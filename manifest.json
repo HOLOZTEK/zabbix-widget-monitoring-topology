@@ -1,0 +1,25 @@
+{
+    "manifest_version": 2.0,
+    "id": "monitoringmap",
+    "type": "widget",
+    "name": "監視経路マップ",
+    "namespace": "MonitoringMap",
+    "version": "0.1.0",
+    "widget": {
+        "size": {"width": 12, "height": 8},
+        "js_class": "CWidgetMonitoringMap",
+        "in": {
+            "hostid": {"type": "_hostid"},
+            "hostgroupid": {"type": "_hostgroupid"}
+        }
+    },
+    "actions": {
+        "widget.monitoringmap.view": {
+            "class": "WidgetView"
+        }
+    },
+    "assets": {
+        "css": ["widget.css"],
+        "js": ["vis-network.min.js", "class.widget.js"]
+    }
+}

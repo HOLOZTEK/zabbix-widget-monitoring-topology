@@ -1,0 +1,72 @@
+div.dashboard-widget-monitoringmap .mm-widget {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 4px;
+    padding: 4px 8px;
+    box-sizing: border-box;
+}
+
+div.dashboard-widget-monitoringmap .mm-control-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 0 0 auto;
+    min-height: 28px;
+}
+
+div.dashboard-widget-monitoringmap .mm-container {
+    flex: 1 1 0;
+    min-height: 0;
+    position: relative;
+}
+
+/* ── Empty state (no host / host group received) ─────────────────────────── */
+
+div.dashboard-widget-monitoringmap .mm-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--font-alt-color, #768d99);
+    font-size: 13px;
+    text-align: center;
+    padding: 12px;
+}
+
+/* ── Display mode toggle ──────────────────────────────────────────────────── */
+
+div.dashboard-widget-monitoringmap .mm-mode-toggle {
+    display: flex;
+    flex-shrink: 0;
+    border: 1px solid #b8c8d4;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+div.dashboard-widget-monitoringmap .mm-mode-btn {
+    padding: 0 10px;
+    height: 26px;
+    font-size: 12px;
+    border: none;
+    background: #f5f7f9;
+    color: #445566;
+    cursor: pointer;
+    line-height: 26px;
+    white-space: nowrap;
+}
+
+div.dashboard-widget-monitoringmap .mm-mode-btn + .mm-mode-btn {
+    border-left: 1px solid #b8c8d4;
+}
+
+div.dashboard-widget-monitoringmap .mm-mode-btn:hover:not(.mm-mode-active) {
+    background: #e0ecf8;
+}
+
+div.dashboard-widget-monitoringmap .mm-mode-btn.mm-mode-active {
+    background: #1388d5;
+    color: #ffffff;
+    cursor: default;
+}
