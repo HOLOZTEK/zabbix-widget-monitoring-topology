@@ -1,0 +1,73 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Monitoring Map"
+msgstr "監視経路マップ"
+
+msgid "Normal"
+msgstr "ノーマル"
+
+msgid "Bold"
+msgstr "太字"
+
+msgid "Italic"
+msgstr "斜体"
+
+msgid "Host"
+msgstr "ホスト"
+
+msgid "Host group"
+msgstr "ホストグループ"
+
+msgid "Subnet prefix length"
+msgstr "サブネットマスク長"
+
+msgid "Zabbix Server label"
+msgstr "Zabbix Serverラベル"
+
+msgid "Font size (px)"
+msgstr "フォントサイズ (px)"
+
+msgid "Style"
+msgstr "スタイル"
+
+msgid "Edge color"
+msgstr "エッジの色"
+
+msgid "Edge width (px)"
+msgstr "エッジの太さ (px)"
+
+msgid "Unknown network"
+msgstr "不明なネットワーク"
+
+msgid "Please select a host or host group."
+msgstr "ホストまたはホストグループを選択してください。"
+
+msgid "No matching hosts found."
+msgstr "該当するホストが見つかりませんでした。"
+
+msgid "Zabbix Server"
+msgstr "Zabbix サーバー"
+
+msgid "Proxy Group"
+msgstr "プロキシグループ"
+
+msgid "Zabbix Proxy"
+msgstr "Zabbix プロキシ"
+
+msgid "Network"
+msgstr "ネットワーク"
+
+msgid "Severity"
+msgstr "重要度"
+
+msgid "Status"
+msgstr "状態"
+
+msgid "Not responding"
+msgstr "応答なし"
+
+msgid "Communication method"
+msgstr "通信方式"

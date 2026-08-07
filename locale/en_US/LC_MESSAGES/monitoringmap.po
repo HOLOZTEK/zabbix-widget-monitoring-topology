@@ -1,0 +1,73 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Monitoring Map"
+msgstr "Monitoring Map"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Bold"
+msgstr "Bold"
+
+msgid "Italic"
+msgstr "Italic"
+
+msgid "Host"
+msgstr "Host"
+
+msgid "Host group"
+msgstr "Host group"
+
+msgid "Subnet prefix length"
+msgstr "Subnet prefix length"
+
+msgid "Zabbix Server label"
+msgstr "Zabbix Server label"
+
+msgid "Font size (px)"
+msgstr "Font size (px)"
+
+msgid "Style"
+msgstr "Style"
+
+msgid "Edge color"
+msgstr "Edge color"
+
+msgid "Edge width (px)"
+msgstr "Edge width (px)"
+
+msgid "Unknown network"
+msgstr "Unknown network"
+
+msgid "Please select a host or host group."
+msgstr "Please select a host or host group."
+
+msgid "No matching hosts found."
+msgstr "No matching hosts found."
+
+msgid "Zabbix Server"
+msgstr "Zabbix Server"
+
+msgid "Proxy Group"
+msgstr "Proxy Group"
+
+msgid "Zabbix Proxy"
+msgstr "Zabbix Proxy"
+
+msgid "Network"
+msgstr "Network"
+
+msgid "Severity"
+msgstr "Severity"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Not responding"
+msgstr "Not responding"
+
+msgid "Communication method"
+msgstr "Communication method"

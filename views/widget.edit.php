@@ -25,18 +25,6 @@
 		new CWidgetFieldTextBoxView($data['fields']['server_label'])
 	)
 	->addField(
-		new CWidgetFieldColorView($data['fields']['server_color'])
-	)
-	->addField(
-		new CWidgetFieldColorView($data['fields']['proxy_color'])
-	)
-	->addField(
-		new CWidgetFieldColorView($data['fields']['network_color'])
-	)
-	->addField(
-		new CWidgetFieldColorView($data['fields']['host_color'])
-	)
-	->addField(
 		new CWidgetFieldIntegerBoxView($data['fields']['node_font_size'])
 	)
 	->addField(
@@ -48,4 +36,6 @@
 	->addField(
 		new CWidgetFieldIntegerBoxView($data['fields']['edge_width'])
 	)
+	->includeJsFile('widget.edit.js.php')
+	->addJavaScript('widget_monitoringmap_form.init();')
 	->show();

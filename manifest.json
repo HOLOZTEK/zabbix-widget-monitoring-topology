@@ -2,7 +2,7 @@
     "manifest_version": 2.0,
     "id": "monitoringmap",
     "type": "widget",
-    "name": "監視経路マップ",
+    "name": "Monitoring Map",
     "namespace": "MonitoringMap",
     "version": "0.1.0",
     "widget": {

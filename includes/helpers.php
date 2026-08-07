@@ -5,6 +5,7 @@ function _mm(string $string): string {
 }
 
 const MM_NODE_SERVER = 'server';
+const MM_NODE_PROXY_GROUP = 'proxy_group';
 const MM_NODE_PROXY = 'proxy';
 const MM_NODE_NETWORK = 'network';
 const MM_NODE_HOST = 'host';
@@ -28,6 +29,12 @@ const MM_ITEM_TYPE_IPMI = 12;
 const MM_ITEM_TYPE_DB_MONITOR = 11;
 const MM_ITEM_TYPE_JMX = 16;
 const MM_ITEM_TYPE_ZABBIX_ACTIVE = 7;
+
+// Zabbix's ZBX_SEVERITY_OK (-1, "no active problem") and its standard
+// ".status-green" color from the frontend theme CSS - CSeverityHelper::getColor()
+// only covers the 6 configured trigger severities (0-5), not this sentinel.
+const MM_SEVERITY_OK = -1;
+const MM_SEVERITY_OK_COLOR = '#59db8f';
 
 // Maps a single item (type + key_) to the communication method it implies, or
 // null if the item type doesn't correspond to any of the methods this widget
@@ -79,6 +86,34 @@ function mm_comm_methods_by_host(array $items): array {
 	}
 
 	return $by_host;
+}
+
+// $problems is Problem.get output with 'severity' and 'hosts' (selectHosts:
+// ['hostid']) selected. Returns [hostid => max severity] - hosts with no
+// active problem are simply absent from the returned map.
+function mm_max_severity_by_host(array $problems): array {
+	$by_host = [];
+	foreach ($problems as $problem) {
+		$severity = (int) $problem['severity'];
+		foreach ($problem['hosts'] ?? [] as $host) {
+			$hostid = $host['hostid'];
+			if (!isset($by_host[$hostid]) || $severity > $by_host[$hostid]) {
+				$by_host[$hostid] = $severity;
+			}
+		}
+	}
+
+	return $by_host;
+}
+
+// MM_SEVERITY_OK isn't one of CSeverityHelper::getColor()'s cases (it only
+// covers the 6 configured trigger severities), so it's handled separately here.
+function mm_severity_color(int $severity): string {
+	return $severity < 0 ? MM_SEVERITY_OK_COLOR : '#' . \CSeverityHelper::getColor($severity);
+}
+
+function mm_severity_label(int $severity): string {
+	return \CSeverityHelper::getName($severity);
 }
 
 // Ported as-is from the base topologymap-visnetwork widget's detectDeviceType().
@@ -157,35 +192,6 @@ function mm_ipv4_cidr(string $ip, int $prefix_length): ?string {
 	return long2ip($network) . '/' . $prefix_length;
 }
 
-// A passive proxy's network is derived from 'address' (the server actively
-// connects there, so it's always a single resolvable host/IP). An active
-// proxy only has 'allowed_addresses', an IP/CIDR allow-list that isn't
-// necessarily a single address (comma-separated ranges, empty, etc) - it's
-// only usable here when it resolves to exactly one IPv4 address.
-function mm_proxy_ip(array $proxy): ?string {
-	$operating_mode = (int) ($proxy['operating_mode'] ?? 1);
-
-	if ($operating_mode === 1) {
-		$address = trim((string) ($proxy['address'] ?? ''));
-		return filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false ? $address : null;
-	}
-
-	$allowed = trim((string) ($proxy['allowed_addresses'] ?? ''));
-	if ($allowed === '' || str_contains($allowed, ',') || str_contains($allowed, '-')) {
-		return null;
-	}
-
-	if (str_contains($allowed, '/')) {
-		[$addr, $mask] = explode('/', $allowed, 2);
-		if ($mask !== '32' || filter_var($addr, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false) {
-			return null;
-		}
-		return $addr;
-	}
-
-	return filter_var($allowed, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false ? $allowed : null;
-}
-
 function mm_node_id_server(): string {
 	return 'srv';
 }
@@ -194,13 +200,22 @@ function mm_node_id_proxy(string $proxyid): string {
 	return 'p_' . $proxyid;
 }
 
+function mm_node_id_proxy_group(string $proxy_groupid): string {
+	return 'pg_' . $proxy_groupid;
+}
+
 function mm_node_id_host(string $hostid): string {
 	return 'h_' . $hostid;
 }
 
-// One network node per distinct CIDR string; the "unknown network" fallback
-// gets a fixed id of its own so every unresolvable host/proxy collapses into
-// the same placeholder node instead of one each.
-function mm_node_id_network(?string $cidr): string {
-	return $cidr === null ? 'n_unknown' : 'n_' . str_replace(['.', '/'], '_', $cidr);
+// One network node per (upstream node, CIDR) pair. Scoping by $upstream (the
+// Server/Proxy node id the network sits under) keeps hosts under different
+// Proxies from merging into the same network node just because they share a
+// subnet - a host belongs to exactly one Proxy, so that relationship has to
+// stay unambiguous in the graph. The "unknown network" fallback is scoped the
+// same way, collapsing per upstream rather than into one single global node.
+function mm_node_id_network(string $upstream, ?string $cidr): string {
+	$suffix = $cidr === null ? 'unknown' : str_replace(['.', '/'], '_', $cidr);
+
+	return 'n_' . $upstream . '_' . $suffix;
 }
