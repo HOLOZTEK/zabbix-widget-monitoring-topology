@@ -96,6 +96,9 @@ msgstr "Acknowledged"
 msgid "Host status"
 msgstr "Host status"
 
+msgid "Enabled hosts"
+msgstr "Enabled hosts"
+
 msgid "In maintenance"
 msgstr "In maintenance"
 
@@ -119,6 +122,9 @@ msgstr "Unknown"
 
 msgid "Host configuration"
 msgstr "Host configuration"
+
+msgid "Normal hosts"
+msgstr "Normal hosts"
 
 msgid "No interface configured"
 msgstr "No interface configured"

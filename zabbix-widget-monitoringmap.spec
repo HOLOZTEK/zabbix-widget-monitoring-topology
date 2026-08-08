@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}%{dist}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoringmap
-Version:        0.1.2
+Version:        0.2.0
 Release:        0
 Summary:        Monitoring Map widget for Zabbix dashboard (Vis Network)
 License:        Proprietary
@@ -92,6 +92,16 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sat Aug 8 2026 claude <noreply> - 0.2.0-0
+- フィルタ保存キーが実行時ID（getUniqueId）に依存しダッシュボード再読み込みの
+  たびにリセットされる不具合を修正、DB保存ID（getWidgetId）を優先使用（issue #1）
+- フィルタのホスト状態に「有効ホスト」チェックボックスを追加（デフォルトON）。
+  ホストステータス無効・メンテナンス中のホストはデフォルトで非表示に
+- フィルタのインターフェイス/監視経路/監視方式の全項目をデフォルトでON化
+- フィルタの挙動を統一: 区分内の項目が全て未チェックの場合に「制限なし＝全表示」
+  としていた例外動作を廃止し、未チェック項目は常に表示から除外されるよう統一
+  （動作の予見性向上）。これに伴いホスト設定区分に「通常ホスト」チェックボックス
+  を新設（インターフェイスあり・ローカル監視でない通常ホストの基準タグ）
 * Sat Aug 8 2026 claude <noreply> - 0.1.2-0
 - 表示フィルタ機能を追加: 障害イベント/ホスト状態/ホスト設定/インターフェイス/
   監視経路/監視方式の6区分（区分内OR・区分間AND）で表示ホストを絞り込み可能に。

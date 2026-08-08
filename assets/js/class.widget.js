@@ -87,28 +87,33 @@ class CWidgetMonitoringMap extends CWidget {
 		// (show every problem, both ack and unack).
 		faultUnack:        true,
 		faultAck:          true,
-		// ホスト状態
+		// ホスト状態 - statusEnabled defaults on so maintenance/disabled hosts
+		// are hidden out of the box (see #hostVisible()).
+		statusEnabled:     true,
 		statusMaintenance: false,
 		statusDisabled:    false,
-		// インターフェイス
-		ifaceAvailable:    false,
-		ifaceMixed:        false,
-		ifaceUnavailable:  false,
-		ifaceUnknown:      false,
-		// ホスト設定
+		// インターフェイス - all checked by default (show every host).
+		ifaceAvailable:    true,
+		ifaceMixed:        true,
+		ifaceUnavailable:  true,
+		ifaceUnknown:      true,
+		// ホスト設定 - cfgNormal defaults on so ordinary hosts (an interface
+		// configured, not local-only) are shown out of the box; see the
+		// cfgNormal entry in #hostVisible()'s tagMatch pairs.
+		cfgNormal:         true,
 		cfgNoInterface:    false,
 		cfgLocal:          false,
-		// 監視経路
-		routeServer:       false,
-		routeProxy:        false,
-		routeProxyGroup:   false,
-		// 監視方式
-		methodPing:        false,
-		methodAgent:       false,
-		methodSnmp:        false,
-		methodIpmi:        false,
-		methodJmx:         false,
-		methodOther:       false,
+		// 監視経路 - all checked by default (show every host).
+		routeServer:       true,
+		routeProxy:        true,
+		routeProxyGroup:   true,
+		// 監視方式 - all checked by default (show every host).
+		methodPing:        true,
+		methodAgent:       true,
+		methodSnmp:        true,
+		methodIpmi:        true,
+		methodJmx:         true,
+		methodOther:       true,
 	};
 
 	// value -> filter-key maps for the "single value per host, select-to-
@@ -513,7 +518,11 @@ class CWidgetMonitoringMap extends CWidget {
 	// ── filter ────────────────────────────────────────────────────────────────
 
 	#filterStorageKey() {
-		return `monitoringmap-filter-${this.getUniqueId()}`;
+		// getWidgetId() is the DB-stored id, stable across dashboard reloads and
+		// distinct per widget instance. It's null until the widget is first saved
+		// (new/unsaved widget), so fall back to the runtime id in that case - an
+		// unsaved widget has no persisted state to restore anyway.
+		return `monitoringmap-filter-${this.getWidgetId() ?? this.getUniqueId()}`;
 	}
 
 	#loadFilterState() {
@@ -585,31 +594,29 @@ class CWidgetMonitoringMap extends CWidget {
 		if (updates.length > 0) this.#nodesDS.update(updates);
 	}
 
-	// True if none of the given filter keys are checked (category imposes no
-	// restriction), or if the host's single value for this category matches
-	// one of the checked keys. Used for インターフェイス/監視経路 (each host has
-	// exactly one value in these categories).
+	// True if the host's single value for this category matches one of the
+	// checked keys - an unchecked category (nothing checked) matches nothing,
+	// hiding every host via this category. Used for インターフェイス/監視経路 (each
+	// host has exactly one value in these categories).
 	#singleMatch(valueKeys, value) {
-		const keys = Object.values(valueKeys);
-		if (!keys.some(key => this.#filter[key])) return true;
 		const key = valueKeys[value];
 		return key !== undefined && this.#filter[key];
 	}
 
-	// True if none of the given [filterKey, hostHasTag] pairs are checked, or
-	// if the host has at least one of the checked tags (OR). Used for
-	// ホスト状態/ホスト設定 (independent boolean tags, not mutually exclusive).
+	// True if the host has at least one of the checked tags (OR) - an
+	// unchecked category matches nothing, hiding every host via this
+	// category. Used for ホスト状態/ホスト設定 (independent boolean tags); both
+	// categories include a "baseline" tag (statusEnabled / cfgNormal) so an
+	// ordinary host always has at least one tag available to match.
 	#tagMatch(pairs) {
-		if (!pairs.some(([key]) => this.#filter[key])) return true;
 		return pairs.some(([key, hostHasTag]) => this.#filter[key] && hostHasTag);
 	}
 
-	// True if no 監視方式 checkbox is checked, or if the host has at least one
-	// comm_method bucketing into a checked method (OR). A host can have
-	// multiple comm_methods at once.
+	// True if the host has at least one comm_method bucketing into a checked
+	// 監視方式 checkbox (OR) - an unchecked category matches nothing, hiding
+	// every host via this category. A host can have multiple comm_methods at
+	// once.
 	#methodMatch(commMethods) {
-		const keys = Object.values(CWidgetMonitoringMap.#METHOD_KEYS);
-		if (!keys.some(key => this.#filter[key])) return true;
 		return commMethods.some(method => {
 			const key = CWidgetMonitoringMap.#METHOD_KEYS[method];
 			return key !== undefined && this.#filter[key];
@@ -620,6 +627,7 @@ class CWidgetMonitoringMap extends CWidget {
 	// it only controls severity display, see #recomputeSeverity()).
 	#hostVisible(meta) {
 		if (!this.#tagMatch([
+			['statusEnabled',     meta.host_status === 0 && meta.maintenance_status !== 1],
 			['statusMaintenance', meta.maintenance_status === 1],
 			['statusDisabled',    meta.host_status === 1],
 		])) return false;
@@ -627,6 +635,7 @@ class CWidgetMonitoringMap extends CWidget {
 		if (!this.#singleMatch(CWidgetMonitoringMap.#IFACE_KEYS, meta.availability)) return false;
 
 		if (!this.#tagMatch([
+			['cfgNormal',      meta.has_interface && !meta.is_local],
 			['cfgNoInterface', !meta.has_interface],
 			['cfgLocal',       meta.is_local],
 		])) return false;
@@ -719,11 +728,13 @@ class CWidgetMonitoringMap extends CWidget {
 			</details>
 			<details class="mm-filter-category">
 				<summary>${this.#escape(t('Host status'))}</summary>
+				${row('statusEnabled', t('Enabled hosts'))}
 				${row('statusMaintenance', t('In maintenance'))}
 				${row('statusDisabled', t('Disabled hosts'))}
 			</details>
 			<details class="mm-filter-category">
 				<summary>${this.#escape(t('Host configuration'))}</summary>
+				${row('cfgNormal', t('Normal hosts'))}
 				${row('cfgNoInterface', t('No interface configured'))}
 				${row('cfgLocal', t('Local host monitoring'))}
 			</details>

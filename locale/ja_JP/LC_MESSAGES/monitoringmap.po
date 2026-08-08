@@ -96,6 +96,9 @@ msgstr "確認済み"
 msgid "Host status"
 msgstr "ホスト状態"
 
+msgid "Enabled hosts"
+msgstr "有効ホスト"
+
 msgid "In maintenance"
 msgstr "メンテナンス中"
 
@@ -119,6 +122,9 @@ msgstr "状況不明"
 
 msgid "Host configuration"
 msgstr "ホスト設定"
+
+msgid "Normal hosts"
+msgstr "通常ホスト"
 
 msgid "No interface configured"
 msgstr "インターフェイス設定なし"
