@@ -31,10 +31,16 @@
 		new CWidgetFieldSelectView($data['fields']['node_font_style'])
 	)
 	->addField(
+		new CWidgetFieldColorView($data['fields']['node_font_color'])
+	)
+	->addField(
 		new CWidgetFieldColorView($data['fields']['edge_color'])
 	)
 	->addField(
 		new CWidgetFieldIntegerBoxView($data['fields']['edge_width'])
+	)
+	->addField(
+		new CWidgetFieldRadioButtonListView($data['fields']['filter_position'])
 	)
 	->includeJsFile('widget.edit.js.php')
 	->addJavaScript('widget_monitoringmap_form.init();')

@@ -66,6 +66,79 @@ class CWidgetMonitoringMap extends CWidget {
 		jmx:    'JMX',
 	};
 
+	// Matches WidgetForm::FILTER_POSITION_* on the PHP side.
+	static #FILTER_POSITION_CLASS = {
+		0: 'mm-filter--top-left',
+		1: 'mm-filter--top-right',
+		2: 'mm-filter--bottom-left',
+		3: 'mm-filter--bottom-right',
+	};
+
+	// Every category below is an inclusion-set filter: selecting a checkbox
+	// narrows the category to hosts matching one of the selected values (OR
+	// within the category), and an empty selection means "no restriction"
+	// (all hosts pass that category). Categories combine with AND. The one
+	// exception is "障害イベント" (fault*), which controls whether/which
+	// problem severities are displayed rather than host visibility itself -
+	// an empty selection there means "don't display problem severity at all",
+	// not "show every host" (see #recomputeSeverity()).
+	static #DEFAULT_FILTER = {
+		// 障害イベント - unchanged from the widget's pre-existing default
+		// (show every problem, both ack and unack).
+		faultUnack:        true,
+		faultAck:          true,
+		// ホスト状態
+		statusMaintenance: false,
+		statusDisabled:    false,
+		// インターフェイス
+		ifaceAvailable:    false,
+		ifaceMixed:        false,
+		ifaceUnavailable:  false,
+		ifaceUnknown:      false,
+		// ホスト設定
+		cfgNoInterface:    false,
+		cfgLocal:          false,
+		// 監視経路
+		routeServer:       false,
+		routeProxy:        false,
+		routeProxyGroup:   false,
+		// 監視方式
+		methodPing:        false,
+		methodAgent:       false,
+		methodSnmp:        false,
+		methodIpmi:        false,
+		methodJmx:         false,
+		methodOther:       false,
+	};
+
+	// value -> filter-key maps for the "single value per host, select-to-
+	// include" categories (インターフェイス/監視経路).
+	static #IFACE_KEYS = {
+		available:   'ifaceAvailable',
+		mixed:       'ifaceMixed',
+		unavailable: 'ifaceUnavailable',
+		unknown:     'ifaceUnknown',
+	};
+
+	static #ROUTE_KEYS = {
+		server:      'routeServer',
+		proxy:       'routeProxy',
+		proxy_group: 'routeProxyGroup',
+	};
+
+	// comm_methods bucket -> filter-key map for 監視方式. vmware/odbc (the
+	// only two comm_methods values not among the 5 explicit methods) both
+	// bucket into "other" per user decision.
+	static #METHOD_KEYS = {
+		ping:   'methodPing',
+		agent:  'methodAgent',
+		snmp:   'methodSnmp',
+		ipmi:   'methodIpmi',
+		jmx:    'methodJmx',
+		vmware: 'methodOther',
+		odbc:   'methodOther',
+	};
+
 	#network      = null;
 	#nodesDS      = null;
 	#edgesDS      = null;
@@ -75,9 +148,18 @@ class CWidgetMonitoringMap extends CWidget {
 	#popupAnchor  = null;
 	#children     = {};
 	#highlightedProxy = null;
+	#filter       = {};
+	#panelEl      = null;
+	#btnEl        = null;
 
 	onInitialize() {
 		this._dom_id_suffix = '';
+		document.addEventListener('click', (e) => {
+			if (this.#panelEl && this.#panelEl.style.display !== 'none'
+					&& !this.#panelEl.contains(e.target) && e.target !== this.#btnEl) {
+				this.#panelEl.style.display = 'none';
+			}
+		});
 	}
 
 	hasPadding() {
@@ -107,6 +189,8 @@ class CWidgetMonitoringMap extends CWidget {
 		}
 		this.#children = {};
 		this.#highlightedProxy = null;
+		this.#panelEl = null;
+		this.#btnEl = null;
 	}
 
 	// ── graph ─────────────────────────────────────────────────────────────────
@@ -135,12 +219,18 @@ class CWidgetMonitoringMap extends CWidget {
 		if (elements.length === 0) return;
 
 		this.#s = {
-			fontSize:   parseInt(container.dataset.nodeFontSize  || '12', 10),
-			fontWeight: parseInt(container.dataset.nodeFontStyle || '0', 10) === 1 ? 'bold'   : 'normal',
-			fontStyle:  parseInt(container.dataset.nodeFontStyle || '0', 10) === 2 ? 'italic' : 'normal',
-			edgeWidth:  parseFloat(container.dataset.edgeWidth || '1'),
-			edgeColor:  container.dataset.edgeColor     || '#aac4d8',
+			fontSize:       parseInt(container.dataset.nodeFontSize  || '12', 10),
+			fontWeight:     parseInt(container.dataset.nodeFontStyle || '0', 10) === 1 ? 'bold'   : 'normal',
+			fontStyle:      parseInt(container.dataset.nodeFontStyle || '0', 10) === 2 ? 'italic' : 'normal',
+			fontColor:      container.dataset.nodeFontColor || this.#detectThemeFontColor(container),
+			edgeWidth:      parseFloat(container.dataset.edgeWidth || '1'),
+			edgeColor:      container.dataset.edgeColor     || '#aac4d8',
+			filterPosition: parseInt(container.dataset.filterPosition || '1', 10),
+			severityColors: this.#parseJson(container.dataset.severityColors, {}),
+			severityLabels: this.#parseJson(container.dataset.severityLabels, {}),
 		};
+
+		this.#loadFilterState();
 
 		const visNodes = [];
 		const visEdges = [];
@@ -164,14 +254,29 @@ class CWidgetMonitoringMap extends CWidget {
 				return;
 			}
 
+			const isHost = el.data.type === 'host';
 			const meta = {
-				node_type:          el.data.type,
-				device_type:        el.data.device_type || 'server',
-				comm_methods:       el.data.comm_methods || [],
-				severity_color:     el.data.severity_color || null,
-				severity_label:     el.data.severity_label || null,
-				proxy_unresponsive: el.data.proxy_unresponsive || false,
+				node_type:           el.data.type,
+				device_type:         el.data.device_type || 'server',
+				comm_methods:        el.data.comm_methods || [],
+				proxy_unresponsive:  el.data.proxy_unresponsive || false,
+				host_status:         isHost ? Number(el.data.host_status || 0) : null,
+				maintenance_status:  isHost ? Number(el.data.maintenance_status || 0) : null,
+				has_interface:       isHost ? (el.data.has_interface !== false) : null,
+				is_local:            isHost ? (el.data.is_local === true) : null,
+				availability:        isHost ? (el.data.availability || 'unknown') : null,
+				route:               isHost ? (el.data.route || 'server') : null,
+				severity_ack:       isHost && el.data.severity_ack !== undefined && el.data.severity_ack !== null
+					? Number(el.data.severity_ack) : null,
+				severity_unack:     isHost && el.data.severity_unack !== undefined && el.data.severity_unack !== null
+					? Number(el.data.severity_unack) : null,
+				severity:           null,
+				severity_color:     null,
+				severity_label:     null,
 			};
+			if (isHost) {
+				this.#recomputeSeverity(meta);
+			}
 			this.#nodesMeta[el.data.id] = meta;
 
 			visNodes.push({
@@ -181,7 +286,7 @@ class CWidgetMonitoringMap extends CWidget {
 				image: this.#buildIcon(meta),
 				color: { background: 'rgba(0,0,0,0)', border: 'rgba(0,0,0,0)' },
 				font: {
-					color: '#333333',
+					color: this.#s.fontColor,
 					size:  this.#s.fontSize,
 					bold:  this.#s.fontWeight === 'bold' ? { size: this.#s.fontSize, vadjust: 0 } : false,
 					ital:  this.#s.fontStyle === 'italic',
@@ -248,6 +353,28 @@ class CWidgetMonitoringMap extends CWidget {
 		});
 
 		this.#network.on('blurNode', () => this.#hideTooltip());
+
+		this.#buildFilterUI(container);
+		this.#applyVisibility();
+	}
+
+	// No node_font_color set in the widget's settings (the field is left blank
+	// by default - see WidgetForm.php) - fall back to whatever text color the
+	// current dashboard theme (light/dark) resolves to on this element, rather
+	// than a hardcoded color that goes invisible against a dark background.
+	#detectThemeFontColor(container) {
+		const color = getComputedStyle(container).color;
+		return color || '#333333';
+	}
+
+	// Parses a JSON data-attribute defensively - malformed/missing attributes
+	// fall back to $fallback rather than breaking graph construction.
+	#parseJson(str, fallback) {
+		try {
+			return str ? JSON.parse(str) : fallback;
+		} catch (_) {
+			return fallback;
+		}
 	}
 
 	// Emergency fallback only, for Host nodes - the server always sends a
@@ -381,6 +508,297 @@ class CWidgetMonitoringMap extends CWidget {
 		const dataUri = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
 		this.#iconCache[cacheKey] = dataUri;
 		return dataUri;
+	}
+
+	// ── filter ────────────────────────────────────────────────────────────────
+
+	#filterStorageKey() {
+		return `monitoringmap-filter-${this.getUniqueId()}`;
+	}
+
+	#loadFilterState() {
+		const defaults = { ...CWidgetMonitoringMap.#DEFAULT_FILTER };
+		try {
+			const raw = localStorage.getItem(this.#filterStorageKey());
+			this.#filter = raw ? Object.assign(defaults, JSON.parse(raw)) : defaults;
+		} catch (_) {
+			this.#filter = defaults;
+		}
+	}
+
+	#saveFilterState() {
+		try {
+			localStorage.setItem(this.#filterStorageKey(), JSON.stringify(this.#filter));
+		} catch (_) {
+			// localStorage unavailable (private browsing, quota, ...) - filter
+			// state just won't persist across reloads, no functional impact.
+		}
+	}
+
+	// Recomputes a host's effective severity from its ack/unack problem
+	// buckets (see WidgetView::applyProblems()) and the current filter state,
+	// entirely client-side. severity stays -1 (MM_SEVERITY_OK, see
+	// helpers.php) when neither checkbox is on or neither enabled bucket has
+	// an active problem - unlike every other category, an empty selection
+	// here means "don't display problem severity", not "no restriction".
+	#recomputeSeverity(meta) {
+		const filterActive = this.#filter.faultAck || this.#filter.faultUnack;
+		let severity = null;
+
+		if (this.#filter.faultAck && meta.severity_ack !== null) {
+			severity = severity === null ? meta.severity_ack : Math.max(severity, meta.severity_ack);
+		}
+		if (this.#filter.faultUnack && meta.severity_unack !== null) {
+			severity = severity === null ? meta.severity_unack : Math.max(severity, meta.severity_unack);
+		}
+
+		meta.severity = severity === null ? -1 : severity;
+
+		// Both checkboxes off means "don't display problem events" (see the
+		// comment above this method) - showing the OK/green circle here would
+		// misleadingly imply a confirmed-healthy status we never checked, so
+		// the host icon's background goes fully transparent instead.
+		if (!filterActive) {
+			meta.severity_color = 'none';
+			meta.severity_label = null;
+			return;
+		}
+
+		const key = String(meta.severity);
+		meta.severity_color = this.#s.severityColors[key] || this.#colorForType();
+		meta.severity_label = this.#s.severityLabels[key] || null;
+	}
+
+	// Re-derives severity for every host node (problem-filter checkboxes
+	// changed) and refreshes the affected icons in place, without rebuilding
+	// the graph.
+	#refreshSeverities() {
+		if (!this.#nodesDS) return;
+
+		const updates = [];
+		for (const id in this.#nodesMeta) {
+			const meta = this.#nodesMeta[id];
+			if (meta.node_type !== 'host') continue;
+			this.#recomputeSeverity(meta);
+			updates.push({ id, image: this.#buildIcon(meta) });
+		}
+		if (updates.length > 0) this.#nodesDS.update(updates);
+	}
+
+	// True if none of the given filter keys are checked (category imposes no
+	// restriction), or if the host's single value for this category matches
+	// one of the checked keys. Used for インターフェイス/監視経路 (each host has
+	// exactly one value in these categories).
+	#singleMatch(valueKeys, value) {
+		const keys = Object.values(valueKeys);
+		if (!keys.some(key => this.#filter[key])) return true;
+		const key = valueKeys[value];
+		return key !== undefined && this.#filter[key];
+	}
+
+	// True if none of the given [filterKey, hostHasTag] pairs are checked, or
+	// if the host has at least one of the checked tags (OR). Used for
+	// ホスト状態/ホスト設定 (independent boolean tags, not mutually exclusive).
+	#tagMatch(pairs) {
+		if (!pairs.some(([key]) => this.#filter[key])) return true;
+		return pairs.some(([key, hostHasTag]) => this.#filter[key] && hostHasTag);
+	}
+
+	// True if no 監視方式 checkbox is checked, or if the host has at least one
+	// comm_method bucketing into a checked method (OR). A host can have
+	// multiple comm_methods at once.
+	#methodMatch(commMethods) {
+		const keys = Object.values(CWidgetMonitoringMap.#METHOD_KEYS);
+		if (!keys.some(key => this.#filter[key])) return true;
+		return commMethods.some(method => {
+			const key = CWidgetMonitoringMap.#METHOD_KEYS[method];
+			return key !== undefined && this.#filter[key];
+		});
+	}
+
+	// AND-combines the 5 host-level categories (障害イベント doesn't hide hosts -
+	// it only controls severity display, see #recomputeSeverity()).
+	#hostVisible(meta) {
+		if (!this.#tagMatch([
+			['statusMaintenance', meta.maintenance_status === 1],
+			['statusDisabled',    meta.host_status === 1],
+		])) return false;
+
+		if (!this.#singleMatch(CWidgetMonitoringMap.#IFACE_KEYS, meta.availability)) return false;
+
+		if (!this.#tagMatch([
+			['cfgNoInterface', !meta.has_interface],
+			['cfgLocal',       meta.is_local],
+		])) return false;
+
+		if (!this.#singleMatch(CWidgetMonitoringMap.#ROUTE_KEYS, meta.route)) return false;
+
+		if (!this.#methodMatch(meta.comm_methods)) return false;
+
+		return true;
+	}
+
+	// A non-host node (Server/Proxy/Proxy Group/Network) is visible iff at
+	// least one descendant host remains visible - every such node is only
+	// ever created because of an actual host in the current selection (see
+	// WidgetView::doAction()), so this cascade never spuriously hides an
+	// ancestor with no host descendants at all; it only fires because of
+	// these filters. Edges follow their endpoints.
+	#applyVisibility() {
+		if (!this.#nodesDS || !this.#edgesDS) return;
+
+		const visible = {};
+		const computeVisible = (id) => {
+			if (id in visible) return visible[id];
+			const meta = this.#nodesMeta[id];
+			let result;
+			if (!meta) {
+				result = false;
+			}
+			else if (meta.node_type === 'host') {
+				result = this.#hostVisible(meta);
+			}
+			else {
+				result = (this.#children[id] || []).some(childId => computeVisible(childId));
+			}
+			visible[id] = result;
+			return result;
+		};
+
+		const nodeUpdates = Object.keys(this.#nodesMeta).map(id => ({ id, hidden: !computeVisible(id) }));
+		this.#nodesDS.update(nodeUpdates);
+
+		const edgeUpdates = this.#edgesDS.get().map(edge => ({
+			id:     edge.id,
+			hidden: !(visible[edge.from] && visible[edge.to]),
+		}));
+		this.#edgesDS.update(edgeUpdates);
+
+		this.#toggleEmptyOverlay(!Object.values(visible).some(v => v));
+	}
+
+	#onFilterChanged(key) {
+		if (key === 'faultAck' || key === 'faultUnack') {
+			this.#refreshSeverities();
+		}
+		this.#applyVisibility();
+	}
+
+	#toggleEmptyOverlay(show) {
+		const container = this._body.querySelector('.js-mm-container');
+		if (!container) return;
+
+		let overlay = container.querySelector('.mm-filter-empty');
+		if (show) {
+			if (!overlay) {
+				overlay = document.createElement('div');
+				overlay.className = 'mm-filter-empty';
+				overlay.textContent = t('No hosts match the current filter.');
+				container.appendChild(overlay);
+			}
+		}
+		else if (overlay) {
+			overlay.remove();
+		}
+	}
+
+	#filterPanelHtml() {
+		const row = (key, label) =>
+			`<label class="mm-filter-item">`
+			+ `<input type="checkbox" data-filter="${key}"> ${this.#escape(label)}</label>`;
+
+		return `
+			<div class="mm-filter-header">
+				<span>${this.#escape(t('Filter'))}</span>
+				<button type="button" class="mm-filter-reset">${this.#escape(t('Reset'))}</button>
+			</div>
+			<details class="mm-filter-category">
+				<summary>${this.#escape(t('Problem events'))}</summary>
+				${row('faultUnack', t('Unacknowledged'))}
+				${row('faultAck', t('Acknowledged'))}
+			</details>
+			<details class="mm-filter-category">
+				<summary>${this.#escape(t('Host status'))}</summary>
+				${row('statusMaintenance', t('In maintenance'))}
+				${row('statusDisabled', t('Disabled hosts'))}
+			</details>
+			<details class="mm-filter-category">
+				<summary>${this.#escape(t('Host configuration'))}</summary>
+				${row('cfgNoInterface', t('No interface configured'))}
+				${row('cfgLocal', t('Local host monitoring'))}
+			</details>
+			<details class="mm-filter-category">
+				<summary>${this.#escape(t('Interface'))}</summary>
+				${row('ifaceAvailable', t('Available'))}
+				${row('ifaceMixed', t('Mixed'))}
+				${row('ifaceUnavailable', t('Not available'))}
+				${row('ifaceUnknown', t('Unknown'))}
+			</details>
+			<details class="mm-filter-category">
+				<summary>${this.#escape(t('Monitoring route'))}</summary>
+				${row('routeServer', t('Zabbix Server'))}
+				${row('routeProxy', t('Zabbix Proxy'))}
+				${row('routeProxyGroup', t('Proxy Group'))}
+			</details>
+			<details class="mm-filter-category">
+				<summary>${this.#escape(t('Monitoring method'))}</summary>
+				${row('methodPing', t('Ping'))}
+				${row('methodAgent', t('Zabbix Agent'))}
+				${row('methodSnmp', t('SNMP'))}
+				${row('methodIpmi', t('IPMI'))}
+				${row('methodJmx', t('JMX'))}
+				${row('methodOther', t('Other'))}
+			</details>
+		`;
+	}
+
+	#wireFilterPanel(panel) {
+		panel.querySelectorAll('input[type=checkbox][data-filter]').forEach(input => {
+			const key = input.dataset.filter;
+			input.checked = !!this.#filter[key];
+			input.addEventListener('change', () => {
+				this.#filter[key] = input.checked;
+				this.#saveFilterState();
+				this.#onFilterChanged(key);
+			});
+		});
+
+		panel.querySelector('.mm-filter-reset').addEventListener('click', () => {
+			this.#filter = { ...CWidgetMonitoringMap.#DEFAULT_FILTER };
+			this.#saveFilterState();
+			panel.querySelectorAll('input[type=checkbox][data-filter]').forEach(input => {
+				input.checked = !!this.#filter[input.dataset.filter];
+			});
+			this.#refreshSeverities();
+			this.#applyVisibility();
+		});
+	}
+
+	#buildFilterUI(container) {
+		const posClass = CWidgetMonitoringMap.#FILTER_POSITION_CLASS[this.#s.filterPosition]
+			|| CWidgetMonitoringMap.#FILTER_POSITION_CLASS[1];
+
+		this.#btnEl = document.createElement('button');
+		this.#btnEl.type = 'button';
+		this.#btnEl.className = `mm-filter-btn ${posClass}`;
+		this.#btnEl.title = t('Filter');
+		this.#btnEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="16" height="16">'
+			+ '<path d="M2 3.5h16l-6 7.2v5l-4 2v-7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+		container.appendChild(this.#btnEl);
+
+		this.#panelEl = document.createElement('div');
+		this.#panelEl.className = `mm-filter-panel ${posClass}`;
+		this.#panelEl.style.display = 'none';
+		this.#panelEl.innerHTML = this.#filterPanelHtml();
+		container.appendChild(this.#panelEl);
+
+		this.#btnEl.addEventListener('click', (e) => {
+			e.stopPropagation();
+			this.#panelEl.style.display = this.#panelEl.style.display === 'none' ? 'block' : 'none';
+		});
+		this.#panelEl.addEventListener('click', (e) => e.stopPropagation());
+
+		this.#wireFilterPanel(this.#panelEl);
 	}
 
 	// ── tooltip ───────────────────────────────────────────────────────────────

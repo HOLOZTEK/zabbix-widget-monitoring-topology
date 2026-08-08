@@ -88,17 +88,23 @@ function mm_comm_methods_by_host(array $items): array {
 	return $by_host;
 }
 
-// $problems is Problem.get output with 'severity' and 'hosts' (selectHosts:
-// ['hostid']) selected. Returns [hostid => max severity] - hosts with no
-// active problem are simply absent from the returned map.
-function mm_max_severity_by_host(array $problems): array {
+// $problems is Problem.get output with 'severity', 'acknowledged' and 'hosts'
+// (selectHosts: ['hostid']) selected. Returns [hostid => ['ack' => severity,
+// 'unack' => severity]], each bucket only present if that host has at least
+// one active problem in it - this split (rather than one combined max) is
+// what lets the client-side ack/unack filter toggles recompute each host's
+// effective severity locally, without a server round-trip (see
+// CWidgetMonitoringMap#effectiveSeverity()).
+function mm_severity_by_host_ack(array $problems): array {
 	$by_host = [];
 	foreach ($problems as $problem) {
 		$severity = (int) $problem['severity'];
+		$bucket = ((int) $problem['acknowledged']) === 1 ? 'ack' : 'unack';
+
 		foreach ($problem['hosts'] ?? [] as $host) {
 			$hostid = $host['hostid'];
-			if (!isset($by_host[$hostid]) || $severity > $by_host[$hostid]) {
-				$by_host[$hostid] = $severity;
+			if (!isset($by_host[$hostid][$bucket]) || $severity > $by_host[$hostid][$bucket]) {
+				$by_host[$hostid][$bucket] = $severity;
 			}
 		}
 	}
@@ -114,6 +120,64 @@ function mm_severity_color(int $severity): string {
 
 function mm_severity_label(int $severity): string {
 	return \CSeverityHelper::getName($severity);
+}
+
+// A host's interface availability, aggregated across all its interfaces from
+// Zabbix's own per-interface INTERFACE_AVAILABLE_* state (0=unknown,
+// 1=available, 2=unavailable) - no Widget-specific Active/Passive or
+// response-time interpretation is applied:
+// - "available": at least one interface is available (1), none are
+//   unavailable (2).
+// - "unavailable": at least one interface is unavailable (2), none are
+//   available (1).
+// - "mixed": at least one interface is available (1) AND at least one is
+//   unavailable (2).
+// - "unknown": no interfaces, or every interface is still
+//   INTERFACE_AVAILABLE_UNKNOWN (0). A host with no interfaces at all is
+//   deliberately "unknown" rather than "unavailable" - that's what the
+//   separate "has_interface" flag is for.
+function mm_host_availability(array $interfaces): string {
+	$any_unavailable = false;
+	$any_available = false;
+
+	foreach ($interfaces as $iface) {
+		$available = (int) ($iface['available'] ?? 0);
+		if ($available === 2) {
+			$any_unavailable = true;
+		}
+		elseif ($available === 1) {
+			$any_available = true;
+		}
+	}
+
+	if ($any_available && $any_unavailable) {
+		return 'mixed';
+	}
+	if ($any_unavailable) {
+		return 'unavailable';
+	}
+
+	return $any_available ? 'available' : 'unknown';
+}
+
+// A host counts as monitoring "itself" (the local Zabbix Server / monitoring
+// source system) if any of its interfaces resolves to the local loopback -
+// IP 127.0.0.1, or DNS name "localhost" - per user-specified criterion
+// (no existing detection logic previously existed in this widget for this).
+function mm_host_is_local(array $interfaces): bool {
+	foreach ($interfaces as $iface) {
+		$ip = trim((string) ($iface['ip'] ?? ''));
+		if ($ip === '127.0.0.1') {
+			return true;
+		}
+
+		$dns = trim((string) ($iface['dns'] ?? ''));
+		if (strcasecmp($dns, 'localhost') === 0) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 // Ported as-is from the base topologymap-visnetwork widget's detectDeviceType().

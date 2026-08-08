@@ -33,6 +33,9 @@ msgstr "Font size (px)"
 msgid "Style"
 msgstr "Style"
 
+msgid "Font color"
+msgstr "Font color"
+
 msgid "Edge color"
 msgstr "Edge color"
 
@@ -71,3 +74,96 @@ msgstr "Not responding"
 
 msgid "Communication method"
 msgstr "Communication method"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Filter"
+msgstr "Filter"
+
+msgid "Reset"
+msgstr "Reset"
+
+msgid "Problem events"
+msgstr "Problem events"
+
+msgid "Unacknowledged"
+msgstr "Unacknowledged"
+
+msgid "Acknowledged"
+msgstr "Acknowledged"
+
+msgid "Host status"
+msgstr "Host status"
+
+msgid "In maintenance"
+msgstr "In maintenance"
+
+msgid "Disabled hosts"
+msgstr "Disabled hosts"
+
+msgid "Interface"
+msgstr "Interface"
+
+msgid "Available"
+msgstr "Available"
+
+msgid "Mixed"
+msgstr "Mixed"
+
+msgid "Not available"
+msgstr "Not available"
+
+msgid "Unknown"
+msgstr "Unknown"
+
+msgid "Host configuration"
+msgstr "Host configuration"
+
+msgid "No interface configured"
+msgstr "No interface configured"
+
+msgid "Local host monitoring"
+msgstr "Local host monitoring"
+
+msgid "Monitoring route"
+msgstr "Monitoring route"
+
+msgid "Monitoring method"
+msgstr "Monitoring method"
+
+msgid "Ping"
+msgstr "Ping"
+
+msgid "Zabbix Agent"
+msgstr "Zabbix Agent"
+
+msgid "SNMP"
+msgstr "SNMP"
+
+msgid "IPMI"
+msgstr "IPMI"
+
+msgid "JMX"
+msgstr "JMX"
+
+msgid "Other"
+msgstr "Other"
+
+msgid "No hosts match the current filter."
+msgstr "No hosts match the current filter."
+
+msgid "Filter icon position"
+msgstr "Filter icon position"
+
+msgid "Top left"
+msgstr "Top left"
+
+msgid "Top right"
+msgstr "Top right"
+
+msgid "Bottom left"
+msgstr "Bottom left"
+
+msgid "Bottom right"
+msgstr "Bottom right"

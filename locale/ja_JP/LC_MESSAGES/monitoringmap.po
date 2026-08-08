@@ -33,6 +33,9 @@ msgstr "フォントサイズ (px)"
 msgid "Style"
 msgstr "スタイル"
 
+msgid "Font color"
+msgstr "文字色"
+
 msgid "Edge color"
 msgstr "エッジの色"
 
@@ -71,3 +74,96 @@ msgstr "応答なし"
 
 msgid "Communication method"
 msgstr "通信方式"
+
+msgid "OK"
+msgstr "正常"
+
+msgid "Filter"
+msgstr "フィルタ"
+
+msgid "Reset"
+msgstr "リセット"
+
+msgid "Problem events"
+msgstr "障害イベント"
+
+msgid "Unacknowledged"
+msgstr "未確認"
+
+msgid "Acknowledged"
+msgstr "確認済み"
+
+msgid "Host status"
+msgstr "ホスト状態"
+
+msgid "In maintenance"
+msgstr "メンテナンス中"
+
+msgid "Disabled hosts"
+msgstr "無効ホスト"
+
+msgid "Interface"
+msgstr "インターフェイス"
+
+msgid "Available"
+msgstr "正常"
+
+msgid "Mixed"
+msgstr "一部監視不可"
+
+msgid "Not available"
+msgstr "監視不可"
+
+msgid "Unknown"
+msgstr "状況不明"
+
+msgid "Host configuration"
+msgstr "ホスト設定"
+
+msgid "No interface configured"
+msgstr "インターフェイス設定なし"
+
+msgid "Local host monitoring"
+msgstr "ローカルホスト監視"
+
+msgid "Monitoring route"
+msgstr "監視経路"
+
+msgid "Monitoring method"
+msgstr "監視方式"
+
+msgid "Ping"
+msgstr "Ping"
+
+msgid "Zabbix Agent"
+msgstr "Zabbix Agent"
+
+msgid "SNMP"
+msgstr "SNMP"
+
+msgid "IPMI"
+msgstr "IPMI"
+
+msgid "JMX"
+msgstr "JMX"
+
+msgid "Other"
+msgstr "その他"
+
+msgid "No hosts match the current filter."
+msgstr "現在のフィルタ条件に一致するホストがありません。"
+
+msgid "Filter icon position"
+msgstr "フィルタアイコンの位置"
+
+msgid "Top left"
+msgstr "左上"
+
+msgid "Top right"
+msgstr "右上"
+
+msgid "Bottom left"
+msgstr "左下"
+
+msgid "Bottom right"
+msgstr "右下"

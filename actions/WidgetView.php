@@ -6,6 +6,8 @@ use API,
 	CControllerDashboardWidgetView,
 	CControllerResponseData;
 
+use Modules\MonitoringMap\Includes\WidgetForm;
+
 class WidgetView extends CControllerDashboardWidgetView {
 
 	private array $node_ids = [];
@@ -22,11 +24,15 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$dom_id_suffix = preg_replace('/[^A-Za-z0-9_-]/', '_', $this->getInput('widget_unique_id', ''));
 
 		$settings = [
-			'server_label'    => (string) ($fv['server_label'] ?: 'Zabbix Server'),
-			'node_font_size'  => (int) ($fv['node_font_size']  ?? 12),
-			'node_font_style' => (int) ($fv['node_font_style'] ?? 0),
-			'edge_width'      => (int) ($fv['edge_width'] ?? 1),
-			'edge_color'      => '#' . ($fv['edge_color'] ?: 'aac4d8'),
+			'server_label'     => (string) ($fv['server_label'] ?: 'Zabbix Server'),
+			'node_font_size'   => (int) ($fv['node_font_size']  ?? 12),
+			'node_font_style'  => (int) ($fv['node_font_style'] ?? 0),
+			'node_font_color'  => ($fv['node_font_color'] ?? '') !== '' ? '#' . $fv['node_font_color'] : '',
+			'edge_width'       => (int) ($fv['edge_width'] ?? 1),
+			'edge_color'       => '#' . ($fv['edge_color'] ?: 'aac4d8'),
+			'filter_position'  => (int) ($fv['filter_position'] ?? WidgetForm::FILTER_POSITION_TOP_RIGHT),
+			'severity_colors'  => $this->severityColors(),
+			'severity_labels'  => $this->severityLabels(),
 		];
 
 		$common = [
@@ -53,9 +59,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 		$hosts = API::Host()->get($host_filter + [
 			'output'                => [
-				'hostid', 'name', 'status', 'monitored_by', 'proxyid', 'proxy_groupid', 'assigned_proxyid'
+				'hostid', 'name', 'status', 'monitored_by', 'proxyid', 'proxy_groupid', 'assigned_proxyid',
+				'maintenance_status'
 			],
-			'selectInterfaces'      => ['type', 'ip', 'dns', 'useip', 'main'],
+			'selectInterfaces'      => ['type', 'ip', 'dns', 'useip', 'main', 'available'],
 			'selectInventory'       => ['type', 'os'],
 			'selectParentTemplates' => ['name'],
 			'preservekeys'          => true
@@ -147,15 +154,23 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 			$this->addEdge($upstream_node, $network_node);
 
+			$interfaces = $host['interfaces'] ?? [];
+
 			$host_node = mm_node_id_host((string) $hostid);
 			$this->addNode($host_node, (string) $host['name'], MM_NODE_HOST, [
-				'device_type'  => mm_detect_device_type($host),
-				'comm_methods' => $comm_methods_by_host[$hostid] ?? []
+				'device_type'        => mm_detect_device_type($host),
+				'comm_methods'       => $comm_methods_by_host[$hostid] ?? [],
+				'host_status'        => (int) $host['status'],
+				'maintenance_status' => (int) ($host['maintenance_status'] ?? 0),
+				'has_interface'      => $interfaces !== [],
+				'is_local'           => mm_host_is_local($interfaces),
+				'availability'       => mm_host_availability($interfaces),
+				'route'              => $this->resolveRoute($host)
 			]);
 			$this->addEdge($network_node, $host_node);
 		}
 
-		$this->applySeverities($hosts);
+		$this->applyProblems($hosts);
 
 		$this->setResponse(new CControllerResponseData($common + [
 			'error'    => null,
@@ -218,6 +233,19 @@ class WidgetView extends CControllerDashboardWidgetView {
 		return mm_node_id_server();
 	}
 
+	// Route filter classification, independent of resolveUpstreamNode()'s
+	// graph-placement fallbacks - this reports the host's actual configured
+	// monitored_by regardless of where its Network node ends up hanging (e.g.
+	// a ProxyGroup host with an assigned_proxyid still visually attaches under
+	// that specific Proxy node, but is still tagged 'proxy_group' here).
+	private function resolveRoute(array $host): string {
+		return match ((int) ($host['monitored_by'] ?? 0)) {
+			1 => 'proxy',
+			2 => 'proxy_group',
+			default => 'server'
+		};
+	}
+
 	private function addNode(string $id, string $label, string $type, array $extra = []): void {
 		if (isset($this->node_ids[$id])) {
 			return;
@@ -260,12 +288,18 @@ class WidgetView extends CControllerDashboardWidgetView {
 	// made it look like Zabbix's own infrastructure was in a problem state, so
 	// those node types now carry no severity data at all - see class.widget.js,
 	// which falls back to their fixed type color once severity_color is absent.
-	private function applySeverities(array $hosts): void {
+	//
+	// Each host gets its acknowledged/unacknowledged problems' severities kept
+	// separate (severity_ack/severity_unack) rather than combined into one
+	// number, so the client's problem-event filter (show/hide by ack status)
+	// can recompute the effective severity locally as the user toggles it,
+	// without a server round-trip - see CWidgetMonitoringMap#effectiveSeverity().
+	private function applyProblems(array $hosts): void {
 		// Problem.get has no selectHosts (only Acknowledges/SuppressionData/Tags),
 		// so the problem->host link has to go through the triggers it references.
 		$problems = $hosts
 			? API::Problem()->get([
-				'output'  => ['eventid', 'objectid', 'severity'],
+				'output'  => ['eventid', 'objectid', 'severity', 'acknowledged'],
 				'hostids' => array_keys($hosts),
 				'recent'  => false
 			])
@@ -286,7 +320,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		}
 		unset($problem);
 
-		$severity_by_hostid = mm_max_severity_by_host($problems);
+		$severity_by_hostid = mm_severity_by_host_ack($problems);
 
 		foreach ($this->elements as &$element) {
 			if (($element['data']['type'] ?? null) !== MM_NODE_HOST) {
@@ -294,11 +328,29 @@ class WidgetView extends CControllerDashboardWidgetView {
 			}
 
 			$hostid = substr($element['data']['id'], 2);
-			$severity = $severity_by_hostid[$hostid] ?? MM_SEVERITY_OK;
-			$element['data']['severity'] = $severity;
-			$element['data']['severity_color'] = mm_severity_color($severity);
-			$element['data']['severity_label'] = mm_severity_label($severity);
+			$element['data']['severity_ack']   = $severity_by_hostid[$hostid]['ack'] ?? null;
+			$element['data']['severity_unack'] = $severity_by_hostid[$hostid]['unack'] ?? null;
 		}
 		unset($element);
+	}
+
+	// Sent once via $settings rather than per-host, so the client can map an
+	// effective severity (recomputed locally as the problem-event filter is
+	// toggled - see applyProblems()) to a color/label without a server
+	// round-trip. Keyed by string severity number, "-1" for MM_SEVERITY_OK.
+	private function severityColors(): array {
+		$colors = [(string) MM_SEVERITY_OK => MM_SEVERITY_OK_COLOR];
+		for ($severity = 0; $severity <= 5; $severity++) {
+			$colors[(string) $severity] = mm_severity_color($severity);
+		}
+		return $colors;
+	}
+
+	private function severityLabels(): array {
+		$labels = [(string) MM_SEVERITY_OK => _mm('OK')];
+		for ($severity = 0; $severity <= 5; $severity++) {
+			$labels[(string) $severity] = mm_severity_label($severity);
+		}
+		return $labels;
 	}
 }

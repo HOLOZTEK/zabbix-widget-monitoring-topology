@@ -29,8 +29,12 @@ else {
 			->setAttribute('data-elements',         json_encode($data['elements'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE))
 			->setAttribute('data-node-font-size',    (string) $s['node_font_size'])
 			->setAttribute('data-node-font-style',   (string) $s['node_font_style'])
+			->setAttribute('data-node-font-color',   $s['node_font_color'])
 			->setAttribute('data-edge-width',        (string) $s['edge_width'])
 			->setAttribute('data-edge-color',        $s['edge_color'])
+			->setAttribute('data-filter-position',   (string) $s['filter_position'])
+			->setAttribute('data-severity-colors',   json_encode($s['severity_colors'], JSON_THROW_ON_ERROR))
+			->setAttribute('data-severity-labels',   json_encode($s['severity_labels'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE))
 	);
 }
 

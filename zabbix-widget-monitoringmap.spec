@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}%{dist}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoringmap
-Version:        0.1.1
+Version:        0.1.2
 Release:        0
 Summary:        Monitoring Map widget for Zabbix dashboard (Vis Network)
 License:        Proprietary
@@ -92,6 +92,16 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sat Aug 8 2026 claude <noreply> - 0.1.2-0
+- 表示フィルタ機能を追加: 障害イベント/ホスト状態/ホスト設定/インターフェイス/
+  監視経路/監視方式の6区分（区分内OR・区分間AND）で表示ホストを絞り込み可能に。
+  フィルタ状態はブラウザのlocalStorageに保存
+- フィルタパネルの各区分を折りたたみ可能に（初期状態は全て折りたたみ）
+- 障害イベントを表示しない設定（未確認/確認済み両方OFF）の場合、ホストの
+  背景色を透明化（従来は誤ってOK色の緑背景のままだった問題を修正）
+- フィルタアイコンの表示位置（左上/右上/左下/右下）を設定画面から選択可能に
+- ノードラベルの文字色を設定可能に（未設定時はダッシュボードのテーマに応じて
+  自動判定、ダークモードで文字が見えなくなる問題を解消）
 * Sat Aug 8 2026 claude <noreply> - 0.1.1-0
 - パッケージ依存関係を修正: PHPパッケージ名がバージョン埋め込み形式
   （例: php8.4-common / php8.4-fpm）の環境でも、無印php/php-fpm形式の
