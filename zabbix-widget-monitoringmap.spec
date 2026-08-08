@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}%{dist}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoringmap
-Version:        0.2.0
+Version:        0.2.1
 Release:        0
 Summary:        Monitoring Map widget for Zabbix dashboard (Vis Network)
 License:        Proprietary
@@ -92,6 +92,12 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sat Aug 8 2026 claude <noreply> - 0.2.1-0
+- コードレビュー issue #2 対応: 通信方式（監視方式）フィルタで、アイテムが
+  無い、またはHTTP agent/trapper/calculated等 mm_item_comm_method() が未分類
+  とするアイテムのみのホストが、通信方式の全チェックボックスON（既定状態）
+  でもマップから消えてしまう回帰不具合を修正。comm_methodsが空配列の場合は
+  vmware/odbcと同様に「その他（methodOther）」区分として判定するよう変更
 * Sat Aug 8 2026 claude <noreply> - 0.2.0-0
 - フィルタ保存キーが実行時ID（getUniqueId）に依存しダッシュボード再読み込みの
   たびにリセットされる不具合を修正、DB保存ID（getWidgetId）を優先使用（issue #1）

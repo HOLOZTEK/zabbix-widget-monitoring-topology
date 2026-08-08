@@ -76,12 +76,15 @@ class CWidgetMonitoringMap extends CWidget {
 
 	// Every category below is an inclusion-set filter: selecting a checkbox
 	// narrows the category to hosts matching one of the selected values (OR
-	// within the category), and an empty selection means "no restriction"
-	// (all hosts pass that category). Categories combine with AND. The one
-	// exception is "障害イベント" (fault*), which controls whether/which
-	// problem severities are displayed rather than host visibility itself -
-	// an empty selection there means "don't display problem severity at all",
-	// not "show every host" (see #recomputeSeverity()).
+	// within the category); an unchecked value excludes hosts matching only
+	// that value, and every category is a complete/covering partition (every
+	// possible host state maps to at least one checkbox) so that leaving a
+	// whole category unchecked hides every host via that category, never
+	// "no restriction". Categories combine with AND. The one exception is
+	// "障害イベント" (fault*), which controls whether/which problem severities
+	// are displayed rather than host visibility itself - an empty selection
+	// there means "don't display problem severity at all", not "show every
+	// host" (see #recomputeSeverity()).
 	static #DEFAULT_FILTER = {
 		// 障害イベント - unchanged from the widget's pre-existing default
 		// (show every problem, both ack and unack).
@@ -133,7 +136,11 @@ class CWidgetMonitoringMap extends CWidget {
 
 	// comm_methods bucket -> filter-key map for 監視方式. vmware/odbc (the
 	// only two comm_methods values not among the 5 explicit methods) both
-	// bucket into "other" per user decision.
+	// bucket into "other" per user decision. A host with no classifiable
+	// comm_methods at all (no items, or only items mm_item_comm_method()
+	// can't classify, e.g. HTTP agent/trapper/calculated) also buckets into
+	// "other" - see #methodMatch(); this keeps 監視方式 a complete/covering
+	// partition per issue #2.
 	static #METHOD_KEYS = {
 		ping:   'methodPing',
 		agent:  'methodAgent',
@@ -615,8 +622,13 @@ class CWidgetMonitoringMap extends CWidget {
 	// True if the host has at least one comm_method bucketing into a checked
 	// 監視方式 checkbox (OR) - an unchecked category matches nothing, hiding
 	// every host via this category. A host can have multiple comm_methods at
-	// once.
+	// once. An empty commMethods array (no items, or only unclassifiable
+	// items) buckets into methodOther - without this, such hosts would never
+	// match any key here and be hidden unconditionally regardless of which
+	// checkboxes are on (issue #2).
 	#methodMatch(commMethods) {
+		if (commMethods.length === 0) return this.#filter.methodOther;
+
 		return commMethods.some(method => {
 			const key = CWidgetMonitoringMap.#METHOD_KEYS[method];
 			return key !== undefined && this.#filter[key];
