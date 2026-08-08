@@ -1,12 +1,12 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}%{dist}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoringmap
-Version:        0.1.0
+Version:        0.1.1
 Release:        0
 Summary:        Monitoring Map widget for Zabbix dashboard (Vis Network)
 License:        Proprietary
 BuildArch:      noarch
-Requires:       php >= 8.3
-Requires:       php-fpm >= 8.3
+Requires:       (php >= 8.3 or php8.3-common or php8.4-common or php8.5-common)
+Requires:       (php-fpm >= 8.3 or php8.3-fpm or php8.4-fpm or php8.5-fpm)
 
 %description
 Zabbix dashboard widget that visualizes the monitoring path (Zabbix Server -
@@ -92,6 +92,10 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sat Aug 8 2026 claude <noreply> - 0.1.1-0
+- パッケージ依存関係を修正: PHPパッケージ名がバージョン埋め込み形式
+  （例: php8.4-common / php8.4-fpm）の環境でも、無印php/php-fpm形式の
+  環境と同様にインストールできるよう、Requiresをブール条件（OR）に変更
 * Sat Aug 8 2026 claude <noreply> - 0.1.0-0
 - 初回リリース
 - Zabbix Server - Proxy(Group) - Network(サブネット) - Host の4階層トポロジー
