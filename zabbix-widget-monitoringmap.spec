@@ -1,9 +1,9 @@
-%define _rpmfilename %%{NAME}-%%{VERSION}%{dist}.%%{ARCH}.rpm
+%define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoringmap
-Version:        0.2.1
+Version:        1.0.0
 Release:        0
 Summary:        Monitoring Map widget for Zabbix dashboard (Vis Network)
-License:        Proprietary
+License:        MIT
 BuildArch:      noarch
 Requires:       (php >= 8.3 or php8.3-common or php8.4-common or php8.5-common)
 Requires:       (php-fpm >= 8.3 or php8.3-fpm or php8.4-fpm or php8.5-fpm)
@@ -92,6 +92,13 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Mon Aug 10 2026 claude <noreply> - 1.0.0-0
+- 無償公開に向けたリリース。機能変更なし。反映内容:
+  1. ライセンスをProprietaryからMITへ変更
+  2. RPMをel9/el10個別ビルドから単一noarchファイルに統一（_rpmfilenameから
+     %%{dist}を除去）。BuildArch: noarchでコンパイル済みバイナリを含まない
+     ため、170/171どちらでビルドしても同一内容
+  3. Debianパッケージング(.deb)をdebian/配下に追加
 * Sat Aug 8 2026 claude <noreply> - 0.2.1-0
 - コードレビュー issue #2 対応: 通信方式（監視方式）フィルタで、アイテムが
   無い、またはHTTP agent/trapper/calculated等 mm_item_comm_method() が未分類

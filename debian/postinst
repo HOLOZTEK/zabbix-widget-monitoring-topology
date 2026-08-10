@@ -1,0 +1,26 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        if [ -d /usr/share/zabbix/ui/modules ]; then
+            ZBXMODDIR=/usr/share/zabbix/ui/modules
+        elif [ -d /usr/share/zabbix/modules ]; then
+            ZBXMODDIR=/usr/share/zabbix/modules
+        else
+            echo "Warning: Zabbix modules directory not found. Skipping module installation." >&2
+            exit 0
+        fi
+
+        SRCSTAGE=/usr/share/zabbix-widget-monitoringmap
+        MODDIR=${ZBXMODDIR}/monitoringmap
+
+        rm -rf "${MODDIR}"
+        mkdir -p "${MODDIR}"
+        cp -rp "${SRCSTAGE}/." "${MODDIR}/"
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

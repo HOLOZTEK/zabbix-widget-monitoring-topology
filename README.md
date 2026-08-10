@@ -46,6 +46,9 @@ Zabbix 管理画面 → 管理 → モジュール からウィジェットを�
 - ホストを選択した場合: ZabbixServerからそのホストまでの経路を表示します。
 - ホストグループを選択した場合: グループに属する全ホストの経路を表示します。
 
-## ライセンス
+## License
 
-社内利用限定。
+This project is licensed under the MIT License.
+
+Copyright (c) 2026 ttake-55
+HOLOZTEK by ttake-55

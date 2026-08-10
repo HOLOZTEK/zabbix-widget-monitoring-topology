@@ -1,0 +1,14 @@
+Source: zabbix-widget-monitoringmap
+Section: web
+Priority: optional
+Maintainer: claude <noreply@example.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: zabbix-widget-monitoringmap
+Architecture: all
+Depends: ${misc:Depends}
+Description: Monitoring Map widget for Zabbix dashboard (Vis Network)
+ Zabbix dashboard widget that visualizes the monitoring path (Zabbix
+ Server - Proxy - Network - Host) as an interactive topology graph
+ using Vis Network (Canvas2D).
