@@ -1,5 +1,5 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
-Name:           zabbix-widget-monitoringmap
+Name:           zabbix-widget-monitoring-topology
 Version:        1.0.0
 Release:        0
 Summary:        Monitoring Map widget for Zabbix dashboard (Vis Network)
@@ -36,8 +36,8 @@ Features:
 # nothing
 
 %install
-SRCDIR=%{_sourcedir}/zabbix-widget-monitoringmap
-STAGEDIR=%{buildroot}/usr/share/zabbix-widget-monitoringmap
+SRCDIR=%{_sourcedir}/zabbix-widget-monitoring-topology
+STAGEDIR=%{buildroot}/usr/share/zabbix-widget-monitoring-topology
 
 install -d ${STAGEDIR}/actions
 install -d ${STAGEDIR}/assets/css
@@ -66,7 +66,7 @@ install -m 644 ${SRCDIR}/views/widget.edit.php                                  
 install -m 644 ${SRCDIR}/views/widget.view.php                                  ${STAGEDIR}/views/
 
 %files
-/usr/share/zabbix-widget-monitoringmap/
+/usr/share/zabbix-widget-monitoring-topology/
 
 %post
 if [ -d /usr/share/zabbix/ui/modules ]; then
@@ -78,7 +78,7 @@ else
     exit 0
 fi
 
-SRCSTAGE=/usr/share/zabbix-widget-monitoringmap
+SRCSTAGE=/usr/share/zabbix-widget-monitoring-topology
 MODDIR=${ZBXMODDIR}/monitoringmap
 
 rm -rf "${MODDIR}"
@@ -99,6 +99,8 @@ fi
      %%{dist}を除去）。BuildArch: noarchでコンパイル済みバイナリを含まない
      ため、170/171どちらでビルドしても同一内容
   3. Debianパッケージング(.deb)をdebian/配下に追加
+  4. パッケージ名をzabbix-widget-monitoringmapからzabbix-widget-monitoring-topology
+     に変更（ウィジェット内部ID・モジュールディレクトリ名(monitoringmap)は変更なし）
 * Sat Aug 8 2026 claude <noreply> - 0.2.1-0
 - コードレビュー issue #2 対応: 通信方式（監視方式）フィルタで、アイテムが
   無い、またはHTTP agent/trapper/calculated等 mm_item_comm_method() が未分類

@@ -12,7 +12,7 @@ case "$1" in
             exit 0
         fi
 
-        SRCSTAGE=/usr/share/zabbix-widget-monitoringmap
+        SRCSTAGE=/usr/share/zabbix-widget-monitoring-topology
         MODDIR=${ZBXMODDIR}/monitoringmap
 
         rm -rf "${MODDIR}"

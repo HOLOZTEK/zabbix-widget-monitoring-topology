@@ -1,6 +1,8 @@
-zabbix-widget-monitoringmap (1.0.0) unstable; urgency=medium
+zabbix-widget-monitoring-topology (1.0.0) unstable; urgency=medium
 
   * 無償公開に向けたリリース。機能変更なし。ライセンスをMITに変更し、
     Debianパッケージング(.deb)を追加。RPMは単一noarchビルドに統一。
+    パッケージ名をzabbix-widget-monitoringmapからzabbix-widget-monitoring-topology
+    に変更（ウィジェット内部ID・モジュールディレクトリ名は変更なし）。
 
- -- claude <noreply@example.com>  Mon, 10 Aug 2026 07:00:00 +0000
+ -- claude <noreply@example.com>  Mon, 10 Aug 2026 09:00:00 +0000

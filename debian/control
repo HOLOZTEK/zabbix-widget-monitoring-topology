@@ -1,11 +1,11 @@
-Source: zabbix-widget-monitoringmap
+Source: zabbix-widget-monitoring-topology
 Section: web
 Priority: optional
 Maintainer: claude <noreply@example.com>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.2
 
-Package: zabbix-widget-monitoringmap
+Package: zabbix-widget-monitoring-topology
 Architecture: all
 Depends: ${misc:Depends}
 Description: Monitoring Map widget for Zabbix dashboard (Vis Network)
