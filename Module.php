@@ -1,6 +1,6 @@
 <?php declare(strict_types = 0);
 
-namespace Modules\MonitoringMap;
+namespace Modules\HoloztekMonitoringMap;
 
 use Zabbix\Core\CModule;
 

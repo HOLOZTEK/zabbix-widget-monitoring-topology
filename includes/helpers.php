@@ -1,63 +1,63 @@
 <?php declare(strict_types = 0);
 
-function _mm(string $string): string {
-	return dgettext('monitoringmap', $string);
+function _holoztek_mm(string $string): string {
+	return dgettext('holoztek-monitoringmap', $string);
 }
 
-const MM_NODE_SERVER = 'server';
-const MM_NODE_PROXY_GROUP = 'proxy_group';
-const MM_NODE_PROXY = 'proxy';
-const MM_NODE_NETWORK = 'network';
-const MM_NODE_HOST = 'host';
+const HOLOZTEK_MM_NODE_SERVER = 'server';
+const HOLOZTEK_MM_NODE_PROXY_GROUP = 'proxy_group';
+const HOLOZTEK_MM_NODE_PROXY = 'proxy';
+const HOLOZTEK_MM_NODE_NETWORK = 'network';
+const HOLOZTEK_MM_NODE_HOST = 'host';
 
-const MM_COMM_PING = 'ping';
-const MM_COMM_SNMP = 'snmp';
-const MM_COMM_AGENT = 'agent';
-const MM_COMM_IPMI = 'ipmi';
-const MM_COMM_VMWARE = 'vmware';
-const MM_COMM_ODBC = 'odbc';
-const MM_COMM_JMX = 'jmx';
+const HOLOZTEK_MM_COMM_PING = 'ping';
+const HOLOZTEK_MM_COMM_SNMP = 'snmp';
+const HOLOZTEK_MM_COMM_AGENT = 'agent';
+const HOLOZTEK_MM_COMM_IPMI = 'ipmi';
+const HOLOZTEK_MM_COMM_VMWARE = 'vmware';
+const HOLOZTEK_MM_COMM_ODBC = 'odbc';
+const HOLOZTEK_MM_COMM_JMX = 'jmx';
 
 // Zabbix 7.0 item type constants (see ITEM_TYPE_* in include/defines.inc.php).
 // There is no dedicated VMware item type - VMware monitoring runs as
 // ITEM_TYPE_SIMPLE items with a "vmware."-prefixed key, same mechanism as the
 // built-in "icmpping"-prefixed Ping checks.
-const MM_ITEM_TYPE_ZABBIX = 0;
-const MM_ITEM_TYPE_SIMPLE = 3;
-const MM_ITEM_TYPE_SNMP = 20;
-const MM_ITEM_TYPE_IPMI = 12;
-const MM_ITEM_TYPE_DB_MONITOR = 11;
-const MM_ITEM_TYPE_JMX = 16;
-const MM_ITEM_TYPE_ZABBIX_ACTIVE = 7;
+const HOLOZTEK_MM_ITEM_TYPE_ZABBIX = 0;
+const HOLOZTEK_MM_ITEM_TYPE_SIMPLE = 3;
+const HOLOZTEK_MM_ITEM_TYPE_SNMP = 20;
+const HOLOZTEK_MM_ITEM_TYPE_IPMI = 12;
+const HOLOZTEK_MM_ITEM_TYPE_DB_MONITOR = 11;
+const HOLOZTEK_MM_ITEM_TYPE_JMX = 16;
+const HOLOZTEK_MM_ITEM_TYPE_ZABBIX_ACTIVE = 7;
 
 // Zabbix's ZBX_SEVERITY_OK (-1, "no active problem") and its standard
 // ".status-green" color from the frontend theme CSS - CSeverityHelper::getColor()
 // only covers the 6 configured trigger severities (0-5), not this sentinel.
-const MM_SEVERITY_OK = -1;
-const MM_SEVERITY_OK_COLOR = '#59db8f';
+const HOLOZTEK_MM_SEVERITY_OK = -1;
+const HOLOZTEK_MM_SEVERITY_OK_COLOR = '#59db8f';
 
 // Maps a single item (type + key_) to the communication method it implies, or
 // null if the item type doesn't correspond to any of the methods this widget
 // distinguishes (trapper items, calculated items, etc).
-function mm_item_comm_method(int $type, string $key): ?string {
+function holoztek_mm_item_comm_method(int $type, string $key): ?string {
 	switch ($type) {
-		case MM_ITEM_TYPE_ZABBIX:
-		case MM_ITEM_TYPE_ZABBIX_ACTIVE:
-			return MM_COMM_AGENT;
-		case MM_ITEM_TYPE_SNMP:
-			return MM_COMM_SNMP;
-		case MM_ITEM_TYPE_IPMI:
-			return MM_COMM_IPMI;
-		case MM_ITEM_TYPE_JMX:
-			return MM_COMM_JMX;
-		case MM_ITEM_TYPE_DB_MONITOR:
-			return MM_COMM_ODBC;
-		case MM_ITEM_TYPE_SIMPLE:
+		case HOLOZTEK_MM_ITEM_TYPE_ZABBIX:
+		case HOLOZTEK_MM_ITEM_TYPE_ZABBIX_ACTIVE:
+			return HOLOZTEK_MM_COMM_AGENT;
+		case HOLOZTEK_MM_ITEM_TYPE_SNMP:
+			return HOLOZTEK_MM_COMM_SNMP;
+		case HOLOZTEK_MM_ITEM_TYPE_IPMI:
+			return HOLOZTEK_MM_COMM_IPMI;
+		case HOLOZTEK_MM_ITEM_TYPE_JMX:
+			return HOLOZTEK_MM_COMM_JMX;
+		case HOLOZTEK_MM_ITEM_TYPE_DB_MONITOR:
+			return HOLOZTEK_MM_COMM_ODBC;
+		case HOLOZTEK_MM_ITEM_TYPE_SIMPLE:
 			if (str_starts_with($key, 'icmpping')) {
-				return MM_COMM_PING;
+				return HOLOZTEK_MM_COMM_PING;
 			}
 			if (str_starts_with($key, 'vmware.')) {
-				return MM_COMM_VMWARE;
+				return HOLOZTEK_MM_COMM_VMWARE;
 			}
 			return null;
 		default:
@@ -69,12 +69,12 @@ function mm_item_comm_method(int $type, string $key): ?string {
 // Returns [hostid => [comm_method, ...]] with each host's methods sorted in
 // the fixed display order below (rather than discovery order), so the badge
 // row on the node icon is stable across reloads.
-function mm_comm_methods_by_host(array $items): array {
-	$order = [MM_COMM_PING, MM_COMM_SNMP, MM_COMM_AGENT, MM_COMM_IPMI, MM_COMM_VMWARE, MM_COMM_ODBC, MM_COMM_JMX];
+function holoztek_mm_comm_methods_by_host(array $items): array {
+	$order = [HOLOZTEK_MM_COMM_PING, HOLOZTEK_MM_COMM_SNMP, HOLOZTEK_MM_COMM_AGENT, HOLOZTEK_MM_COMM_IPMI, HOLOZTEK_MM_COMM_VMWARE, HOLOZTEK_MM_COMM_ODBC, HOLOZTEK_MM_COMM_JMX];
 
 	$by_host = [];
 	foreach ($items as $item) {
-		$method = mm_item_comm_method((int) $item['type'], (string) $item['key_']);
+		$method = holoztek_mm_item_comm_method((int) $item['type'], (string) $item['key_']);
 		if ($method === null) {
 			continue;
 		}
@@ -94,8 +94,8 @@ function mm_comm_methods_by_host(array $items): array {
 // one active problem in it - this split (rather than one combined max) is
 // what lets the client-side ack/unack filter toggles recompute each host's
 // effective severity locally, without a server round-trip (see
-// CWidgetMonitoringMap#effectiveSeverity()).
-function mm_severity_by_host_ack(array $problems): array {
+// CWidgetHoloztekMonitoringMap#effectiveSeverity()).
+function holoztek_mm_severity_by_host_ack(array $problems): array {
 	$by_host = [];
 	foreach ($problems as $problem) {
 		$severity = (int) $problem['severity'];
@@ -112,13 +112,13 @@ function mm_severity_by_host_ack(array $problems): array {
 	return $by_host;
 }
 
-// MM_SEVERITY_OK isn't one of CSeverityHelper::getColor()'s cases (it only
+// HOLOZTEK_MM_SEVERITY_OK isn't one of CSeverityHelper::getColor()'s cases (it only
 // covers the 6 configured trigger severities), so it's handled separately here.
-function mm_severity_color(int $severity): string {
-	return $severity < 0 ? MM_SEVERITY_OK_COLOR : '#' . \CSeverityHelper::getColor($severity);
+function holoztek_mm_severity_color(int $severity): string {
+	return $severity < 0 ? HOLOZTEK_MM_SEVERITY_OK_COLOR : '#' . \CSeverityHelper::getColor($severity);
 }
 
-function mm_severity_label(int $severity): string {
+function holoztek_mm_severity_label(int $severity): string {
 	return \CSeverityHelper::getName($severity);
 }
 
@@ -136,7 +136,7 @@ function mm_severity_label(int $severity): string {
 //   INTERFACE_AVAILABLE_UNKNOWN (0). A host with no interfaces at all is
 //   deliberately "unknown" rather than "unavailable" - that's what the
 //   separate "has_interface" flag is for.
-function mm_host_availability(array $interfaces): string {
+function holoztek_mm_host_availability(array $interfaces): string {
 	$any_unavailable = false;
 	$any_available = false;
 
@@ -164,7 +164,7 @@ function mm_host_availability(array $interfaces): string {
 // source system) if any of its interfaces resolves to the local loopback -
 // IP 127.0.0.1, or DNS name "localhost" - per user-specified criterion
 // (no existing detection logic previously existed in this widget for this).
-function mm_host_is_local(array $interfaces): bool {
+function holoztek_mm_host_is_local(array $interfaces): bool {
 	foreach ($interfaces as $iface) {
 		$ip = trim((string) ($iface['ip'] ?? ''));
 		if ($ip === '127.0.0.1') {
@@ -181,7 +181,7 @@ function mm_host_is_local(array $interfaces): bool {
 }
 
 // Ported as-is from the base topologymap-visnetwork widget's detectDeviceType().
-function mm_detect_device_type(array $host): string {
+function holoztek_mm_detect_device_type(array $host): string {
 	$inv = is_array($host['inventory'] ?? null) ? $host['inventory'] : [];
 	$inv_os = strtolower($inv['os'] ?? '');
 	$inv_type = strtolower($inv['type'] ?? '');
@@ -213,7 +213,7 @@ function mm_detect_device_type(array $host): string {
 // SNMP=2, IPMI=3, JMX=4 per Zabbix's own INTERFACE_TYPE_* priority), falling
 // back to the first interface with a non-empty 'ip'. Returns null if no
 // interface has a usable IPv4 address (agent-less / trapper-only hosts).
-function mm_host_primary_ip(array $interfaces): ?string {
+function holoztek_mm_host_primary_ip(array $interfaces): ?string {
 	if ($interfaces === []) {
 		return null;
 	}
@@ -238,7 +238,7 @@ function mm_host_primary_ip(array $interfaces): ?string {
 
 // Returns the "network.network/prefix" CIDR string an IPv4 address belongs
 // to, or null if $ip isn't a valid IPv4 address.
-function mm_ipv4_cidr(string $ip, int $prefix_length): ?string {
+function holoztek_mm_ipv4_cidr(string $ip, int $prefix_length): ?string {
 	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false) {
 		return null;
 	}
@@ -256,19 +256,19 @@ function mm_ipv4_cidr(string $ip, int $prefix_length): ?string {
 	return long2ip($network) . '/' . $prefix_length;
 }
 
-function mm_node_id_server(): string {
+function holoztek_mm_node_id_server(): string {
 	return 'srv';
 }
 
-function mm_node_id_proxy(string $proxyid): string {
+function holoztek_mm_node_id_proxy(string $proxyid): string {
 	return 'p_' . $proxyid;
 }
 
-function mm_node_id_proxy_group(string $proxy_groupid): string {
+function holoztek_mm_node_id_proxy_group(string $proxy_groupid): string {
 	return 'pg_' . $proxy_groupid;
 }
 
-function mm_node_id_host(string $hostid): string {
+function holoztek_mm_node_id_host(string $hostid): string {
 	return 'h_' . $hostid;
 }
 
@@ -278,7 +278,7 @@ function mm_node_id_host(string $hostid): string {
 // subnet - a host belongs to exactly one Proxy, so that relationship has to
 // stay unambiguous in the graph. The "unknown network" fallback is scoped the
 // same way, collapsing per upstream rather than into one single global node.
-function mm_node_id_network(string $upstream, ?string $cidr): string {
+function holoztek_mm_node_id_network(string $upstream, ?string $cidr): string {
 	$suffix = $cidr === null ? 'unknown' : str_replace(['.', '/'], '_', $cidr);
 
 	return 'n_' . $upstream . '_' . $suffix;

@@ -13,11 +13,34 @@ case "$1" in
         fi
 
         SRCSTAGE=/usr/share/zabbix-widget-monitoring-topology
-        MODDIR=${ZBXMODDIR}/monitoringmap
+        MODDIR=${ZBXMODDIR}/holoztek_monitoringmap
+        OLDMODDIR=${ZBXMODDIR}/monitoringmap
 
+        # 自パッケージ専有のディレクトリなので無条件で置き換える
         rm -rf "${MODDIR}"
         mkdir -p "${MODDIR}"
         cp -rp "${SRCSTAGE}/." "${MODDIR}/"
+
+        # v1.0.0以前は modules/monitoringmap という汎用的すぎる名前を使っていたため、
+        # 別ベンダーのモジュールが同名ディレクトリを先に使っている可能性がある。
+        # 自動削除は「author が HOLOZTEK と明記されている」または「id が既に
+        # holoztek_monitoringmap（新形式、当パッケージ以外が書く可能性は実質無い）」
+        # の場合のみに限定する。旧形式id(monitoringmap)かつauthor欄なしのケース
+        # （v1.0.0のHOLOZTEK製と、authorを書いていない別ベンダー製が区別不能）は
+        # 自動削除せず警告のみとし、手動確認・削除を促す。
+        if [ -f "${OLDMODDIR}/manifest.json" ]; then
+            ID_VAL=$(grep -Eo '"id"[[:space:]]*:[[:space:]]*"[^"]*"' "${OLDMODDIR}/manifest.json" | head -1 | sed -E 's/.*:[[:space:]]*"([^"]*)"/\1/')
+            AUTHOR_VAL=$(grep -Eo '"author"[[:space:]]*:[[:space:]]*"[^"]*"' "${OLDMODDIR}/manifest.json" | head -1 | sed -E 's/.*:[[:space:]]*"([^"]*)"/\1/')
+            AUTO_OK=0
+            if [ "${AUTHOR_VAL}" = "HOLOZTEK" ] || [ "${ID_VAL}" = "holoztek_monitoringmap" ]; then
+                AUTO_OK=1
+            fi
+            if [ "${AUTO_OK}" -eq 1 ]; then
+                rm -rf "${OLDMODDIR}"
+            else
+                echo "Warning: ${OLDMODDIR} exists (id=${ID_VAL:-unknown}, author=${AUTHOR_VAL:-unset}) but could not be confirmed as a HOLOZTEK monitoring-topology install. Leaving it in place; please verify manually (e.g. namespace=MonitoringMap, js_class=CWidgetMonitoringMap indicates the old HOLOZTEK v1.0.0 install) and remove it yourself if appropriate. It may instead belong to a different vendor's module." >&2
+            fi
+        fi
         ;;
 esac
 

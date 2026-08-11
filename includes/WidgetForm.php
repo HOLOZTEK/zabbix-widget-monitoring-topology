@@ -1,6 +1,6 @@
 <?php declare(strict_types = 0);
 
-namespace Modules\MonitoringMap\Includes;
+namespace Modules\HoloztekMonitoringMap\Includes;
 
 use CWidgetsData;
 
@@ -29,18 +29,18 @@ class WidgetForm extends CWidgetForm {
 
 	private static function fontStyleValues(): array {
 		return [
-			self::FONT_STYLE_NORMAL => _mm('Normal'),
-			self::FONT_STYLE_BOLD   => _mm('Bold'),
-			self::FONT_STYLE_ITALIC => _mm('Italic'),
+			self::FONT_STYLE_NORMAL => _holoztek_mm('Normal'),
+			self::FONT_STYLE_BOLD   => _holoztek_mm('Bold'),
+			self::FONT_STYLE_ITALIC => _holoztek_mm('Italic'),
 		];
 	}
 
 	private static function filterPositionValues(): array {
 		return [
-			self::FILTER_POSITION_TOP_LEFT     => _mm('Top left'),
-			self::FILTER_POSITION_TOP_RIGHT    => _mm('Top right'),
-			self::FILTER_POSITION_BOTTOM_LEFT  => _mm('Bottom left'),
-			self::FILTER_POSITION_BOTTOM_RIGHT => _mm('Bottom right'),
+			self::FILTER_POSITION_TOP_LEFT     => _holoztek_mm('Top left'),
+			self::FILTER_POSITION_TOP_RIGHT    => _holoztek_mm('Top right'),
+			self::FILTER_POSITION_BOTTOM_LEFT  => _holoztek_mm('Bottom left'),
+			self::FILTER_POSITION_BOTTOM_RIGHT => _holoztek_mm('Bottom right'),
 		];
 	}
 
@@ -52,52 +52,52 @@ class WidgetForm extends CWidgetForm {
 			// broadcast received, WidgetView must render the empty state, never a
 			// stale manual pick.
 			->addField(
-				(new CWidgetFieldMultiSelectHost('hostid', _mm('Host')))
+				(new CWidgetFieldMultiSelectHost('hostid', _holoztek_mm('Host')))
 					->setMultiple(false)
 					->setInType(CWidgetsData::DATA_TYPE_HOST_ID)
 					->preventDefault()
 					->acceptWidget()
 			)
 			->addField(
-				(new CWidgetFieldMultiSelectGroup('hostgroupid', _mm('Host group')))
+				(new CWidgetFieldMultiSelectGroup('hostgroupid', _holoztek_mm('Host group')))
 					->setMultiple(false)
 					->setInType(CWidgetsData::DATA_TYPE_HOST_GROUP_ID)
 					->preventDefault()
 					->acceptWidget()
 			)
 			->addField(
-				(new CWidgetFieldIntegerBox('subnet_prefix_length', _mm('Subnet prefix length'), 1, 32))
+				(new CWidgetFieldIntegerBox('subnet_prefix_length', _holoztek_mm('Subnet prefix length'), 1, 32))
 					->setDefault(24)
 			)
 			->addField(
-				(new CWidgetFieldTextBox('server_label', _mm('Zabbix Server label')))
+				(new CWidgetFieldTextBox('server_label', _holoztek_mm('Zabbix Server label')))
 					->setDefault('Zabbix Server')
 			)
 			->addField(
-				(new CWidgetFieldIntegerBox('node_font_size', _mm('Font size (px)'), 8, 24))
+				(new CWidgetFieldIntegerBox('node_font_size', _holoztek_mm('Font size (px)'), 8, 24))
 					->setDefault(12)
 			)
 			->addField(
-				(new CWidgetFieldSelect('node_font_style', _mm('Style'), self::fontStyleValues()))
+				(new CWidgetFieldSelect('node_font_style', _holoztek_mm('Style'), self::fontStyleValues()))
 					->setDefault(self::FONT_STYLE_NORMAL)
 			)
 			// Left empty by default (not '333333') so the client picks a color
 			// that follows the current dashboard theme (light/dark) automatically
-			// - see CWidgetMonitoringMap#resolveFontColor(). Set explicitly here
+			// - see CWidgetHoloztekMonitoringMap#resolveFontColor(). Set explicitly here
 			// only to override that auto-detection.
 			->addField(
-				new CWidgetFieldColor('node_font_color', _mm('Font color'))
+				new CWidgetFieldColor('node_font_color', _holoztek_mm('Font color'))
 			)
 			->addField(
-				(new CWidgetFieldColor('edge_color', _mm('Edge color')))
+				(new CWidgetFieldColor('edge_color', _holoztek_mm('Edge color')))
 					->setDefault('aac4d8')
 			)
 			->addField(
-				(new CWidgetFieldIntegerBox('edge_width', _mm('Edge width (px)'), 1, 8))
+				(new CWidgetFieldIntegerBox('edge_width', _holoztek_mm('Edge width (px)'), 1, 8))
 					->setDefault(1)
 			)
 			->addField(
-				(new CWidgetFieldRadioButtonList('filter_position', _mm('Filter icon position'),
+				(new CWidgetFieldRadioButtonList('filter_position', _holoztek_mm('Filter icon position'),
 					self::filterPositionValues()
 				))
 					->setDefault(self::FILTER_POSITION_TOP_RIGHT)

@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.0.0
+Version:        1.0.1
 Release:        0
 Summary:        Monitoring Map widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -38,6 +38,10 @@ Features:
 %install
 SRCDIR=%{_sourcedir}/zabbix-widget-monitoring-topology
 STAGEDIR=%{buildroot}/usr/share/zabbix-widget-monitoring-topology
+LICENSEDIR=%{buildroot}%{_licensedir}/%{name}
+
+install -d ${LICENSEDIR}
+install -m 644 ${SRCDIR}/LICENSE                                                ${LICENSEDIR}/
 
 install -d ${STAGEDIR}/actions
 install -d ${STAGEDIR}/assets/css
@@ -47,6 +51,7 @@ install -d ${STAGEDIR}/locale/ja_JP/LC_MESSAGES
 install -d ${STAGEDIR}/locale/en_US/LC_MESSAGES
 install -d ${STAGEDIR}/views
 
+install -m 644 ${SRCDIR}/LICENSE                                                ${STAGEDIR}/
 install -m 644 ${SRCDIR}/README.md                                              ${STAGEDIR}/
 install -m 644 ${SRCDIR}/manifest.json                                          ${STAGEDIR}/
 install -m 644 ${SRCDIR}/Module.php                                             ${STAGEDIR}/
@@ -57,15 +62,16 @@ install -m 644 ${SRCDIR}/assets/js/vis-network.min.js                           
 install -m 644 ${SRCDIR}/assets/js/class.widget.js                              ${STAGEDIR}/assets/js/
 install -m 644 ${SRCDIR}/includes/helpers.php                                   ${STAGEDIR}/includes/
 install -m 644 ${SRCDIR}/includes/WidgetForm.php                                ${STAGEDIR}/includes/
-install -m 644 ${SRCDIR}/locale/ja_JP/LC_MESSAGES/monitoringmap.po              ${STAGEDIR}/locale/ja_JP/LC_MESSAGES/
-install -m 644 ${SRCDIR}/locale/ja_JP/LC_MESSAGES/monitoringmap.mo              ${STAGEDIR}/locale/ja_JP/LC_MESSAGES/
-install -m 644 ${SRCDIR}/locale/en_US/LC_MESSAGES/monitoringmap.po              ${STAGEDIR}/locale/en_US/LC_MESSAGES/
-install -m 644 ${SRCDIR}/locale/en_US/LC_MESSAGES/monitoringmap.mo              ${STAGEDIR}/locale/en_US/LC_MESSAGES/
+install -m 644 ${SRCDIR}/locale/ja_JP/LC_MESSAGES/holoztek-monitoringmap.po     ${STAGEDIR}/locale/ja_JP/LC_MESSAGES/
+install -m 644 ${SRCDIR}/locale/ja_JP/LC_MESSAGES/holoztek-monitoringmap.mo     ${STAGEDIR}/locale/ja_JP/LC_MESSAGES/
+install -m 644 ${SRCDIR}/locale/en_US/LC_MESSAGES/holoztek-monitoringmap.po     ${STAGEDIR}/locale/en_US/LC_MESSAGES/
+install -m 644 ${SRCDIR}/locale/en_US/LC_MESSAGES/holoztek-monitoringmap.mo     ${STAGEDIR}/locale/en_US/LC_MESSAGES/
 install -m 644 ${SRCDIR}/views/widget.edit.js.php                               ${STAGEDIR}/views/
 install -m 644 ${SRCDIR}/views/widget.edit.php                                  ${STAGEDIR}/views/
 install -m 644 ${SRCDIR}/views/widget.view.php                                  ${STAGEDIR}/views/
 
 %files
+%license %{_licensedir}/%{name}/LICENSE
 /usr/share/zabbix-widget-monitoring-topology/
 
 %post
@@ -79,19 +85,58 @@ else
 fi
 
 SRCSTAGE=/usr/share/zabbix-widget-monitoring-topology
-MODDIR=${ZBXMODDIR}/monitoringmap
+MODDIR=${ZBXMODDIR}/holoztek_monitoringmap
+OLDMODDIR=${ZBXMODDIR}/monitoringmap
 
+# 自パッケージ専有のディレクトリなので無条件で置き換える
 rm -rf "${MODDIR}"
 mkdir -p "${MODDIR}"
 cp -rp "${SRCSTAGE}/." "${MODDIR}/"
 
+# v1.0.0以前は modules/monitoringmap という汎用的すぎる名前を使っていたため、
+# 別ベンダーのモジュールが同名ディレクトリを先に使っている可能性がある。
+# 自動削除は「author が HOLOZTEK と明記されている」または「id が既に
+# holoztek_monitoringmap（新形式、当パッケージ以外が書く可能性は実質無い）」
+# の場合のみに限定する。旧形式id(monitoringmap)かつauthor欄なしのケース
+# （v1.0.0のHOLOZTEK製と、authorを書いていない別ベンダー製が区別不能）は
+# 自動削除せず警告のみとし、手動確認・削除を促す。
+if [ -f "${OLDMODDIR}/manifest.json" ]; then
+    ID_VAL=$(grep -Eo '"id"[[:space:]]*:[[:space:]]*"[^"]*"' "${OLDMODDIR}/manifest.json" | head -1 | sed -E 's/.*:[[:space:]]*"([^"]*)"/\1/')
+    AUTHOR_VAL=$(grep -Eo '"author"[[:space:]]*:[[:space:]]*"[^"]*"' "${OLDMODDIR}/manifest.json" | head -1 | sed -E 's/.*:[[:space:]]*"([^"]*)"/\1/')
+    AUTO_OK=0
+    if [ "${AUTHOR_VAL}" = "HOLOZTEK" ] || [ "${ID_VAL}" = "holoztek_monitoringmap" ]; then
+        AUTO_OK=1
+    fi
+    if [ "${AUTO_OK}" -eq 1 ]; then
+        rm -rf "${OLDMODDIR}"
+    else
+        echo "Warning: ${OLDMODDIR} exists (id=${ID_VAL:-unknown}, author=${AUTHOR_VAL:-unset}) but could not be confirmed as a HOLOZTEK monitoring-topology install. Leaving it in place; please verify manually (e.g. namespace=MonitoringMap, js_class=CWidgetMonitoringMap indicates the old HOLOZTEK v1.0.0 install) and remove it yourself if appropriate. It may instead belong to a different vendor's module." >&2
+    fi
+fi
+
 %preun
 if [ $1 -eq 0 ]; then
-    rm -rf /usr/share/zabbix/ui/modules/monitoringmap 2>/dev/null || true
-    rm -rf /usr/share/zabbix/modules/monitoringmap 2>/dev/null || true
+    rm -rf /usr/share/zabbix/ui/modules/holoztek_monitoringmap 2>/dev/null || true
+    rm -rf /usr/share/zabbix/modules/holoztek_monitoringmap 2>/dev/null || true
 fi
 
 %changelog
+* Tue Aug 11 2026 claude <noreply> - 1.0.1-0
+- モジュール識別子（manifest.id/namespace/action/js_class）にHOLOZTEKプレフィックス
+  を付与し他モジュールとの衝突リスクを回避（id: monitoringmap →
+  holoztek_monitoringmap）。helpers.phpの全識別子（gettextラッパー_mm()、
+  MM_*定数18個、mm_*関数15個）をholoztek_mm_*/HOLOZTEK_MM_*へ全面リネーム。
+  gettextドメインをholoztek-monitoringmapへ（.po/.moファイル名も追随）、JS
+  クラスCWidgetMonitoringMap→CWidgetHoloztekMonitoringMap、JSグローバル
+  window.widget_monitoringmap_form→window.holoztek_monitoringmap_form、CSSの
+  .dashboard-widget-monitoringmap→.dashboard-widget-holoztek_monitoringmapへ
+  変更。RPMのLICENSE同梱を%license/%{_licensedir}経由の標準的な方式に変更
+  （DEBもLICENSEファイルを同梱するよう追加）。モジュール配置ディレクトリも
+  modules/monitoringmapからmodules/holoztek_monitoringmapへ変更し、旧
+  ディレクトリはmanifest.jsonのid/authorを確認しHOLOZTEK由来と判定できた
+  場合のみ自動削除する安全確認ロジックをpostinst/prermに実装（tree-navigator
+  v1.4.10・radar-chart v1.0.3で判明した「author欄空欄を削除根拠にしない」
+  教訓を最初から反映）
 * Mon Aug 10 2026 claude <noreply> - 1.0.0-0
 - 無償公開に向けたリリース。機能変更なし。反映内容:
   1. ライセンスをProprietaryからMITへ変更

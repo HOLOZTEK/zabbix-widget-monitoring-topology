@@ -1,20 +1,21 @@
 {
     "manifest_version": 2.0,
-    "id": "monitoringmap",
+    "id": "holoztek_monitoringmap",
     "type": "widget",
     "name": "Monitoring Map",
-    "namespace": "MonitoringMap",
-    "version": "1.0.0",
+    "namespace": "HoloztekMonitoringMap",
+    "author": "HOLOZTEK",
+    "version": "1.0.1",
     "widget": {
         "size": {"width": 12, "height": 8},
-        "js_class": "CWidgetMonitoringMap",
+        "js_class": "CWidgetHoloztekMonitoringMap",
         "in": {
             "hostid": {"type": "_hostid"},
             "hostgroupid": {"type": "_hostgroupid"}
         }
     },
     "actions": {
-        "widget.monitoringmap.view": {
+        "widget.holoztek_monitoringmap.view": {
             "class": "WidgetView"
         }
     },

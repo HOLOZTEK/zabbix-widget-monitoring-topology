@@ -43,5 +43,5 @@
 		new CWidgetFieldRadioButtonListView($data['fields']['filter_position'])
 	)
 	->includeJsFile('widget.edit.js.php')
-	->addJavaScript('widget_monitoringmap_form.init();')
+	->addJavaScript('holoztek_monitoringmap_form.init();')
 	->show();

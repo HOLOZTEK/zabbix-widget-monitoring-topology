@@ -1,5 +1,5 @@
 <?php declare(strict_types = 0); ?>
-window.widget_monitoringmap_form = new class {
+window.holoztek_monitoringmap_form = new class {
 
 	init() {
 		this._form = document.getElementById('widget-dialogue-form');

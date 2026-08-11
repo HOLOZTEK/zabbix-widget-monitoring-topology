@@ -1,3 +1,24 @@
+zabbix-widget-monitoring-topology (1.0.1) unstable; urgency=medium
+
+  * モジュール識別子（manifest.id/namespace/action/js_class）にHOLOZTEK
+    プレフィックスを付与し他モジュールとの衝突リスクを回避（id:
+    monitoringmap → holoztek_monitoringmap）。helpers.phpの全識別子
+    （gettextラッパー_mm()、MM_*定数18個、mm_*関数15個）を
+    holoztek_mm_*/HOLOZTEK_MM_*へ全面リネーム。gettextドメインを
+    holoztek-monitoringmapへ（.po/.moファイル名も追随）、JSクラス
+    CWidgetMonitoringMap→CWidgetHoloztekMonitoringMap、JSグローバル
+    window.widget_monitoringmap_form→window.holoztek_monitoringmap_form、
+    CSSの.dashboard-widget-monitoringmap→
+    .dashboard-widget-holoztek_monitoringmapへ変更。RPM/DEB双方に
+    LICENSEファイルを標準的な方式で同梱するよう追加。モジュール配置
+    ディレクトリもmodules/monitoringmapからmodules/holoztek_monitoringmap
+    へ変更し、旧ディレクトリはmanifest.jsonのid/authorを確認しHOLOZTEK
+    由来と判定できた場合のみ自動削除する安全確認ロジックをpostinst/prermに
+    実装（tree-navigator v1.4.10・radar-chart v1.0.3で判明した「author欄
+    空欄を削除根拠にしない」教訓を最初から反映）。
+
+ -- claude <noreply@example.com>  Tue, 11 Aug 2026 10:00:00 +0000
+
 zabbix-widget-monitoring-topology (1.0.0) unstable; urgency=medium
 
   * 無償公開に向けたリリース。機能変更なし。ライセンスをMITに変更し、

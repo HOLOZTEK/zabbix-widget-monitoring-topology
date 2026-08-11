@@ -1,12 +1,12 @@
 <?php declare(strict_types = 0);
 
-namespace Modules\MonitoringMap\Actions;
+namespace Modules\HoloztekMonitoringMap\Actions;
 
 use API,
 	CControllerDashboardWidgetView,
 	CControllerResponseData;
 
-use Modules\MonitoringMap\Includes\WidgetForm;
+use Modules\HoloztekMonitoringMap\Includes\WidgetForm;
 
 class WidgetView extends CControllerDashboardWidgetView {
 
@@ -82,7 +82,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'output'   => ['itemid', 'hostid', 'type', 'key_'],
 			'hostids'  => array_keys($hosts)
 		]);
-		$comm_methods_by_host = mm_comm_methods_by_host($items);
+		$comm_methods_by_host = holoztek_mm_comm_methods_by_host($items);
 
 		$is_id = static fn($id): bool => $id !== null && (string) $id !== '0' && (string) $id !== '';
 
@@ -112,34 +112,34 @@ class WidgetView extends CControllerDashboardWidgetView {
 			])
 			: [];
 
-		$this->addNode(mm_node_id_server(), $settings['server_label'], MM_NODE_SERVER);
+		$this->addNode(holoztek_mm_node_id_server(), $settings['server_label'], HOLOZTEK_MM_NODE_SERVER);
 
 		// Server-ProxyGroup and Server/ProxyGroup-Proxy are direct edges (no
 		// network node in between) - unlike the Network-Host segment, the path
 		// here isn't derived from an IP so there's no CIDR to place a waypoint at.
 		$proxy_group_upstream_node = [];
 		foreach ($proxy_groups as $proxy_groupid => $proxy_group) {
-			$pg_node = mm_node_id_proxy_group((string) $proxy_groupid);
-			$this->addNode($pg_node, (string) $proxy_group['name'], MM_NODE_PROXY_GROUP);
-			$this->addEdge(mm_node_id_server(), $pg_node);
+			$pg_node = holoztek_mm_node_id_proxy_group((string) $proxy_groupid);
+			$this->addNode($pg_node, (string) $proxy_group['name'], HOLOZTEK_MM_NODE_PROXY_GROUP);
+			$this->addEdge(holoztek_mm_node_id_server(), $pg_node);
 
 			$proxy_group_upstream_node[$proxy_groupid] = $pg_node;
 		}
 
 		$proxy_upstream_node = [];
 		foreach ($proxies as $proxyid => $proxy) {
-			$proxy_node = mm_node_id_proxy((string) $proxyid);
+			$proxy_node = holoztek_mm_node_id_proxy((string) $proxyid);
 
 			// ZBX_PROXY_STATE_ONLINE (see include/defines.inc.php) is the only
 			// state confirming the Proxy is currently reachable - OFFLINE and
 			// UNKNOWN both mean "not confirmed responding" and get the same
 			// grayed-out badge (see #TYPE_ICON.proxy_offline in class.widget.js).
 			$proxy_unresponsive = ((int) ($proxy['state'] ?? ZBX_PROXY_STATE_UNKNOWN)) !== ZBX_PROXY_STATE_ONLINE;
-			$this->addNode($proxy_node, (string) $proxy['name'], MM_NODE_PROXY, [
+			$this->addNode($proxy_node, (string) $proxy['name'], HOLOZTEK_MM_NODE_PROXY, [
 				'proxy_unresponsive' => $proxy_unresponsive
 			]);
 
-			$proxy_parent = $proxy_group_upstream_node[$proxy['proxy_groupid']] ?? mm_node_id_server();
+			$proxy_parent = $proxy_group_upstream_node[$proxy['proxy_groupid']] ?? holoztek_mm_node_id_server();
 			$this->addEdge($proxy_parent, $proxy_node);
 
 			$proxy_upstream_node[$proxyid] = $proxy_node;
@@ -148,23 +148,23 @@ class WidgetView extends CControllerDashboardWidgetView {
 		foreach ($hosts as $hostid => $host) {
 			$upstream_node = $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
 
-			$host_ip = mm_host_primary_ip($host['interfaces'] ?? []);
-			$host_cidr = $host_ip !== null ? mm_ipv4_cidr($host_ip, $prefix_length) : null;
+			$host_ip = holoztek_mm_host_primary_ip($host['interfaces'] ?? []);
+			$host_cidr = $host_ip !== null ? holoztek_mm_ipv4_cidr($host_ip, $prefix_length) : null;
 			$network_node = $this->addNetworkNode($upstream_node, $host_cidr);
 
 			$this->addEdge($upstream_node, $network_node);
 
 			$interfaces = $host['interfaces'] ?? [];
 
-			$host_node = mm_node_id_host((string) $hostid);
-			$this->addNode($host_node, (string) $host['name'], MM_NODE_HOST, [
-				'device_type'        => mm_detect_device_type($host),
+			$host_node = holoztek_mm_node_id_host((string) $hostid);
+			$this->addNode($host_node, (string) $host['name'], HOLOZTEK_MM_NODE_HOST, [
+				'device_type'        => holoztek_mm_detect_device_type($host),
 				'comm_methods'       => $comm_methods_by_host[$hostid] ?? [],
 				'host_status'        => (int) $host['status'],
 				'maintenance_status' => (int) ($host['maintenance_status'] ?? 0),
 				'has_interface'      => $interfaces !== [],
-				'is_local'           => mm_host_is_local($interfaces),
-				'availability'       => mm_host_availability($interfaces),
+				'is_local'           => holoztek_mm_host_is_local($interfaces),
+				'availability'       => holoztek_mm_host_availability($interfaces),
 				'route'              => $this->resolveRoute($host)
 			]);
 			$this->addEdge($network_node, $host_node);
@@ -221,16 +221,16 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$monitored_by = (int) ($host['monitored_by'] ?? 0);
 
 		if ($monitored_by === 1) {
-			return $proxy_upstream_node[$host['proxyid']] ?? mm_node_id_server();
+			return $proxy_upstream_node[$host['proxyid']] ?? holoztek_mm_node_id_server();
 		}
 
 		if ($monitored_by === 2) {
 			return $proxy_upstream_node[$host['assigned_proxyid']]
 				?? $proxy_group_upstream_node[$host['proxy_groupid']]
-				?? mm_node_id_server();
+				?? holoztek_mm_node_id_server();
 		}
 
-		return mm_node_id_server();
+		return holoztek_mm_node_id_server();
 	}
 
 	// Route filter classification, independent of resolveUpstreamNode()'s
@@ -263,8 +263,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 	// Proxy, and merging across upstreams would make that ambiguous in the
 	// graph (and in the Proxy edge-highlight feature).
 	private function addNetworkNode(string $upstream, ?string $cidr): string {
-		$id = mm_node_id_network($upstream, $cidr);
-		$this->addNode($id, $cidr ?? _mm('Unknown network'), MM_NODE_NETWORK);
+		$id = holoztek_mm_node_id_network($upstream, $cidr);
+		$this->addNode($id, $cidr ?? _holoztek_mm('Unknown network'), HOLOZTEK_MM_NODE_NETWORK);
 
 		return $id;
 	}
@@ -293,7 +293,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 	// separate (severity_ack/severity_unack) rather than combined into one
 	// number, so the client's problem-event filter (show/hide by ack status)
 	// can recompute the effective severity locally as the user toggles it,
-	// without a server round-trip - see CWidgetMonitoringMap#effectiveSeverity().
+	// without a server round-trip - see CWidgetHoloztekMonitoringMap#effectiveSeverity().
 	private function applyProblems(array $hosts): void {
 		// Problem.get has no selectHosts (only Acknowledges/SuppressionData/Tags),
 		// so the problem->host link has to go through the triggers it references.
@@ -320,10 +320,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 		}
 		unset($problem);
 
-		$severity_by_hostid = mm_severity_by_host_ack($problems);
+		$severity_by_hostid = holoztek_mm_severity_by_host_ack($problems);
 
 		foreach ($this->elements as &$element) {
-			if (($element['data']['type'] ?? null) !== MM_NODE_HOST) {
+			if (($element['data']['type'] ?? null) !== HOLOZTEK_MM_NODE_HOST) {
 				continue;
 			}
 
@@ -337,19 +337,19 @@ class WidgetView extends CControllerDashboardWidgetView {
 	// Sent once via $settings rather than per-host, so the client can map an
 	// effective severity (recomputed locally as the problem-event filter is
 	// toggled - see applyProblems()) to a color/label without a server
-	// round-trip. Keyed by string severity number, "-1" for MM_SEVERITY_OK.
+	// round-trip. Keyed by string severity number, "-1" for HOLOZTEK_MM_SEVERITY_OK.
 	private function severityColors(): array {
-		$colors = [(string) MM_SEVERITY_OK => MM_SEVERITY_OK_COLOR];
+		$colors = [(string) HOLOZTEK_MM_SEVERITY_OK => HOLOZTEK_MM_SEVERITY_OK_COLOR];
 		for ($severity = 0; $severity <= 5; $severity++) {
-			$colors[(string) $severity] = mm_severity_color($severity);
+			$colors[(string) $severity] = holoztek_mm_severity_color($severity);
 		}
 		return $colors;
 	}
 
 	private function severityLabels(): array {
-		$labels = [(string) MM_SEVERITY_OK => _mm('OK')];
+		$labels = [(string) HOLOZTEK_MM_SEVERITY_OK => _holoztek_mm('OK')];
 		for ($severity = 0; $severity <= 5; $severity++) {
-			$labels[(string) $severity] = mm_severity_label($severity);
+			$labels[(string) $severity] = holoztek_mm_severity_label($severity);
 		}
 		return $labels;
 	}

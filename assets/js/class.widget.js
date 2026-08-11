@@ -1,6 +1,6 @@
 'use strict';
 
-class CWidgetMonitoringMap extends CWidget {
+class CWidgetHoloztekMonitoringMap extends CWidget {
 
 	// Device-type icons, keyed by host device_type and used for host nodes
 	// only. 'network' is a switch/router glyph (same design as the Tree
@@ -494,15 +494,15 @@ class CWidgetMonitoringMap extends CWidget {
 			? (meta.severity_color || this.#colorForType())
 			: 'none';
 		const deviceIcon = meta.node_type === 'host'
-			? (CWidgetMonitoringMap.#DEVICE_ICON[meta.device_type] || CWidgetMonitoringMap.#DEVICE_ICON.server)
+			? (CWidgetHoloztekMonitoringMap.#DEVICE_ICON[meta.device_type] || CWidgetHoloztekMonitoringMap.#DEVICE_ICON.server)
 			: meta.node_type === 'network'
-				? CWidgetMonitoringMap.#DEVICE_ICON.subnet
+				? CWidgetHoloztekMonitoringMap.#DEVICE_ICON.subnet
 				: meta.node_type === 'proxy' && meta.proxy_unresponsive
-					? CWidgetMonitoringMap.#TYPE_ICON.proxy_offline
-					: (CWidgetMonitoringMap.#TYPE_ICON[meta.node_type] || CWidgetMonitoringMap.#TYPE_ICON.zbxserver);
+					? CWidgetHoloztekMonitoringMap.#TYPE_ICON.proxy_offline
+					: (CWidgetHoloztekMonitoringMap.#TYPE_ICON[meta.node_type] || CWidgetHoloztekMonitoringMap.#TYPE_ICON.zbxserver);
 
 		const badges = (meta.comm_methods || []).map((method, i) => {
-			const badge = CWidgetMonitoringMap.#COMM_BADGE[method];
+			const badge = CWidgetHoloztekMonitoringMap.#COMM_BADGE[method];
 			if (!badge) return '';
 			const cx = 8 + i * 9;
 			const cy = 36;
@@ -529,11 +529,11 @@ class CWidgetMonitoringMap extends CWidget {
 		// distinct per widget instance. It's null until the widget is first saved
 		// (new/unsaved widget), so fall back to the runtime id in that case - an
 		// unsaved widget has no persisted state to restore anyway.
-		return `monitoringmap-filter-${this.getWidgetId() ?? this.getUniqueId()}`;
+		return `holoztek-monitoringmap-filter-${this.getWidgetId() ?? this.getUniqueId()}`;
 	}
 
 	#loadFilterState() {
-		const defaults = { ...CWidgetMonitoringMap.#DEFAULT_FILTER };
+		const defaults = { ...CWidgetHoloztekMonitoringMap.#DEFAULT_FILTER };
 		try {
 			const raw = localStorage.getItem(this.#filterStorageKey());
 			this.#filter = raw ? Object.assign(defaults, JSON.parse(raw)) : defaults;
@@ -630,7 +630,7 @@ class CWidgetMonitoringMap extends CWidget {
 		if (commMethods.length === 0) return this.#filter.methodOther;
 
 		return commMethods.some(method => {
-			const key = CWidgetMonitoringMap.#METHOD_KEYS[method];
+			const key = CWidgetHoloztekMonitoringMap.#METHOD_KEYS[method];
 			return key !== undefined && this.#filter[key];
 		});
 	}
@@ -644,7 +644,7 @@ class CWidgetMonitoringMap extends CWidget {
 			['statusDisabled',    meta.host_status === 1],
 		])) return false;
 
-		if (!this.#singleMatch(CWidgetMonitoringMap.#IFACE_KEYS, meta.availability)) return false;
+		if (!this.#singleMatch(CWidgetHoloztekMonitoringMap.#IFACE_KEYS, meta.availability)) return false;
 
 		if (!this.#tagMatch([
 			['cfgNormal',      meta.has_interface && !meta.is_local],
@@ -652,7 +652,7 @@ class CWidgetMonitoringMap extends CWidget {
 			['cfgLocal',       meta.is_local],
 		])) return false;
 
-		if (!this.#singleMatch(CWidgetMonitoringMap.#ROUTE_KEYS, meta.route)) return false;
+		if (!this.#singleMatch(CWidgetHoloztekMonitoringMap.#ROUTE_KEYS, meta.route)) return false;
 
 		if (!this.#methodMatch(meta.comm_methods)) return false;
 
@@ -787,7 +787,7 @@ class CWidgetMonitoringMap extends CWidget {
 		});
 
 		panel.querySelector('.mm-filter-reset').addEventListener('click', () => {
-			this.#filter = { ...CWidgetMonitoringMap.#DEFAULT_FILTER };
+			this.#filter = { ...CWidgetHoloztekMonitoringMap.#DEFAULT_FILTER };
 			this.#saveFilterState();
 			panel.querySelectorAll('input[type=checkbox][data-filter]').forEach(input => {
 				input.checked = !!this.#filter[input.dataset.filter];
@@ -798,8 +798,8 @@ class CWidgetMonitoringMap extends CWidget {
 	}
 
 	#buildFilterUI(container) {
-		const posClass = CWidgetMonitoringMap.#FILTER_POSITION_CLASS[this.#s.filterPosition]
-			|| CWidgetMonitoringMap.#FILTER_POSITION_CLASS[1];
+		const posClass = CWidgetHoloztekMonitoringMap.#FILTER_POSITION_CLASS[this.#s.filterPosition]
+			|| CWidgetHoloztekMonitoringMap.#FILTER_POSITION_CLASS[1];
 
 		this.#btnEl = document.createElement('button');
 		this.#btnEl.type = 'button';
@@ -835,7 +835,7 @@ class CWidgetMonitoringMap extends CWidget {
 			document.body.appendChild(box);
 		}
 
-		const typeLabel = t(CWidgetMonitoringMap.#NODE_TYPE_LABEL[meta.node_type] || meta.node_type);
+		const typeLabel = t(CWidgetHoloztekMonitoringMap.#NODE_TYPE_LABEL[meta.node_type] || meta.node_type);
 		let html = `<strong>${this.#escape(label)}</strong><br><span style="opacity:.7">${typeLabel}</span>`;
 
 		if (meta.severity_label) {
@@ -847,7 +847,7 @@ class CWidgetMonitoringMap extends CWidget {
 		}
 
 		if (meta.node_type === 'host' && meta.comm_methods && meta.comm_methods.length > 0) {
-			const names = meta.comm_methods.map(m => CWidgetMonitoringMap.#COMM_METHOD_LABEL[m] || m).join(', ');
+			const names = meta.comm_methods.map(m => CWidgetHoloztekMonitoringMap.#COMM_METHOD_LABEL[m] || m).join(', ');
 			html += `<br><span style="opacity:.7">${t('Communication method')}: ${this.#escape(names)}</span>`;
 		}
 

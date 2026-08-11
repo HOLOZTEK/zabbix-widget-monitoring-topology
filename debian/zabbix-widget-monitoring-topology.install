@@ -1,4 +1,5 @@
 README.md usr/share/zabbix-widget-monitoring-topology
+LICENSE usr/share/zabbix-widget-monitoring-topology
 manifest.json usr/share/zabbix-widget-monitoring-topology
 Module.php usr/share/zabbix-widget-monitoring-topology
 Widget.php usr/share/zabbix-widget-monitoring-topology
@@ -8,10 +9,10 @@ assets/js/vis-network.min.js usr/share/zabbix-widget-monitoring-topology/assets/
 assets/js/class.widget.js usr/share/zabbix-widget-monitoring-topology/assets/js
 includes/helpers.php usr/share/zabbix-widget-monitoring-topology/includes
 includes/WidgetForm.php usr/share/zabbix-widget-monitoring-topology/includes
-locale/ja_JP/LC_MESSAGES/monitoringmap.po usr/share/zabbix-widget-monitoring-topology/locale/ja_JP/LC_MESSAGES
-locale/ja_JP/LC_MESSAGES/monitoringmap.mo usr/share/zabbix-widget-monitoring-topology/locale/ja_JP/LC_MESSAGES
-locale/en_US/LC_MESSAGES/monitoringmap.po usr/share/zabbix-widget-monitoring-topology/locale/en_US/LC_MESSAGES
-locale/en_US/LC_MESSAGES/monitoringmap.mo usr/share/zabbix-widget-monitoring-topology/locale/en_US/LC_MESSAGES
+locale/ja_JP/LC_MESSAGES/holoztek-monitoringmap.po usr/share/zabbix-widget-monitoring-topology/locale/ja_JP/LC_MESSAGES
+locale/ja_JP/LC_MESSAGES/holoztek-monitoringmap.mo usr/share/zabbix-widget-monitoring-topology/locale/ja_JP/LC_MESSAGES
+locale/en_US/LC_MESSAGES/holoztek-monitoringmap.po usr/share/zabbix-widget-monitoring-topology/locale/en_US/LC_MESSAGES
+locale/en_US/LC_MESSAGES/holoztek-monitoringmap.mo usr/share/zabbix-widget-monitoring-topology/locale/en_US/LC_MESSAGES
 views/widget.edit.js.php usr/share/zabbix-widget-monitoring-topology/views
 views/widget.edit.php usr/share/zabbix-widget-monitoring-topology/views
 views/widget.view.php usr/share/zabbix-widget-monitoring-topology/views

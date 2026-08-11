@@ -11,8 +11,8 @@ $s   = $data['settings'];
 $sfx = $data['dom_id_suffix'] ?? '';
 
 $error_messages = [
-	'nothing_selected' => _mm('Please select a host or host group.'),
-	'no_hosts'          => _mm('No matching hosts found.')
+	'nothing_selected' => _holoztek_mm('Please select a host or host group.'),
+	'no_hosts'          => _holoztek_mm('No matching hosts found.')
 ];
 
 $content = (new CDiv())->addClass('mm-widget');
