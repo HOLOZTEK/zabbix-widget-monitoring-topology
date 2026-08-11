@@ -532,10 +532,24 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		return `holoztek-monitoringmap-filter-${this.getWidgetId() ?? this.getUniqueId()}`;
 	}
 
+	// pre-v1.0.1 key (before the holoztek_ id/prefix rename); same widget-id basis.
+	#legacyFilterStorageKey() {
+		return `monitoringmap-filter-${this.getWidgetId() ?? this.getUniqueId()}`;
+	}
+
 	#loadFilterState() {
 		const defaults = { ...CWidgetHoloztekMonitoringMap.#DEFAULT_FILTER };
 		try {
-			const raw = localStorage.getItem(this.#filterStorageKey());
+			let raw = localStorage.getItem(this.#filterStorageKey());
+			if (raw === null) {
+				// one-time migration: only when the new key has no data yet, so an
+				// existing new-key value always wins and is never clobbered.
+				const legacyRaw = localStorage.getItem(this.#legacyFilterStorageKey());
+				if (legacyRaw !== null) {
+					raw = legacyRaw;
+					localStorage.setItem(this.#filterStorageKey(), raw);
+				}
+			}
 			this.#filter = raw ? Object.assign(defaults, JSON.parse(raw)) : defaults;
 		} catch (_) {
 			this.#filter = defaults;

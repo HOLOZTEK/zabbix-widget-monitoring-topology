@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.0.2
+Version:        1.0.3
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,6 +121,20 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Tue Aug 11 2026 claude <noreply> - 1.0.3-0
+- コードレビュー issue #3/#4 対応:
+  1. ダッシュボードフィルタの保存キーが v1.0.1 で
+     monitoringmap-filter-<id> から holoztek-monitoringmap-filter-<id> へ
+     変更された際に旧キーからの移行ロジックが無く、v0.2.1 以前で保存した
+     フィルタ設定が新IDへの移行後に失われる不具合を修正。新キーが未存在の
+     場合のみ旧キーを読み込み新キーへコピーする一回限りの移行処理を追加
+     （新キーに既存データがある場合は上書きしない）
+  2. README.md のRPMインストール例が特定バージョン(1.0.1)に固定され
+     リリースの度に陳腐化していたため、<version>プレースホルダに戻し
+     バージョン非依存化
+  3. debian/control の短いDescriptionが旧名称"Monitoring Map widget"の
+     ままだったのを"Monitoring Topology widget"へ修正
+
 * Tue Aug 11 2026 claude <noreply> - 1.0.2-0
 - ウィジェット表示名（manifest.json name / getDefaultName()）を
   "Monitoring Map" から "Monitoring Topology" へ変更（パッケージ名・

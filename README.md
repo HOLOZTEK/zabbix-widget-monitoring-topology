@@ -26,7 +26,7 @@ Zabbixの監視経路（ZabbixServer / Proxy / Network / Host のつながり）
 ### RPM パッケージ（推奨）
 
 ```bash
-rpm -ivh zabbix-widget-monitoring-topology-1.0.1.noarch.rpm
+rpm -ivh zabbix-widget-monitoring-topology-<version>.noarch.rpm
 systemctl reload httpd php-fpm
 ```
 

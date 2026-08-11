@@ -8,7 +8,7 @@ Standards-Version: 4.6.2
 Package: zabbix-widget-monitoring-topology
 Architecture: all
 Depends: ${misc:Depends}
-Description: Monitoring Map widget for Zabbix dashboard (Vis Network)
+Description: Monitoring Topology widget for Zabbix dashboard (Vis Network)
  Zabbix dashboard widget that visualizes the monitoring path (Zabbix
  Server - Proxy - Network - Host) as an interactive topology graph
  using Vis Network (Canvas2D).

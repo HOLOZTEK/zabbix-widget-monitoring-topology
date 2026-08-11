@@ -1,3 +1,14 @@
+zabbix-widget-monitoring-topology (1.0.3) unstable; urgency=medium
+
+  * コードレビュー issue #3/#4 対応: ダッシュボードフィルタの保存キー変更
+    (v1.0.1)に伴う旧キーからの移行ロジックを追加し、v0.2.1以前で保存した
+    フィルタ設定が失われる不具合を修正。README.mdのRPMインストール例を
+    <version>プレースホルダに戻しバージョン非依存化。debian/controlの
+    Descriptionを旧名称"Monitoring Map widget"から"Monitoring Topology
+    widget"へ修正。
+
+ -- claude <noreply@example.com>  Tue, 11 Aug 2026 12:00:00 +0000
+
 zabbix-widget-monitoring-topology (1.0.2) unstable; urgency=medium
 
   * ウィジェット表示名（manifest.json name / getDefaultName()）を
