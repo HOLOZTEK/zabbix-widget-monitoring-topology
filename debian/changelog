@@ -1,3 +1,12 @@
+zabbix-widget-monitoring-topology (1.0.2) unstable; urgency=medium
+
+  * ウィジェット表示名（manifest.json name / getDefaultName()）を
+    "Monitoring Map" から "Monitoring Topology" へ変更（パッケージ名・
+    リポジトリ名との整合性を確保）。gettextのmsgid/msgstr（ja_JP/en_US）
+    も追随して更新。機能・内部ID・モジュールディレクトリ名の変更なし。
+
+ -- claude <noreply@example.com>  Tue, 11 Aug 2026 11:00:00 +0000
+
 zabbix-widget-monitoring-topology (1.0.1) unstable; urgency=medium
 
   * モジュール識別子（manifest.id/namespace/action/js_class）にHOLOZTEK

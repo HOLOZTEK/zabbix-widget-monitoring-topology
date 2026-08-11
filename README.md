@@ -1,4 +1,4 @@
-# Monitoring Map Widget for Zabbix
+# Monitoring Topology Widget for Zabbix
 
 Zabbixの監視経路（ZabbixServer / Proxy / Network / Host のつながり）をトポロジー図として可視化するウィジェットです。Vis Network（Canvas2D）を使用します。
 

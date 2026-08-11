@@ -13,7 +13,7 @@ class Widget extends CWidget {
     }
 
     public function getDefaultName(): string {
-        return _holoztek_mm('Monitoring Map');
+        return _holoztek_mm('Monitoring Topology');
     }
 
     public function getTranslationStrings(): array {

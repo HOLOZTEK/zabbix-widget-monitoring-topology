@@ -2,10 +2,10 @@
     "manifest_version": 2.0,
     "id": "holoztek_monitoringmap",
     "type": "widget",
-    "name": "Monitoring Map",
+    "name": "Monitoring Topology",
     "namespace": "HoloztekMonitoringMap",
     "author": "HOLOZTEK",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "widget": {
         "size": {"width": 12, "height": 8},
         "js_class": "CWidgetHoloztekMonitoringMap",

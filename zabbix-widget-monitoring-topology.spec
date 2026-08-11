@@ -1,8 +1,8 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.0.1
+Version:        1.0.2
 Release:        0
-Summary:        Monitoring Map widget for Zabbix dashboard (Vis Network)
+Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
 BuildArch:      noarch
 Requires:       (php >= 8.3 or php8.3-common or php8.4-common or php8.5-common)
@@ -121,6 +121,12 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Tue Aug 11 2026 claude <noreply> - 1.0.2-0
+- ウィジェット表示名（manifest.json name / getDefaultName()）を
+  "Monitoring Map" から "Monitoring Topology" へ変更（パッケージ名・
+  リポジトリ名との整合性を確保）。gettextの msgid/msgstr（ja_JP/en_US）も
+  追随して更新。機能・内部ID・モジュールディレクトリ名の変更なし。
+
 * Tue Aug 11 2026 claude <noreply> - 1.0.1-0
 - モジュール識別子（manifest.id/namespace/action/js_class）にHOLOZTEKプレフィックス
   を付与し他モジュールとの衝突リスクを回避（id: monitoringmap →
