@@ -13,6 +13,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 	private array $node_ids = [];
 	private array $edge_keys = [];
 	private array $elements = [];
+	private array $cluster_member_ips = [];
 
 	protected function init(): void {
 		parent::init();
@@ -147,19 +148,36 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 		foreach ($hosts as $hostid => $host) {
 			$upstream_node = $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
+			$comm_methods = $comm_methods_by_host[$hostid] ?? [];
 
 			$host_ip = holoztek_mm_host_primary_ip($host['interfaces'] ?? []);
-			$host_cidr = $host_ip !== null ? holoztek_mm_ipv4_cidr($host_ip, $prefix_length) : null;
-			$network_node = $this->addNetworkNode($upstream_node, $host_cidr);
+			$cluster_method = holoztek_mm_host_cluster_method($comm_methods);
 
-			$this->addEdge($upstream_node, $network_node);
+			// VMware/Kubernetes hosts always attach to their comm method's
+			// Cluster node, regardless of whether an IP is known - membership
+			// there comes from LLD, not addressing, so grouping by CIDR would be
+			// meaningless (and would scatter one cluster's hosts across several
+			// Network nodes as it scales). A known IP is kept on the Cluster node
+			// as extra info instead (see applyClusterMemberIps()).
+			if ($cluster_method !== null) {
+				$group_node = $this->addClusterNode($upstream_node, $cluster_method);
+				if ($host_ip !== null) {
+					$this->cluster_member_ips[$group_node][$host_ip] = true;
+				}
+			}
+			else {
+				$host_cidr = $host_ip !== null ? holoztek_mm_ipv4_cidr($host_ip, $prefix_length) : null;
+				$group_node = $this->addNetworkNode($upstream_node, $host_cidr);
+			}
+
+			$this->addEdge($upstream_node, $group_node);
 
 			$interfaces = $host['interfaces'] ?? [];
 
 			$host_node = holoztek_mm_node_id_host((string) $hostid);
 			$this->addNode($host_node, (string) $host['name'], HOLOZTEK_MM_NODE_HOST, [
 				'device_type'        => holoztek_mm_detect_device_type($host),
-				'comm_methods'       => $comm_methods_by_host[$hostid] ?? [],
+				'comm_methods'       => $comm_methods,
 				'host_status'        => (int) $host['status'],
 				'maintenance_status' => (int) ($host['maintenance_status'] ?? 0),
 				'has_interface'      => $interfaces !== [],
@@ -167,9 +185,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'availability'       => holoztek_mm_host_availability($interfaces),
 				'route'              => $this->resolveRoute($host)
 			]);
-			$this->addEdge($network_node, $host_node);
+			$this->addEdge($group_node, $host_node);
 		}
 
+		$this->applyClusterMemberIps();
 		$this->applyProblems($hosts);
 
 		$this->setResponse(new CControllerResponseData($common + [
@@ -269,6 +288,15 @@ class WidgetView extends CControllerDashboardWidgetView {
 		return $id;
 	}
 
+	// One cluster node per (upstream, comm method) pair - see
+	// holoztek_mm_node_id_cluster() for the scoping rationale.
+	private function addClusterNode(string $upstream, string $method): string {
+		$id = holoztek_mm_node_id_cluster($upstream, $method);
+		$this->addNode($id, holoztek_mm_cluster_label($method), HOLOZTEK_MM_NODE_CLUSTER);
+
+		return $id;
+	}
+
 	private function addEdge(string $source, string $target): void {
 		$key = $source . '->' . $target;
 		if (isset($this->edge_keys[$key])) {
@@ -330,6 +358,25 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$hostid = substr($element['data']['id'], 2);
 			$element['data']['severity_ack']   = $severity_by_hostid[$hostid]['ack'] ?? null;
 			$element['data']['severity_unack'] = $severity_by_hostid[$hostid]['unack'] ?? null;
+		}
+		unset($element);
+	}
+
+	// Attaches each Cluster node's known member IPs (collected in the main host
+	// loop from hosts that do have a resolvable primary IP - e.g. a VMware
+	// Hypervisor or a Kubernetes node host, as opposed to an interface-less
+	// aggregate/cluster-level host) as metadata, sorted for stable tooltip
+	// rendering. A Cluster node with no known-IP members at all simply gets an
+	// empty list rather than being omitted from this pass.
+	private function applyClusterMemberIps(): void {
+		foreach ($this->elements as &$element) {
+			if (($element['data']['type'] ?? null) !== HOLOZTEK_MM_NODE_CLUSTER) {
+				continue;
+			}
+
+			$ips = array_keys($this->cluster_member_ips[$element['data']['id']] ?? []);
+			sort($ips);
+			$element['data']['member_ips'] = $ips;
 		}
 		unset($element);
 	}

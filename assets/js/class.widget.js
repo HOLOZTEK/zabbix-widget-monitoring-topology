@@ -33,6 +33,12 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		proxy_offline: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzE2JyBoZWlnaHQ9JzE2JyByeD0nMycgZmlsbD0nI2JkYmRiZCcgc3Ryb2tlPScjNmU2ZTZlJyBzdHJva2Utd2lkdGg9JzEuNCcvPjx0ZXh0IHg9JzEwJyB5PScxNC44JyBmb250LXNpemU9JzEyJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC13ZWlnaHQ9J2JvbGQnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyMwMDAnPlA8L3RleHQ+PC9zdmc+",
 		// Proxy Group node: badge with "G", same red/white design as the Server badge.
 		proxy_group: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzE2JyBoZWlnaHQ9JzE2JyByeD0nMycgZmlsbD0nI2Q0MDAwMCcgc3Ryb2tlPScjYTMwMDAwJyBzdHJva2Utd2lkdGg9JzEuNCcvPjx0ZXh0IHg9JzEwJyB5PScxNC44JyBmb250LXNpemU9JzEyJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC13ZWlnaHQ9J2JvbGQnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyNmZmYnPkc8L3RleHQ+PC9zdmc+",
+		// Cluster node (VMware/Kubernetes structured monitoring - see
+		// HOLOZTEK_MM_CLUSTER_COMM_METHODS server-side): three connected nodes,
+		// deliberately distinct from both the subnet cloud (#DEVICE_ICON.subnet)
+		// and the Server/Proxy/Proxy Group red badges, since a Cluster node is
+		// neither an IP waypoint nor a piece of Zabbix's own infrastructure.
+		cluster: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PGNpcmNsZSBjeD0nMTAnIGN5PSc1LjUnIHI9JzMuNCcgZmlsbD0nI2NkZDZkYicgc3Ryb2tlPScjMzM0JyBzdHJva2Utd2lkdGg9JzEuMicvPjxjaXJjbGUgY3g9JzUnIGN5PScxNCcgcj0nMy40JyBmaWxsPScjY2RkNmRiJyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4yJy8+PGNpcmNsZSBjeD0nMTUnIGN5PScxNCcgcj0nMy40JyBmaWxsPScjY2RkNmRiJyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4yJy8+PGxpbmUgeDE9JzEwJyB5MT0nOC41JyB4Mj0nNi4yJyB5Mj0nMTEuNCcgc3Ryb2tlPScjMzM0JyBzdHJva2Utd2lkdGg9JzEuMScvPjxsaW5lIHgxPScxMCcgeTE9JzguNScgeDI9JzEzLjgnIHkyPScxMS40JyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4xJy8+PGxpbmUgeDE9JzguMicgeTE9JzE0JyB4Mj0nMTEuOCcgeTI9JzE0JyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4xJy8+PC9zdmc+",
 	};
 
 	// Communication-method badges: rendered as small colored/lettered circles
@@ -46,6 +52,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		vmware: { letter: 'V', color: '#1abc9c' },
 		odbc:   { letter: 'O', color: '#e74c3c' },
 		jmx:    { letter: 'J', color: '#f39c12' },
+		k8s:    { letter: 'K', color: '#326ce5' },
 	};
 
 	static #NODE_TYPE_LABEL = {
@@ -53,6 +60,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		proxy_group: 'Proxy Group',
 		proxy:       'Zabbix Proxy',
 		network:     'Network',
+		cluster:     'Cluster',
 		host:        'Host',
 	};
 
@@ -64,6 +72,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		vmware: 'VMware',
 		odbc:   'ODBC',
 		jmx:    'JMX',
+		k8s:    'Kubernetes',
 	};
 
 	// Matches WidgetForm::FILTER_POSITION_* on the PHP side.
@@ -134,13 +143,15 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		proxy_group: 'routeProxyGroup',
 	};
 
-	// comm_methods bucket -> filter-key map for 監視方式. vmware/odbc (the
-	// only two comm_methods values not among the 5 explicit methods) both
-	// bucket into "other" per user decision. A host with no classifiable
-	// comm_methods at all (no items, or only items mm_item_comm_method()
-	// can't classify, e.g. HTTP agent/trapper/calculated) also buckets into
-	// "other" - see #methodMatch(); this keeps 監視方式 a complete/covering
-	// partition per issue #2.
+	// comm_methods bucket -> filter-key map for 監視方式. vmware/odbc/k8s (the
+	// comm_methods values not among the 5 explicit methods) all bucket into
+	// "other" per user decision - k8s hosts still get their own badge letter
+	// (see #COMM_BADGE) for at-a-glance identification, it just isn't a
+	// separate filter checkbox. A host with no classifiable comm_methods at
+	// all (no items, or only items mm_item_comm_method() can't classify, e.g.
+	// HTTP agent/trapper/calculated) also buckets into "other" - see
+	// #methodMatch(); this keeps 監視方式 a complete/covering partition per
+	// issue #2.
 	static #METHOD_KEYS = {
 		ping:   'methodPing',
 		agent:  'methodAgent',
@@ -149,6 +160,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		jmx:    'methodJmx',
 		vmware: 'methodOther',
 		odbc:   'methodOther',
+		k8s:    'methodOther',
 	};
 
 	#network      = null;
@@ -278,6 +290,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				is_local:            isHost ? (el.data.is_local === true) : null,
 				availability:        isHost ? (el.data.availability || 'unknown') : null,
 				route:               isHost ? (el.data.route || 'server') : null,
+				member_ips:          el.data.member_ips || null,
 				severity_ack:       isHost && el.data.severity_ack !== undefined && el.data.severity_ack !== null
 					? Number(el.data.severity_ack) : null,
 				severity_unack:     isHost && el.data.severity_unack !== undefined && el.data.severity_unack !== null
@@ -673,7 +686,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		return true;
 	}
 
-	// A non-host node (Server/Proxy/Proxy Group/Network) is visible iff at
+	// A non-host node (Server/Proxy/Proxy Group/Network/Cluster) is visible iff at
 	// least one descendant host remains visible - every such node is only
 	// ever created because of an actual host in the current selection (see
 	// WidgetView::doAction()), so this cascade never spuriously hides an
@@ -863,6 +876,10 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		if (meta.node_type === 'host' && meta.comm_methods && meta.comm_methods.length > 0) {
 			const names = meta.comm_methods.map(m => CWidgetHoloztekMonitoringMap.#COMM_METHOD_LABEL[m] || m).join(', ');
 			html += `<br><span style="opacity:.7">${t('Communication method')}: ${this.#escape(names)}</span>`;
+		}
+
+		if (meta.node_type === 'cluster' && meta.member_ips && meta.member_ips.length > 0) {
+			html += `<br><span style="opacity:.7">${t('Known addresses')}: ${this.#escape(meta.member_ips.join(', '))}</span>`;
 		}
 
 		box.innerHTML = html;

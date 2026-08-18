@@ -63,6 +63,9 @@ msgstr "Zabbix Proxy"
 msgid "Network"
 msgstr "Network"
 
+msgid "Cluster"
+msgstr "Cluster"
+
 msgid "Severity"
 msgstr "Severity"
 
@@ -74,6 +77,9 @@ msgstr "Not responding"
 
 msgid "Communication method"
 msgstr "Communication method"
+
+msgid "Known addresses"
+msgstr "Known addresses"
 
 msgid "OK"
 msgstr "OK"

@@ -63,6 +63,9 @@ msgstr "Zabbix プロキシ"
 msgid "Network"
 msgstr "ネットワーク"
 
+msgid "Cluster"
+msgstr "クラスタ"
+
 msgid "Severity"
 msgstr "重要度"
 
@@ -74,6 +77,9 @@ msgstr "応答なし"
 
 msgid "Communication method"
 msgstr "通信方式"
+
+msgid "Known addresses"
+msgstr "既知のアドレス"
 
 msgid "OK"
 msgstr "正常"

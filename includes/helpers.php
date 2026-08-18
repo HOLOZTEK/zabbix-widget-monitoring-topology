@@ -8,6 +8,7 @@ const HOLOZTEK_MM_NODE_SERVER = 'server';
 const HOLOZTEK_MM_NODE_PROXY_GROUP = 'proxy_group';
 const HOLOZTEK_MM_NODE_PROXY = 'proxy';
 const HOLOZTEK_MM_NODE_NETWORK = 'network';
+const HOLOZTEK_MM_NODE_CLUSTER = 'cluster';
 const HOLOZTEK_MM_NODE_HOST = 'host';
 
 const HOLOZTEK_MM_COMM_PING = 'ping';
@@ -17,6 +18,14 @@ const HOLOZTEK_MM_COMM_IPMI = 'ipmi';
 const HOLOZTEK_MM_COMM_VMWARE = 'vmware';
 const HOLOZTEK_MM_COMM_ODBC = 'odbc';
 const HOLOZTEK_MM_COMM_JMX = 'jmx';
+const HOLOZTEK_MM_COMM_K8S = 'k8s';
+
+// Communication methods whose host population scales up/down on its own
+// (VMware Hypervisor/Guest hosts discovered via the official VMware Collector
+// LLD, Kubernetes node/component hosts) - see holoztek_mm_host_cluster_method().
+// ODBC is deliberately excluded: it's a fixed check against one DB target, not
+// a scaling host population, so it keeps the plain "Unknown network" fallback.
+const HOLOZTEK_MM_CLUSTER_COMM_METHODS = [HOLOZTEK_MM_COMM_VMWARE, HOLOZTEK_MM_COMM_K8S];
 
 // Zabbix 7.0 item type constants (see ITEM_TYPE_* in include/defines.inc.php).
 // There is no dedicated VMware item type - VMware monitoring runs as
@@ -29,6 +38,7 @@ const HOLOZTEK_MM_ITEM_TYPE_IPMI = 12;
 const HOLOZTEK_MM_ITEM_TYPE_DB_MONITOR = 11;
 const HOLOZTEK_MM_ITEM_TYPE_JMX = 16;
 const HOLOZTEK_MM_ITEM_TYPE_ZABBIX_ACTIVE = 7;
+const HOLOZTEK_MM_ITEM_TYPE_HTTPAGENT = 19;
 
 // Zabbix's ZBX_SEVERITY_OK (-1, "no active problem") and its standard
 // ".status-green" color from the frontend theme CSS - CSeverityHelper::getColor()
@@ -60,6 +70,15 @@ function holoztek_mm_item_comm_method(int $type, string $key): ?string {
 				return HOLOZTEK_MM_COMM_VMWARE;
 			}
 			return null;
+		case HOLOZTEK_MM_ITEM_TYPE_HTTPAGENT:
+			// The official "Kubernetes ... by HTTP" templates run every check as
+			// an HTTP agent item; type=19 alone is too broad (any host could use
+			// HTTP agent items for unrelated checks), so only "kube."/"kubernetes."
+			// key_ prefixes - the templates' own convention - count as Kubernetes.
+			if (str_starts_with($key, 'kube.') || str_starts_with($key, 'kubernetes.')) {
+				return HOLOZTEK_MM_COMM_K8S;
+			}
+			return null;
 		default:
 			return null;
 	}
@@ -70,7 +89,7 @@ function holoztek_mm_item_comm_method(int $type, string $key): ?string {
 // the fixed display order below (rather than discovery order), so the badge
 // row on the node icon is stable across reloads.
 function holoztek_mm_comm_methods_by_host(array $items): array {
-	$order = [HOLOZTEK_MM_COMM_PING, HOLOZTEK_MM_COMM_SNMP, HOLOZTEK_MM_COMM_AGENT, HOLOZTEK_MM_COMM_IPMI, HOLOZTEK_MM_COMM_VMWARE, HOLOZTEK_MM_COMM_ODBC, HOLOZTEK_MM_COMM_JMX];
+	$order = [HOLOZTEK_MM_COMM_PING, HOLOZTEK_MM_COMM_SNMP, HOLOZTEK_MM_COMM_AGENT, HOLOZTEK_MM_COMM_IPMI, HOLOZTEK_MM_COMM_VMWARE, HOLOZTEK_MM_COMM_ODBC, HOLOZTEK_MM_COMM_JMX, HOLOZTEK_MM_COMM_K8S];
 
 	$by_host = [];
 	foreach ($items as $item) {
@@ -282,4 +301,35 @@ function holoztek_mm_node_id_network(string $upstream, ?string $cidr): string {
 	$suffix = $cidr === null ? 'unknown' : str_replace(['.', '/'], '_', $cidr);
 
 	return 'n_' . $upstream . '_' . $suffix;
+}
+
+// Returns the comm method (see HOLOZTEK_MM_CLUSTER_COMM_METHODS) a host should
+// be grouped under a Cluster node for, or null if it belongs under the normal
+// IP-subnet Network node instead. A host is checked against each cluster
+// method in the same fixed order used elsewhere so a host that somehow trips
+// both (not expected in practice) still gets one stable, reproducible answer.
+function holoztek_mm_host_cluster_method(array $comm_methods): ?string {
+	foreach (HOLOZTEK_MM_CLUSTER_COMM_METHODS as $method) {
+		if (in_array($method, $comm_methods, true)) {
+			return $method;
+		}
+	}
+
+	return null;
+}
+
+function holoztek_mm_cluster_label(string $method): string {
+	return match ($method) {
+		HOLOZTEK_MM_COMM_VMWARE => _holoztek_mm('VMware cluster'),
+		HOLOZTEK_MM_COMM_K8S    => _holoztek_mm('Kubernetes cluster'),
+		default                 => _holoztek_mm('Cluster'),
+	};
+}
+
+// One cluster node per (upstream node, comm method) pair - same per-upstream
+// scoping rationale as holoztek_mm_node_id_network(), and per-method so a
+// VMware cluster and a Kubernetes cluster under the same upstream don't
+// collapse into a single node.
+function holoztek_mm_node_id_cluster(string $upstream, string $method): string {
+	return 'c_' . $upstream . '_' . $method;
 }
