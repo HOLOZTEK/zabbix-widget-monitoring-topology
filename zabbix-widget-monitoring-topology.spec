@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.0.3
+Version:        1.0.4
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,6 +121,24 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sat Aug 22 2026 claude <noreply> - 1.0.4-0
+- VMware/Kubernetesクラスタノードを追加（gitadminによる170のみ未リリース実装
+  f3a5e66を正式反映）: 通信方式ごとに1個の固定クラスタノードを新設し、
+  Kubernetesと判定されたホストは既存のNetworkノードではなくこのクラスタ
+  ノードに常時接続するよう変更。Kubernetes公式テンプレート(HTTP agentアイ
+  テム, kube./kubernetes.キープレフィックス)の検出ロジックを追加
+- VMware監視をDatacenter(vCenter)/Cluster/ESXi/VMのツリー構造として表示
+  するよう変更（Zabbix - vCenter - Cluster - ESXi - VM）。上記のVMware
+  クラスタノード運用は廃止し専用ツリーに置き換え。Datacenter/Cluster名は
+  ESXiホスト自身のアイテム(vmware.hv.datacenter.name/vmware.hv.cluster.name)
+  から取得、クラスタ未所属（スタンドアロンESXi）の場合はCluster階層を省略。
+  VMホストはvCenter/ESXiにアイテムが割り当てられるまでコミュニケーション
+  方式で判別できないため、公式VMwareテンプレートのVM検出ルール
+  (vmware.vm.discovery)が自動付与する「(vm)」ホストグループ名と、ESXi自身の
+  Zabbixホスト名が一致することを利用してVM→ESXiの親子関係を判定（該当する
+  ESXiがウィジェットの選択範囲外の場合は通常のNetworkノードへフォールバック）。
+  170の実データ（esxi-dev-01配下のVM21台）で動作検証済み
+
 * Tue Aug 11 2026 claude <noreply> - 1.0.3-0
 - コードレビュー issue #3/#4 対応:
   1. ダッシュボードフィルタの保存キーが v1.0.1 で

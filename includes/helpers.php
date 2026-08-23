@@ -9,6 +9,7 @@ const HOLOZTEK_MM_NODE_PROXY_GROUP = 'proxy_group';
 const HOLOZTEK_MM_NODE_PROXY = 'proxy';
 const HOLOZTEK_MM_NODE_NETWORK = 'network';
 const HOLOZTEK_MM_NODE_CLUSTER = 'cluster';
+const HOLOZTEK_MM_NODE_DATACENTER = 'datacenter';
 const HOLOZTEK_MM_NODE_HOST = 'host';
 
 const HOLOZTEK_MM_COMM_PING = 'ping';
@@ -20,12 +21,27 @@ const HOLOZTEK_MM_COMM_ODBC = 'odbc';
 const HOLOZTEK_MM_COMM_JMX = 'jmx';
 const HOLOZTEK_MM_COMM_K8S = 'k8s';
 
-// Communication methods whose host population scales up/down on its own
-// (VMware Hypervisor/Guest hosts discovered via the official VMware Collector
-// LLD, Kubernetes node/component hosts) - see holoztek_mm_host_cluster_method().
-// ODBC is deliberately excluded: it's a fixed check against one DB target, not
-// a scaling host population, so it keeps the plain "Unknown network" fallback.
-const HOLOZTEK_MM_CLUSTER_COMM_METHODS = [HOLOZTEK_MM_COMM_VMWARE, HOLOZTEK_MM_COMM_K8S];
+// Host group name the official Zabbix "VMware" template's VM discovery rule
+// (vmware.vm.discovery) auto-assigns to every VM host it creates via host
+// prototype - a fixed marker distinguishing a VM host from a Hypervisor host.
+// A VM host has no comm-method-classifiable item of its own (no items at all
+// until a guest-monitoring template is separately assigned to it), so this
+// group membership is the only current way to identify one - see
+// WidgetView::doAction().
+const HOLOZTEK_MM_VMWARE_VM_GROUP = '(vm)';
+
+// Communication methods whose host population scales up/down on its own and
+// has no Datacenter/vCenter-style hierarchy of its own (Kubernetes node/
+// component hosts) - see holoztek_mm_host_cluster_method(). All such hosts
+// under one upstream collapse into a single flat Cluster node. VMware is
+// deliberately NOT here: a VMware Hypervisor host gets its own dedicated
+// Datacenter/Cluster placement instead (see WidgetView::addVmwareHierarchy()),
+// since vCenter/ESXi's own Datacenter/Cluster/Host structure is real
+// discoverable data (vmware.hv.datacenter.name/vmware.hv.cluster.name), not
+// just a flat bucket. ODBC is also excluded: it's a fixed check against one
+// DB target, not a scaling host population, so it keeps the plain "Unknown
+// network" fallback.
+const HOLOZTEK_MM_CLUSTER_COMM_METHODS = [HOLOZTEK_MM_COMM_K8S];
 
 // Zabbix 7.0 item type constants (see ITEM_TYPE_* in include/defines.inc.php).
 // There is no dedicated VMware item type - VMware monitoring runs as
@@ -320,16 +336,43 @@ function holoztek_mm_host_cluster_method(array $comm_methods): ?string {
 
 function holoztek_mm_cluster_label(string $method): string {
 	return match ($method) {
-		HOLOZTEK_MM_COMM_VMWARE => _holoztek_mm('VMware cluster'),
-		HOLOZTEK_MM_COMM_K8S    => _holoztek_mm('Kubernetes cluster'),
-		default                 => _holoztek_mm('Cluster'),
+		HOLOZTEK_MM_COMM_K8S => _holoztek_mm('Kubernetes cluster'),
+		default              => _holoztek_mm('Cluster'),
 	};
 }
 
 // One cluster node per (upstream node, comm method) pair - same per-upstream
-// scoping rationale as holoztek_mm_node_id_network(), and per-method so a
-// VMware cluster and a Kubernetes cluster under the same upstream don't
-// collapse into a single node.
+// scoping rationale as holoztek_mm_node_id_network(), so a Kubernetes cluster
+// under one upstream doesn't collapse with one under another.
 function holoztek_mm_node_id_cluster(string $upstream, string $method): string {
 	return 'c_' . $upstream . '_' . $method;
+}
+
+// Deterministic, filesystem/id-safe representation of an arbitrary
+// (potentially non-ASCII, e.g. a Japanese Datacenter/Cluster name) string for
+// use inside a Cytoscape/vis-network node id. Keeping a short ASCII prefix of
+// the original text makes the generated id easier to spot in debug output,
+// but the actual uniqueness guarantee comes from the hash suffix - two
+// different names that happen to collapse to the same ASCII-stripped prefix
+// (e.g. differing only in punctuation or non-ASCII characters) still get
+// distinct node ids.
+function holoztek_mm_id_slug(string $name): string {
+	$slug = preg_replace('/[^A-Za-z0-9]+/', '_', $name);
+	$slug = trim((string) $slug, '_');
+
+	return ($slug !== '' ? $slug . '_' : '') . substr(md5($name), 0, 8);
+}
+
+// One Datacenter/vCenter node per (upstream node, datacenter name) pair - same
+// per-upstream scoping rationale as holoztek_mm_node_id_network().
+function holoztek_mm_node_id_datacenter(string $upstream, string $name): string {
+	return 'dc_' . $upstream . '_' . holoztek_mm_id_slug($name);
+}
+
+// One VMware Cluster node per (parent Datacenter node, cluster name) pair -
+// scoped under the Datacenter node id (rather than the outer upstream)
+// because a cluster only ever makes sense within the one Datacenter/vCenter
+// it was discovered in.
+function holoztek_mm_node_id_vmware_cluster(string $datacenter_node, string $name): string {
+	return 'vc_' . $datacenter_node . '_' . holoztek_mm_id_slug($name);
 }

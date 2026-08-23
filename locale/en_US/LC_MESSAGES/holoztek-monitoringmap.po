@@ -66,6 +66,12 @@ msgstr "Network"
 msgid "Cluster"
 msgstr "Cluster"
 
+msgid "Datacenter"
+msgstr "Datacenter"
+
+msgid "Unknown datacenter"
+msgstr "Unknown datacenter"
+
 msgid "Severity"
 msgstr "Severity"
 

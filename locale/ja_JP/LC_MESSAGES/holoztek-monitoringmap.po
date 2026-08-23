@@ -66,6 +66,12 @@ msgstr "ネットワーク"
 msgid "Cluster"
 msgstr "クラスタ"
 
+msgid "Datacenter"
+msgstr "データセンター"
+
+msgid "Unknown datacenter"
+msgstr "不明なデータセンター"
+
 msgid "Severity"
 msgstr "重要度"
 

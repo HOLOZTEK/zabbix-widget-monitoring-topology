@@ -1,3 +1,20 @@
+zabbix-widget-monitoring-topology (1.0.4) unstable; urgency=medium
+
+  * VMware/Kubernetesクラスタノードを追加（170のみ未リリース実装f3a5e66を
+    正式反映）: Kubernetesと判定されたホストは既存のNetworkノードではなく
+    専用のクラスタノードに常時接続するよう変更。Kubernetes公式テンプレート
+    (HTTP agentアイテム, kube./kubernetes.キープレフィックス)の検出ロジック
+    を追加。
+  * VMware監視をDatacenter(vCenter)/Cluster/ESXi/VMのツリー構造として表示
+    するよう変更（Zabbix - vCenter - Cluster - ESXi - VM）。上記のVMware
+    クラスタノード運用は廃止し専用ツリーに置き換え。Datacenter/Cluster名は
+    ESXiホスト自身のアイテムから取得し、クラスタ未所属の場合はCluster階層
+    を省略。VMホストは公式VMwareテンプレートが自動付与する「(vm)」ホスト
+    グループ名とESXi自身のホスト名の一致でVM→ESXiの親子関係を判定。170の
+    実データで動作検証済み。
+
+ -- claude <noreply@example.com>  Sat, 22 Aug 2026 12:00:00 +0000
+
 zabbix-widget-monitoring-topology (1.0.3) unstable; urgency=medium
 
   * コードレビュー issue #3/#4 対応: ダッシュボードフィルタの保存キー変更

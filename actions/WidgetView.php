@@ -66,6 +66,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'selectInterfaces'      => ['type', 'ip', 'dns', 'useip', 'main', 'available'],
 			'selectInventory'       => ['type', 'os'],
 			'selectParentTemplates' => ['name'],
+			'selectGroups'          => ['name'],
 			'preservekeys'          => true
 		]);
 
@@ -84,6 +85,36 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'hostids'  => array_keys($hosts)
 		]);
 		$comm_methods_by_host = holoztek_mm_comm_methods_by_host($items);
+
+		// A VMware Hypervisor host's own Datacenter/Cluster placement comes from
+		// two of its own items (populated by the official "VMware" template's
+		// vmware.hv.discovery-created Hypervisor hosts), not from LLD structure -
+		// see addVmwareHierarchy(). Scoped to just the Hypervisor hostids so this
+		// stays cheap even on a large host selection.
+		$vmware_hv_hostids = array_keys(array_filter(
+			$comm_methods_by_host,
+			static fn(array $methods): bool => in_array(HOLOZTEK_MM_COMM_VMWARE, $methods, true)
+		));
+
+		$vmware_dc_items = $vmware_hv_hostids
+			? API::Item()->get([
+				'output'      => ['hostid', 'lastvalue'],
+				'hostids'     => $vmware_hv_hostids,
+				'search'      => ['key_' => 'vmware.hv.datacenter.name'],
+				'startSearch' => true
+			])
+			: [];
+		$vmware_dc_by_hostid = array_column($vmware_dc_items, 'lastvalue', 'hostid');
+
+		$vmware_cl_items = $vmware_hv_hostids
+			? API::Item()->get([
+				'output'      => ['hostid', 'lastvalue'],
+				'hostids'     => $vmware_hv_hostids,
+				'search'      => ['key_' => 'vmware.hv.cluster.name'],
+				'startSearch' => true
+			])
+			: [];
+		$vmware_cl_by_hostid = array_column($vmware_cl_items, 'lastvalue', 'hostid');
 
 		$is_id = static fn($id): bool => $id !== null && (string) $id !== '0' && (string) $id !== '';
 
@@ -146,45 +177,74 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$proxy_upstream_node[$proxyid] = $proxy_node;
 		}
 
+		// Host nodes whose placement depends on another Host node placed earlier
+		// in this same pass (a VM's parent ESXi) can't be resolved inline, so VM
+		// hosts are collected here and placed in a second pass below, once every
+		// Hypervisor host's own node id is known.
+		$hv_node_by_name = [];
+		$vmware_vm_hostids = [];
+
 		foreach ($hosts as $hostid => $host) {
-			$upstream_node = $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
 			$comm_methods = $comm_methods_by_host[$hostid] ?? [];
+			$is_vmware_hv = in_array(HOLOZTEK_MM_COMM_VMWARE, $comm_methods, true);
 
-			$host_ip = holoztek_mm_host_primary_ip($host['interfaces'] ?? []);
-			$cluster_method = holoztek_mm_host_cluster_method($comm_methods);
-
-			// VMware/Kubernetes hosts always attach to their comm method's
-			// Cluster node, regardless of whether an IP is known - membership
-			// there comes from LLD, not addressing, so grouping by CIDR would be
-			// meaningless (and would scatter one cluster's hosts across several
-			// Network nodes as it scales). A known IP is kept on the Cluster node
-			// as extra info instead (see applyClusterMemberIps()).
-			if ($cluster_method !== null) {
-				$group_node = $this->addClusterNode($upstream_node, $cluster_method);
-				if ($host_ip !== null) {
-					$this->cluster_member_ips[$group_node][$host_ip] = true;
+			$in_vmware_vm_group = false;
+			foreach ($host['groups'] ?? [] as $group) {
+				if ($group['name'] === HOLOZTEK_MM_VMWARE_VM_GROUP) {
+					$in_vmware_vm_group = true;
+					break;
 				}
 			}
-			else {
-				$host_cidr = $host_ip !== null ? holoztek_mm_ipv4_cidr($host_ip, $prefix_length) : null;
-				$group_node = $this->addNetworkNode($upstream_node, $host_cidr);
+
+			if (!$is_vmware_hv && $in_vmware_vm_group) {
+				$vmware_vm_hostids[] = $hostid;
+				continue;
 			}
 
-			$this->addEdge($upstream_node, $group_node);
+			$upstream_node = $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
+			$group_node = $this->placeHost(
+				$upstream_node, $host, (string) $hostid, $comm_methods, $prefix_length,
+				$vmware_dc_by_hostid, $vmware_cl_by_hostid
+			);
 
-			$interfaces = $host['interfaces'] ?? [];
+			$host_node = $this->addHostNode((string) $hostid, $host, $comm_methods);
+			$this->addEdge($group_node, $host_node);
 
-			$host_node = holoztek_mm_node_id_host((string) $hostid);
-			$this->addNode($host_node, (string) $host['name'], HOLOZTEK_MM_NODE_HOST, [
-				'device_type'        => holoztek_mm_detect_device_type($host),
-				'comm_methods'       => $comm_methods,
-				'host_status'        => (int) $host['status'],
-				'maintenance_status' => (int) ($host['maintenance_status'] ?? 0),
-				'has_interface'      => $interfaces !== [],
-				'is_local'           => holoztek_mm_host_is_local($interfaces),
-				'availability'       => holoztek_mm_host_availability($interfaces),
-				'route'              => $this->resolveRoute($host)
-			]);
+			if ($is_vmware_hv) {
+				$hv_node_by_name[$host['name']] = $host_node;
+			}
+		}
+
+		// A VM host's only current link to its parent ESXi is the host group the
+		// official "VMware" template's vmware.vm.discovery rule auto-assigns to
+		// it, named identically to the ESXi's own Zabbix host name (see
+		// includes/helpers.php's HOLOZTEK_MM_VMWARE_VM_GROUP). If that ESXi isn't
+		// in this widget's own host selection, the VM falls back to plain Network
+		// placement instead of being silently dropped.
+		foreach ($vmware_vm_hostids as $hostid) {
+			$host = $hosts[$hostid];
+			$comm_methods = $comm_methods_by_host[$hostid] ?? [];
+
+			$hv_node = null;
+			foreach ($host['groups'] ?? [] as $group) {
+				if (isset($hv_node_by_name[$group['name']])) {
+					$hv_node = $hv_node_by_name[$group['name']];
+					break;
+				}
+			}
+
+			if ($hv_node !== null) {
+				$group_node = $hv_node;
+			}
+			else {
+				$upstream_node = $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
+				$host_ip = holoztek_mm_host_primary_ip($host['interfaces'] ?? []);
+				$host_cidr = $host_ip !== null ? holoztek_mm_ipv4_cidr($host_ip, $prefix_length) : null;
+				$group_node = $this->addNetworkNode($upstream_node, $host_cidr);
+				$this->addEdge($upstream_node, $group_node);
+			}
+
+			$host_node = $this->addHostNode((string) $hostid, $host, $comm_methods);
 			$this->addEdge($group_node, $host_node);
 		}
 
@@ -295,6 +355,91 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$this->addNode($id, holoztek_mm_cluster_label($method), HOLOZTEK_MM_NODE_CLUSTER);
 
 		return $id;
+	}
+
+	// Placed as Datacenter -> [Cluster ->] Hypervisor-host, matching vCenter's
+	// own inventory hierarchy (a standalone/non-clustered Hypervisor has no
+	// Cluster level to pass through). Datacenter/Cluster names come from
+	// vmware.hv.datacenter.name/vmware.hv.cluster.name, two items only the
+	// Hypervisor host itself carries - see doAction(). Wires every edge along
+	// this path itself, since the shape (one vs. two intermediate nodes)
+	// varies per host.
+	private function addVmwareHierarchy(
+		string $upstream, string $hostid, array $dc_by_hostid, array $cl_by_hostid
+	): string {
+		$dc_name = trim((string) ($dc_by_hostid[$hostid] ?? ''));
+		$dc_label = $dc_name !== '' ? $dc_name : _holoztek_mm('Unknown datacenter');
+		$dc_node = holoztek_mm_node_id_datacenter($upstream, $dc_label);
+		$this->addNode($dc_node, $dc_label, HOLOZTEK_MM_NODE_DATACENTER);
+		$this->addEdge($upstream, $dc_node);
+
+		$cl_name = trim((string) ($cl_by_hostid[$hostid] ?? ''));
+		if ($cl_name === '') {
+			return $dc_node;
+		}
+
+		$cl_node = holoztek_mm_node_id_vmware_cluster($dc_node, $cl_name);
+		$this->addNode($cl_node, $cl_name, HOLOZTEK_MM_NODE_CLUSTER);
+		$this->addEdge($dc_node, $cl_node);
+
+		return $cl_node;
+	}
+
+	// Returns the immediate parent (group) node id a host's own Host node
+	// should attach to, wiring every edge up to $upstream itself - the three
+	// branches (VMware Hypervisor / Kubernetes-style cluster / everything
+	// else) each have a differently-shaped path to $upstream, so unlike a
+	// plain Network node this can't be reduced to one addEdge() call shared
+	// by every caller.
+	private function placeHost(
+		string $upstream, array $host, string $hostid, array $comm_methods, int $prefix_length,
+		array $vmware_dc_by_hostid, array $vmware_cl_by_hostid
+	): string {
+		if (in_array(HOLOZTEK_MM_COMM_VMWARE, $comm_methods, true)) {
+			return $this->addVmwareHierarchy($upstream, $hostid, $vmware_dc_by_hostid, $vmware_cl_by_hostid);
+		}
+
+		$host_ip = holoztek_mm_host_primary_ip($host['interfaces'] ?? []);
+		$cluster_method = holoztek_mm_host_cluster_method($comm_methods);
+
+		// Kubernetes hosts always attach to their comm method's Cluster node,
+		// regardless of whether an IP is known - membership there comes from
+		// LLD, not addressing, so grouping by CIDR would be meaningless (and
+		// would scatter one cluster's hosts across several Network nodes as
+		// it scales). A known IP is kept on the Cluster node as extra info
+		// instead - see applyClusterMemberIps().
+		if ($cluster_method !== null) {
+			$group_node = $this->addClusterNode($upstream, $cluster_method);
+			if ($host_ip !== null) {
+				$this->cluster_member_ips[$group_node][$host_ip] = true;
+			}
+		}
+		else {
+			$host_cidr = $host_ip !== null ? holoztek_mm_ipv4_cidr($host_ip, $prefix_length) : null;
+			$group_node = $this->addNetworkNode($upstream, $host_cidr);
+		}
+
+		$this->addEdge($upstream, $group_node);
+
+		return $group_node;
+	}
+
+	private function addHostNode(string $hostid, array $host, array $comm_methods): string {
+		$interfaces = $host['interfaces'] ?? [];
+
+		$host_node = holoztek_mm_node_id_host($hostid);
+		$this->addNode($host_node, (string) $host['name'], HOLOZTEK_MM_NODE_HOST, [
+			'device_type'        => holoztek_mm_detect_device_type($host),
+			'comm_methods'       => $comm_methods,
+			'host_status'        => (int) $host['status'],
+			'maintenance_status' => (int) ($host['maintenance_status'] ?? 0),
+			'has_interface'      => $interfaces !== [],
+			'is_local'           => holoztek_mm_host_is_local($interfaces),
+			'availability'       => holoztek_mm_host_availability($interfaces),
+			'route'              => $this->resolveRoute($host)
+		]);
+
+		return $host_node;
 	}
 
 	private function addEdge(string $source, string $target): void {

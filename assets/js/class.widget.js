@@ -39,6 +39,12 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		// and the Server/Proxy/Proxy Group red badges, since a Cluster node is
 		// neither an IP waypoint nor a piece of Zabbix's own infrastructure.
 		cluster: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PGNpcmNsZSBjeD0nMTAnIGN5PSc1LjUnIHI9JzMuNCcgZmlsbD0nI2NkZDZkYicgc3Ryb2tlPScjMzM0JyBzdHJva2Utd2lkdGg9JzEuMicvPjxjaXJjbGUgY3g9JzUnIGN5PScxNCcgcj0nMy40JyBmaWxsPScjY2RkNmRiJyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4yJy8+PGNpcmNsZSBjeD0nMTUnIGN5PScxNCcgcj0nMy40JyBmaWxsPScjY2RkNmRiJyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4yJy8+PGxpbmUgeDE9JzEwJyB5MT0nOC41JyB4Mj0nNi4yJyB5Mj0nMTEuNCcgc3Ryb2tlPScjMzM0JyBzdHJva2Utd2lkdGg9JzEuMScvPjxsaW5lIHgxPScxMCcgeTE9JzguNScgeDI9JzEzLjgnIHkyPScxMS40JyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4xJy8+PGxpbmUgeDE9JzguMicgeTE9JzE0JyB4Mj0nMTEuOCcgeTI9JzE0JyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4xJy8+PC9zdmc+",
+		// Datacenter/vCenter node (VMware structured monitoring - see
+		// WidgetView::addVmwareHierarchy() server-side): a small building glyph,
+		// distinct from the Cluster node's three-connected-nodes icon above -
+		// a Datacenter is a physical/vCenter-inventory grouping, not itself a
+		// set of connected hosts.
+		datacenter: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHJlY3QgeD0nNCcgeT0nMicgd2lkdGg9JzEyJyBoZWlnaHQ9JzE2JyByeD0nMScgZmlsbD0nI2NkZDZkYicgc3Ryb2tlPScjMzM0JyBzdHJva2Utd2lkdGg9JzEuNCcvPjxyZWN0IHg9JzYuNScgeT0nNC41JyB3aWR0aD0nMicgaGVpZ2h0PScyJyBmaWxsPScjMzM0Jy8+PHJlY3QgeD0nMTEuNScgeT0nNC41JyB3aWR0aD0nMicgaGVpZ2h0PScyJyBmaWxsPScjMzM0Jy8+PHJlY3QgeD0nNi41JyB5PSc4LjUnIHdpZHRoPScyJyBoZWlnaHQ9JzInIGZpbGw9JyMzMzQnLz48cmVjdCB4PScxMS41JyB5PSc4LjUnIHdpZHRoPScyJyBoZWlnaHQ9JzInIGZpbGw9JyMzMzQnLz48cmVjdCB4PSc2LjUnIHk9JzEyLjUnIHdpZHRoPScyJyBoZWlnaHQ9JzInIGZpbGw9JyMzMzQnLz48cmVjdCB4PScxMS41JyB5PScxMi41JyB3aWR0aD0nMicgaGVpZ2h0PScyJyBmaWxsPScjMzM0Jy8+PHJlY3QgeD0nOC41JyB5PScxNS41JyB3aWR0aD0nMycgaGVpZ2h0PScyLjUnIGZpbGw9JyM4ODknLz48L3N2Zz4=",
 	};
 
 	// Communication-method badges: rendered as small colored/lettered circles
@@ -61,6 +67,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		proxy:       'Zabbix Proxy',
 		network:     'Network',
 		cluster:     'Cluster',
+		datacenter:  'Datacenter',
 		host:        'Host',
 	};
 

@@ -24,6 +24,7 @@ class Widget extends CWidget {
                 'Zabbix Proxy'          => _holoztek_mm('Zabbix Proxy'),
                 'Network'               => _holoztek_mm('Network'),
                 'Cluster'               => _holoztek_mm('Cluster'),
+                'Datacenter'            => _holoztek_mm('Datacenter'),
                 'Host'                  => _holoztek_mm('Host'),
                 'Severity'              => _holoztek_mm('Severity'),
                 'Status'                => _holoztek_mm('Status'),
