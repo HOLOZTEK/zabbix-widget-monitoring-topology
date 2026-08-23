@@ -66,7 +66,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'selectInterfaces'      => ['type', 'ip', 'dns', 'useip', 'main', 'available'],
 			'selectInventory'       => ['type', 'os'],
 			'selectParentTemplates' => ['name'],
-			'selectGroups'          => ['name'],
+			'selectHostGroups'      => ['name'],
 			'preservekeys'          => true
 		]);
 
@@ -189,7 +189,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$is_vmware_hv = in_array(HOLOZTEK_MM_COMM_VMWARE, $comm_methods, true);
 
 			$in_vmware_vm_group = false;
-			foreach ($host['groups'] ?? [] as $group) {
+			foreach ($host['hostgroups'] ?? [] as $group) {
 				if ($group['name'] === HOLOZTEK_MM_VMWARE_VM_GROUP) {
 					$in_vmware_vm_group = true;
 					break;
@@ -226,7 +226,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$comm_methods = $comm_methods_by_host[$hostid] ?? [];
 
 			$hv_node = null;
-			foreach ($host['groups'] ?? [] as $group) {
+			foreach ($host['hostgroups'] ?? [] as $group) {
 				if (isset($hv_node_by_name[$group['name']])) {
 					$hv_node = $hv_node_by_name[$group['name']];
 					break;
