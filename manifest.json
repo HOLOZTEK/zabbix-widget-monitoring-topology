@@ -5,6 +5,8 @@
     "name": "Monitoring Topology",
     "namespace": "HoloztekMonitoringMap",
     "author": "HOLOZTEK",
+    "description": "Visualizes Zabbix monitoring paths as an interactive topology graph.",
+    "url": "https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology",
     "version": "1.0.6",
     "widget": {
         "size": {"width": 12, "height": 8},

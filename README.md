@@ -1,95 +1,152 @@
-# Monitoring Topology Widget for Zabbix
+# zabbix-widget-monitoring-topology
 
-Zabbixの監視経路（ZabbixServer / Proxy / Network / Host のつながり）をトポロジー図として可視化するウィジェットです。Vis Network（Canvas2D）を使用します。
+English | [日本語](README.ja.md)
 
-`zabbix-widget-topologymap-visnetwork` をベースに、ホストグループ⇔ホストの2階層グラフから、監視経路（Server-Network-Proxy-Network-Host）を表現する4階層グラフへ拡張した独立ウィジェットです。
+## Overview
 
-## 機能
+Monitoring Topology is a Zabbix dashboard widget that visualizes the monitoring path from Zabbix Server through proxy, network, virtualization, cluster, and host layers as an interactive topology graph.
 
-- ZabbixServer / Proxy / ネットワーク（サブネット） / ホストをノードとしてグラフ表示
-- ホストのインターフェースIPからネットワーク（サブネット）ノードを自動算出（マスク長は設定可能）
-- ホストの種類に応じたアイコン表示（Linux / Windows / ネットワーク機器 / 仮想 / サーバー）
-- 通信方式（Ping / SNMP / Agent / IPMI / VMware / ODBC / JMX）をホストノードに併記
-- Tree Navigatorウィジェットと連動（ホスト/ホストグループ選択のブロードキャストを受信し、対象範囲を絞り込み表示）
-- オブジェクト表示 / アイコン表示の切り替え
-- 物理シミュレーションによる自動レイアウト・ノードのドラッグ調整
-- ホストノードクリックでホスト詳細画面へ遷移
-- ノードホバーでツールチップ表示
+It receives host or host-group selections from another dashboard widget, such as [Tree Navigator](https://github.com/HOLOZTEK/zabbix-widget-tree-navigator), and redraws the topology for the selected scope. Vis Network renders the graph in Canvas2D; WebGL is not required.
 
-## 動作要件
+[Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.0.6) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology_1.0.6_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.tar.gz)
 
-- Zabbix 7.0 以上
-- Canvas2D 対応ブラウザ（WebGL 不要）
+## Why Monitoring Topology?
 
-## インストール
+Zabbix dashboards usually show host status, but the monitoring route behind each host can be difficult to understand at a glance. Monitoring Topology exposes that route and groups infrastructure by the relationships detected from Zabbix configuration and item data.
 
-### RPM パッケージ（推奨）
+Use it when operators need to see which server or proxy monitors a host, how hosts map to subnets, or how VMware and Kubernetes resources relate to their parent infrastructure.
 
-```bash
-rpm -ivh zabbix-widget-monitoring-topology-<version>.noarch.rpm
-systemctl reload httpd php-fpm
+## Features
+
+| Function | What it does |
+| --- | --- |
+| Monitoring-path graph | Shows Zabbix Server, Proxy Group, Proxy, Network, Cluster, Datacenter, Host, and VM nodes with connecting edges. |
+| Network derivation | Calculates network nodes from host and proxy interface addresses using a configurable IPv4 prefix length. |
+| VMware hierarchy | Builds Datacenter / Cluster / ESXi / VM branches from official VMware template discovery and item data. |
+| Kubernetes grouping | Detects official Kubernetes template item keys and separates multiple clusters under the same monitoring path. |
+| Proxmox handling | Uses the Proxmox endpoint macro to label or derive a network when the monitored host has no Zabbix interface. |
+| Device and method indicators | Uses host-type icons and badges for Ping, SNMP, Agent, IPMI, VMware, ODBC, JMX, Kubernetes, and other methods. |
+| Operational status | Marks non-responding proxies and applies problem-severity colors to host nodes only. |
+| Interactive graph | Supports physics-based layout, node dragging, hover tooltips, and host-detail navigation. |
+| Display filters | Filters by problem acknowledgement, host state, host configuration, interface, monitoring route, and monitoring method. |
+| Widget integration | Receives host and host-group dynamic parameters from Tree Navigator or another compatible widget. |
+| Theme controls | Configures node font, edge appearance, server label, subnet prefix, and filter-button position. |
+
+## Topology Model
+
+Typical paths include:
+
+```text
+Zabbix Server -> Network -> Host
+Zabbix Server -> Proxy Group -> Proxy -> Network -> Host
+Zabbix Server/Proxy -> Network -> VMware connection host -> Datacenter -> Cluster -> ESXi -> VM
+Zabbix Server/Proxy -> Kubernetes Cluster -> Kubernetes hosts
 ```
 
-### 手動インストール
+The exact structure depends on available interfaces, proxy assignments, discovery relationships, macros, and monitoring items. Only host nodes aggregate problem severity; infrastructure grouping nodes do not imply an aggregated health state.
+
+## Settings
+
+| Setting | Description |
+| --- | --- |
+| Host / Host group | Receive-only connectors used to link another dashboard widget. |
+| Subnet prefix length | IPv4 prefix used to derive network nodes; default is 24. |
+| Zabbix Server label | Label displayed for the root server node. |
+| Font size | Node-label size from 8 to 24 pixels. |
+| Style | Normal, bold, or italic node labels. |
+| Font color | Explicit node-label color; empty uses automatic light/dark theme detection. |
+| Edge color | Color of graph edges. |
+| Edge width | Edge width from 1 to 8 pixels. |
+| Filter icon position | Top-left, top-right, bottom-left, or bottom-right. |
+
+## Dashboard Integration
+
+This widget is receive-only and intentionally shows an empty state until a host or host group is received.
+
+1. Add Tree Navigator or another widget that broadcasts `_hostid` or `_hostgroupid`.
+2. Add Monitoring Topology to the same dashboard page.
+3. In Monitoring Topology settings, connect Host and/or Host group to the source widget.
+4. Select a host to show its route, or a host group to show routes for hosts in that group.
+
+## Requirements
+
+- Zabbix 7.0 or later
+- PHP 8.3 or later for packaged installation
+- Browser with Canvas2D support
+
+## Installation
+
+### Install from RPM
 
 ```bash
-cp -r zabbix-widget-monitoring-topology /usr/share/zabbix/modules/holoztek_monitoringmap
-systemctl reload httpd php-fpm
+rpm -Uvh zabbix-widget-monitoring-topology-1.0.6.noarch.rpm
 ```
 
-Zabbix 管理画面 → 管理 → モジュール からウィジェットを有効化してください。
+### Install from DEB
 
-## 使い方
+```bash
+apt install ./zabbix-widget-monitoring-topology_1.0.6_all.deb
+```
 
-このウィジェットは単独では何も表示しません。同一ダッシュボードに Tree Navigator 等のホスト/ホストグループを送信するウィジェットを配置し、ブロードキャスト連携を設定してください。
+The packages install the runtime files into the active Zabbix frontend module directory. Then scan and enable the module from Administration -> Modules and add the widget to a dashboard.
 
-- ホストを選択した場合: ZabbixServerからそのホストまでの経路を表示します。
-- ホストグループを選択した場合: グループに属する全ホストの経路を表示します。
+### Install from Source
 
-## 旧ID（monitoringmap）からのアップグレード手順
+RPM or DEB installation is recommended. For a source installation:
 
-v1.0.1 で、Zabbix モジュールの内部識別子（`manifest.json` の `id`）が
-`monitoringmap` から `holoztek_monitoringmap` へ変更されました。この変更は
-他ベンダーのモジュールとの名前衝突を避けるためのもので、v1.0.0 以前から
-アップグレードする場合は以下の手順が必要です。
+```bash
+curl -L -o zabbix-widget-monitoring-topology-1.0.6.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.tar.gz
+tar -xzf zabbix-widget-monitoring-topology-1.0.6.tar.gz
+install -d /usr/share/zabbix/ui/modules/holoztek_monitoringmap
+cd zabbix-widget-monitoring-topology-1.0.6
+cp -a manifest.json Module.php Widget.php actions assets includes locale views /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
+```
 
-1. **パッケージの更新**（RPM/DEB を新バージョンで上書きインストール、または
-   ファイルを直接配置）。モジュール配置ディレクトリ名も `monitoringmap` から
-   `holoztek_monitoringmap` へ変更されています（他ベンダーのモジュールとの
-   ファイルシステム上の衝突を避けるため）。RPM/DEB パッケージはインストール
-   時に旧ディレクトリの中身が本パッケージ由来であることを確認した上で自動的
-   に移行・削除します。手動インストールの場合は
-   `/usr/share/zabbix/modules/monitoringmap` を新しい
-   `holoztek_monitoringmap` ディレクトリへ手動で移行してください。
-2. **モジュールの再スキャンと再有効化**: Zabbix 管理画面 → 管理 → モジュール
-   で「今すぐスキャン」を実行し、新しい ID（`holoztek_monitoringmap`）の
-   モジュールを検出させたうえで有効化します。旧 ID（`monitoringmap`）の
-   モジュールが一覧に残っている場合は無効化（または削除）してください。
-3. **既存ダッシュボードのウィジェット type を更新**: 旧 ID で配置済みの
-   ウィジェットは、Zabbix API で `type` フィールドのみを書き換えることで
-   移行できます。`widgetid` ・設定フィールド（`fields`）・`reference` は
-   変更不要です。
-   ```php
-   // 例: dashboard.get で対象ダッシュボードを取得後、
-   // type が 'monitoringmap' のウィジェットのみ書き換えて dashboard.update
-   foreach ($dashboard['pages'] as &$page) {
-       foreach ($page['widgets'] as &$widget) {
-           if ($widget['type'] === 'monitoringmap') {
-               $widget['type'] = 'holoztek_monitoringmap';
-           }
-       }
-   }
-   ```
-   同様のロジックを `dashboard.update` の呼び出し前に適用してください。
-4. **テンプレートダッシュボードも移行対象に含める**: 通常のダッシュボードに
-   加え、ホストテンプレートに含まれるテンプレートダッシュボード
-   （`templatedashboard.get` / `templatedashboard.update`）にも同じ手順を
-   適用してください。テンプレート側の移行漏れがあると、そのテンプレートを
-   使うホストの表示のみ旧 ID のまま残ってしまいます。
+Use `/usr/share/zabbix/modules/holoztek_monitoringmap` if the installation uses the legacy frontend module path. Set readable ownership and permissions, scan modules, and enable Monitoring Topology.
+
+## Upgrading from the Old Module ID
+
+Version 1.0.1 changed the module ID from `monitoringmap` to `holoztek_monitoringmap` to avoid vendor collisions. The package name remains `zabbix-widget-monitoring-topology`.
+
+1. Install the current package or source files and rescan modules.
+2. Enable `holoztek_monitoringmap` and disable the old `monitoringmap` entry if it remains.
+3. Back up or export the dashboard.
+4. Retrieve the complete dashboard, including all pages and widgets, with `dashboard.get`.
+5. Change only widget entries whose `type` is `monitoringmap` to `holoztek_monitoringmap`; preserve `widgetid`, `fields`, and `reference`.
+6. Call `dashboard.update` with the complete `pages` structure. Apply the same migration to template dashboards when applicable.
+
+```php
+foreach ($dashboard['pages'] as &$page) {
+    foreach ($page['widgets'] as &$widget) {
+        if ($widget['type'] === 'monitoringmap') {
+            $widget['type'] = 'holoztek_monitoringmap';
+        }
+    }
+}
+```
+
+Package scripts remove the old module directory only when its manifest can be safely identified as this HOLOZTEK widget. Ambiguous directories are left in place for manual inspection.
+
+## Documentation
+
+- [CHANGELOG](docs/CHANGELOG.md)
+- [CONTRIBUTING](docs/CONTRIBUTING.md)
+- [SECURITY](docs/SECURITY.md)
+- [Screenshot Guide](docs/screenshot-guide.md)
+- [LICENSE](LICENSE)
+
+## Repository Layout
+
+Runtime module files remain in the repository root and under `actions/`, `assets/`, `includes/`, `locale/`, and `views/`. Packaging is under `packaging/rpm/` and `debian/`; publication and maintenance documents are under `docs/`.
+
+## Bundled Dependency
+
+`assets/js/vis-network.min.js` is Vis Network 10.1.0, distributed under the MIT or Apache-2.0 license as stated in its source header.
+
+## Maintainer
+
+Developed and maintained by [HOLOZTEK](https://github.com/HOLOZTEK).
 
 ## License
 
-This project is licensed under the MIT License.
-
-Copyright (c) 2026 ttake-55
-HOLOZTEK by ttake-55
+This project is licensed under the MIT License. See [LICENSE](LICENSE).

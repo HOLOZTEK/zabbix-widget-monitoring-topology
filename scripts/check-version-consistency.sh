@@ -9,7 +9,7 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 MANIFEST_VERSION=$(grep -Eo '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "${ROOT}/manifest.json" \
     | sed -E 's/.*:[[:space:]]*"([^"]*)"/\1/')
 
-SPEC_VERSION=$(grep -Em1 '^Version:' "${ROOT}/"*.spec \
+SPEC_VERSION=$(grep -Em1 '^Version:' "${ROOT}/packaging/rpm/"*.spec \
     | sed -E 's/^([^:]*:)?Version:[[:space:]]*//')
 
 CHANGELOG_VERSION=$(grep -Em1 '^[a-zA-Z0-9.-]+ \(' "${ROOT}/debian/changelog" \

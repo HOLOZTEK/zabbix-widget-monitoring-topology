@@ -1,9 +1,9 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: zabbix-widget-monitoring-topology
-Source: http://172.16.4.190:3000/zabbix-widgets/zabbix-widget-monitoring-topology
+Source: https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology
 
 Files: *
-Copyright: 2026 ttake-55 (HOLOZTEK)
+Copyright: 2026 ttake-55
 License: MIT
 
 License: MIT

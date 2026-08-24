@@ -1,7 +1,7 @@
 Source: zabbix-widget-monitoring-topology
 Section: web
 Priority: optional
-Maintainer: claude <noreply@example.com>
+Maintainer: HOLOZTEK <ttake-55@users.noreply.github.com>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.2
 

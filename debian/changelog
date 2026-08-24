@@ -10,7 +10,7 @@ zabbix-widget-monitoring-topology (1.0.6) unstable; urgency=medium
     識別子としてノードIDに組み込み、クラスタごとに別ノードとして表示する
     よう変更。ノードラベルも集約ホスト名を優先表示。
 
- -- claude <noreply@example.com>  Mon, 24 Aug 2026 14:00:00 +0000
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Mon, 24 Aug 2026 14:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.5) unstable; urgency=medium
 
@@ -25,7 +25,7 @@ zabbix-widget-monitoring-topology (1.0.5) unstable; urgency=medium
     マクロ({$PVE.URL.HOST})の値をIP/ラベルとして流用し「不明な
     ネットワーク」表示を解消。
 
- -- claude <noreply@example.com>  Mon, 24 Aug 2026 12:00:00 +0000
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Mon, 24 Aug 2026 12:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.4) unstable; urgency=medium
 
@@ -42,7 +42,7 @@ zabbix-widget-monitoring-topology (1.0.4) unstable; urgency=medium
     グループ名とESXi自身のホスト名の一致でVM→ESXiの親子関係を判定。170の
     実データで動作検証済み。
 
- -- claude <noreply@example.com>  Sat, 22 Aug 2026 12:00:00 +0000
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Sat, 22 Aug 2026 12:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.3) unstable; urgency=medium
 
@@ -53,7 +53,7 @@ zabbix-widget-monitoring-topology (1.0.3) unstable; urgency=medium
     Descriptionを旧名称"Monitoring Map widget"から"Monitoring Topology
     widget"へ修正。
 
- -- claude <noreply@example.com>  Tue, 11 Aug 2026 12:00:00 +0000
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Tue, 11 Aug 2026 12:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.2) unstable; urgency=medium
 
@@ -62,7 +62,7 @@ zabbix-widget-monitoring-topology (1.0.2) unstable; urgency=medium
     リポジトリ名との整合性を確保）。gettextのmsgid/msgstr（ja_JP/en_US）
     も追随して更新。機能・内部ID・モジュールディレクトリ名の変更なし。
 
- -- claude <noreply@example.com>  Tue, 11 Aug 2026 11:00:00 +0000
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Tue, 11 Aug 2026 11:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.1) unstable; urgency=medium
 
@@ -83,7 +83,7 @@ zabbix-widget-monitoring-topology (1.0.1) unstable; urgency=medium
     実装（tree-navigator v1.4.10・radar-chart v1.0.3で判明した「author欄
     空欄を削除根拠にしない」教訓を最初から反映）。
 
- -- claude <noreply@example.com>  Tue, 11 Aug 2026 10:00:00 +0000
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Tue, 11 Aug 2026 10:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.0) unstable; urgency=medium
 
@@ -92,4 +92,4 @@ zabbix-widget-monitoring-topology (1.0.0) unstable; urgency=medium
     パッケージ名をzabbix-widget-monitoringmapからzabbix-widget-monitoring-topology
     に変更（ウィジェット内部ID・モジュールディレクトリ名は変更なし）。
 
- -- claude <noreply@example.com>  Mon, 10 Aug 2026 09:00:00 +0000
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Mon, 10 Aug 2026 09:00:00 +0000
