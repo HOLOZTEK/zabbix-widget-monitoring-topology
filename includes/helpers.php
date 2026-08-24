@@ -271,6 +271,32 @@ function holoztek_mm_host_primary_ip(array $interfaces): ?string {
 	return null;
 }
 
+// Macro names the official "... by HTTP"-style connection templates use to
+// hold the address a check actually connects to. A host running one of these
+// (e.g. "Proxmox VE by HTTP", whose own checks are Script/HTTP-agent items -
+// see holoztek_mm_item_comm_method()) has no Zabbix interface of its own, so
+// holoztek_mm_host_primary_ip() always returns null for it and it would
+// otherwise land on a plain "Unknown network" node instead of its real
+// subnet. Add further macro names here as more agent-less connection
+// templates come up.
+const HOLOZTEK_MM_CONNECTION_HOST_MACROS = ['{$PVE.URL.HOST}'];
+
+// $macros is a host's selectMacros() output. Returns the first configured
+// value among HOLOZTEK_MM_CONNECTION_HOST_MACROS, or null if the host has
+// none of them set - see WidgetView::placeHost().
+function holoztek_mm_host_connection_macro_value(array $macros): ?string {
+	$by_name = array_column($macros, 'value', 'macro');
+
+	foreach (HOLOZTEK_MM_CONNECTION_HOST_MACROS as $macro_name) {
+		$value = trim((string) ($by_name[$macro_name] ?? ''));
+		if ($value !== '') {
+			return $value;
+		}
+	}
+
+	return null;
+}
+
 // Returns the "network.network/prefix" CIDR string an IPv4 address belongs
 // to, or null if $ip isn't a valid IPv4 address.
 function holoztek_mm_ipv4_cidr(string $ip, int $prefix_length): ?string {

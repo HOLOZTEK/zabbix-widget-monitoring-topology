@@ -67,6 +67,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'selectInventory'       => ['type', 'os'],
 			'selectParentTemplates' => ['name'],
 			'selectHostGroups'      => ['name'],
+			'selectMacros'          => ['macro', 'value'],
 			'preservekeys'          => true
 		]);
 
@@ -86,15 +87,51 @@ class WidgetView extends CControllerDashboardWidgetView {
 		]);
 		$comm_methods_by_host = holoztek_mm_comm_methods_by_host($items);
 
-		// A VMware Hypervisor host's own Datacenter/Cluster placement comes from
-		// two of its own items (populated by the official "VMware" template's
-		// vmware.hv.discovery-created Hypervisor hosts), not from LLD structure -
-		// see addVmwareHierarchy(). Scoped to just the Hypervisor hostids so this
-		// stays cheap even on a large host selection.
+		// Any host running the official "VMware" template's connection-check items
+		// (vmware.fullname/vmware.version/vmware.eventlog/vmware.health.*/
+		// vmware.alarms.*, all plain "vmware."-prefixed) is scoped here first,
+		// but that includes the master/connection host itself (the one holding
+		// {$VMWARE.URL}/vmware.hv.discovery) - it has no datacenter/cluster
+		// identity of its own. Only a host that ALSO owns at least one
+		// "vmware.hv."-prefixed item is an actual discovered Hypervisor host (see
+		// addVmwareHierarchy()); $vmware_hypervisor_hostids narrows down to those.
+		// Scoped to just this candidate set so it stays cheap even on a large
+		// host selection.
 		$vmware_hv_hostids = array_keys(array_filter(
 			$comm_methods_by_host,
 			static fn(array $methods): bool => in_array(HOLOZTEK_MM_COMM_VMWARE, $methods, true)
 		));
+
+		$vmware_hv_marker_items = $vmware_hv_hostids
+			? API::Item()->get([
+				'output'      => ['hostid'],
+				'hostids'     => $vmware_hv_hostids,
+				'search'      => ['key_' => 'vmware.hv.'],
+				'startSearch' => true
+			])
+			: [];
+		$vmware_hypervisor_hostids = array_flip(array_unique(array_column($vmware_hv_marker_items, 'hostid')));
+
+		// An LLD-discovered Hypervisor host's discoveryRule always belongs to
+		// the master/connection host that discovered it (host.get's
+		// selectDiscoveryRule returns that item's own hostid, not the
+		// Hypervisor's) - this is the only link back from a Hypervisor to its
+		// master, used below to nest the Datacenter/Cluster chain under the
+		// master host's own node instead of a generic Network node.
+		$vmware_master_hostid_by_hv_hostid = [];
+		if ($vmware_hypervisor_hostids) {
+			$vmware_hv_hosts_with_rule = API::Host()->get([
+				'output'              => ['hostid'],
+				'hostids'             => array_keys($vmware_hypervisor_hostids),
+				'selectDiscoveryRule' => ['hostid']
+			]);
+			foreach ($vmware_hv_hosts_with_rule as $hv_host) {
+				$master_hostid = $hv_host['discoveryRule']['hostid'] ?? null;
+				if ($master_hostid !== null) {
+					$vmware_master_hostid_by_hv_hostid[$hv_host['hostid']] = $master_hostid;
+				}
+			}
+		}
 
 		$vmware_dc_items = $vmware_hv_hostids
 			? API::Item()->get([
@@ -178,15 +215,18 @@ class WidgetView extends CControllerDashboardWidgetView {
 		}
 
 		// Host nodes whose placement depends on another Host node placed earlier
-		// in this same pass (a VM's parent ESXi) can't be resolved inline, so VM
-		// hosts are collected here and placed in a second pass below, once every
-		// Hypervisor host's own node id is known.
+		// in this same pass (a VM's parent ESXi, or a Hypervisor's own
+		// master/connection host) can't be resolved inline, so both are
+		// collected here and placed in later passes below, once every node
+		// they depend on has its own node id known.
 		$hv_node_by_name = [];
+		$host_node_by_hostid = [];
 		$vmware_vm_hostids = [];
+		$vmware_hv_hostids_pending = [];
 
 		foreach ($hosts as $hostid => $host) {
 			$comm_methods = $comm_methods_by_host[$hostid] ?? [];
-			$is_vmware_hv = in_array(HOLOZTEK_MM_COMM_VMWARE, $comm_methods, true);
+			$is_vmware_hv = isset($vmware_hypervisor_hostids[$hostid]);
 
 			$in_vmware_vm_group = false;
 			foreach ($host['hostgroups'] ?? [] as $group) {
@@ -201,18 +241,49 @@ class WidgetView extends CControllerDashboardWidgetView {
 				continue;
 			}
 
+			if ($is_vmware_hv) {
+				$vmware_hv_hostids_pending[] = $hostid;
+				continue;
+			}
+
 			$upstream_node = $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
 			$group_node = $this->placeHost(
 				$upstream_node, $host, (string) $hostid, $comm_methods, $prefix_length,
-				$vmware_dc_by_hostid, $vmware_cl_by_hostid
+				$vmware_dc_by_hostid, $vmware_cl_by_hostid, false
 			);
 
 			$host_node = $this->addHostNode((string) $hostid, $host, $comm_methods);
 			$this->addEdge($group_node, $host_node);
 
-			if ($is_vmware_hv) {
-				$hv_node_by_name[$host['name']] = $host_node;
-			}
+			$host_node_by_hostid[$hostid] = $host_node;
+		}
+
+		// A Hypervisor host's Datacenter/Cluster chain nests under its own
+		// master/connection host's Host node (Zabbix - Network - ESXi host -
+		// datacenter - cluster - host - VM), found via
+		// $vmware_master_hostid_by_hv_hostid above. If that master host isn't
+		// in this widget's own host selection, fall back to plain Network
+		// placement - same graceful-degradation pattern as the VM pass below.
+		foreach ($vmware_hv_hostids_pending as $hostid) {
+			$host = $hosts[$hostid];
+			$comm_methods = $comm_methods_by_host[$hostid] ?? [];
+
+			$master_hostid = $vmware_master_hostid_by_hv_hostid[$hostid] ?? null;
+			$master_node = $master_hostid !== null ? ($host_node_by_hostid[$master_hostid] ?? null) : null;
+
+			$upstream_node = $master_node
+				?? $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
+
+			$group_node = $this->placeHost(
+				$upstream_node, $host, (string) $hostid, $comm_methods, $prefix_length,
+				$vmware_dc_by_hostid, $vmware_cl_by_hostid, true
+			);
+
+			$host_node = $this->addHostNode((string) $hostid, $host, $comm_methods);
+			$this->addEdge($group_node, $host_node);
+
+			$host_node_by_hostid[$hostid] = $host_node;
+			$hv_node_by_name[$host['name']] = $host_node;
 		}
 
 		// A VM host's only current link to its parent ESXi is the host group the
@@ -393,13 +464,33 @@ class WidgetView extends CControllerDashboardWidgetView {
 	// by every caller.
 	private function placeHost(
 		string $upstream, array $host, string $hostid, array $comm_methods, int $prefix_length,
-		array $vmware_dc_by_hostid, array $vmware_cl_by_hostid
+		array $vmware_dc_by_hostid, array $vmware_cl_by_hostid, bool $is_vmware_hypervisor
 	): string {
-		if (in_array(HOLOZTEK_MM_COMM_VMWARE, $comm_methods, true)) {
+		if ($is_vmware_hypervisor) {
 			return $this->addVmwareHierarchy($upstream, $hostid, $vmware_dc_by_hostid, $vmware_cl_by_hostid);
 		}
 
 		$host_ip = holoztek_mm_host_primary_ip($host['interfaces'] ?? []);
+
+		// A host with no interface of its own (e.g. Proxmox VE by HTTP, which
+		// connects via a Script/HTTP-agent item, not a Zabbix interface) has
+		// no IP for the usual Network-node placement. Its connection macro
+		// (see HOLOZTEK_MM_CONNECTION_HOST_MACROS) is the only address it
+		// carries - use it as the IP if it parses as one, or fall back to
+		// showing it as-is instead of a plain "Unknown network" label.
+		$connection_macro_label = null;
+		if ($host_ip === null) {
+			$connection_macro = holoztek_mm_host_connection_macro_value($host['macros'] ?? []);
+			if ($connection_macro !== null) {
+				if (filter_var($connection_macro, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+					$host_ip = $connection_macro;
+				}
+				else {
+					$connection_macro_label = $connection_macro;
+				}
+			}
+		}
+
 		$cluster_method = holoztek_mm_host_cluster_method($comm_methods);
 
 		// Kubernetes hosts always attach to their comm method's Cluster node,
@@ -415,7 +506,9 @@ class WidgetView extends CControllerDashboardWidgetView {
 			}
 		}
 		else {
-			$host_cidr = $host_ip !== null ? holoztek_mm_ipv4_cidr($host_ip, $prefix_length) : null;
+			$host_cidr = $host_ip !== null
+				? holoztek_mm_ipv4_cidr($host_ip, $prefix_length)
+				: $connection_macro_label;
 			$group_node = $this->addNetworkNode($upstream, $host_cidr);
 		}
 

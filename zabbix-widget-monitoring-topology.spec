@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.0.4
+Version:        1.0.5
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,6 +121,26 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Mon Aug 24 2026 claude <noreply> - 1.0.5-0
+- CHost::get()の非推奨パラメータselectGroupsをselectHostGroupsに修正
+  （170のダッシュボード表示時に出ていたE_USER_WARNINGを解消）
+- VMware階層の不具合を修正（issue #5）: 公式VMwareテンプレートの接続用ホスト
+  （{$VMWARE.URL}等のマクロとvmware.hv.discovery等のLLDルールを持つホスト）
+  が、Hypervisor固有アイテム(vmware.hv.*)を持つ発見済みHypervisorホストと
+  同じ「vmware.」プレフィックスを共有していたため誤ってHypervisorとして
+  分類され「不明なデータセンター」ノードとして切り離されて表示される不具合
+  を修正。vmware.hv.*アイテムの有無で両者を正しく区別した上で、Hypervisor
+  ホストのDatacenter/Clusterチェーンを、host.get()のselectDiscoveryRuleで
+  判明する接続用ホスト自身のノード配下にネストするよう変更（Zabbix -
+  Network - ESXiホスト - datacenter - cluster - host - vm）。接続用ホストが
+  ウィジェットの選択範囲外の場合は従来通りNetworkノードへフォールバック
+- Proxmox VE監視ホストのネットワークノード表示を改善: 公式テンプレート
+  「Proxmox VE by HTTP」はZabbixインターフェースを持たないエージェントレス
+  構成のため従来「不明なネットワーク」表示になっていたが、接続先マクロ
+  ({$PVE.URL.HOST})の値をIPアドレスとして解釈できる場合はCIDRネットワーク
+  ノードへ、解釈できない場合はマクロ値をそのままラベルとして表示するよう
+  変更（HOLOZTEK_MM_CONNECTION_HOST_MACROSに今後同様のマクロ名を追加可能）
+
 * Sat Aug 22 2026 claude <noreply> - 1.0.4-0
 - VMware/Kubernetesクラスタノードを追加（gitadminによる170のみ未リリース実装
   f3a5e66を正式反映）: 通信方式ごとに1個の固定クラスタノードを新設し、
