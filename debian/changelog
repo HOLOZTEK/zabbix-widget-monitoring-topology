@@ -1,3 +1,17 @@
+zabbix-widget-monitoring-topology (1.0.6) unstable; urgency=medium
+
+  * コードレビュー issue #7/#8 対応（v1.0.5レビュー、reviewer codex）。
+    issue #7: VM識別用ホストグループ判定を固定文字列"(vm)"との完全一致から、
+    公式VMwareテンプレートが実際に生成する"<cluster> (vm)"/"<dc>/<folder>
+    (vm)"形式に対応する末尾一致へ修正（標準構成のVMが一切ESXi配下に
+    ネストされなかった不具合を解消）。
+  * issue #8: 複数Kubernetesクラスタが同じZabbix Server/Proxy配下で単一の
+    Clusterノードへ統合される不具合を修正。クラスタ集約ホストのhostidを
+    識別子としてノードIDに組み込み、クラスタごとに別ノードとして表示する
+    よう変更。ノードラベルも集約ホスト名を優先表示。
+
+ -- claude <noreply@example.com>  Mon, 24 Aug 2026 14:00:00 +0000
+
 zabbix-widget-monitoring-topology (1.0.5) unstable; urgency=medium
 
   * CHost::get()の非推奨パラメータselectGroupsをselectHostGroupsに修正。

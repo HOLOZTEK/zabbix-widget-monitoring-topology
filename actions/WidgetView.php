@@ -133,6 +133,47 @@ class WidgetView extends CControllerDashboardWidgetView {
 			}
 		}
 
+		// The official "Kubernetes ... by HTTP" templates' component hosts (API/
+		// Scheduler/Controller manager/Kubelet, discovered by an LLD rule) all
+		// share one aggregate "cluster state" host as their discoveryRule parent
+		// - the same host.get selectDiscoveryRule relationship used above for
+		// VMware. That aggregate host's own hostid is the one stable identifier
+		// distinguishing one Kubernetes cluster from another; a host with no
+		// discoveryRule of its own (i.e. the aggregate host itself, or a
+		// standalone k8s host not LLD-discovered) is its own cluster's identity.
+		// Without this, every Kubernetes host under the same upstream collapses
+		// into a single Cluster node regardless of which cluster it belongs to
+		// (see holoztek_mm_node_id_cluster()).
+		$k8s_hostids = array_keys(array_filter(
+			$comm_methods_by_host,
+			static fn(array $methods): bool => in_array(HOLOZTEK_MM_COMM_K8S, $methods, true)
+		));
+
+		$k8s_cluster_hostid_by_hostid = [];
+		if ($k8s_hostids) {
+			$k8s_hosts_with_rule = API::Host()->get([
+				'output'              => ['hostid'],
+				'hostids'             => $k8s_hostids,
+				'selectDiscoveryRule' => ['hostid']
+			]);
+			foreach ($k8s_hosts_with_rule as $k8s_host) {
+				$k8s_cluster_hostid_by_hostid[$k8s_host['hostid']] =
+					$k8s_host['discoveryRule']['hostid'] ?? $k8s_host['hostid'];
+			}
+		}
+
+		// Cluster node label: prefer the aggregate host's own Zabbix name (e.g.
+		// "K8s Cluster (163/164)") so distinct clusters are visually
+		// distinguishable, falling back to the generic "Kubernetes cluster"
+		// label (holoztek_mm_cluster_label()) if that host isn't resolvable.
+		$k8s_cluster_master_hostids = array_values(array_unique(array_values($k8s_cluster_hostid_by_hostid)));
+		$k8s_cluster_name_by_master_hostid = $k8s_cluster_master_hostids
+			? array_column(API::Host()->get([
+				'output'  => ['hostid', 'name'],
+				'hostids' => $k8s_cluster_master_hostids
+			]), 'name', 'hostid')
+			: [];
+
 		$vmware_dc_items = $vmware_hv_hostids
 			? API::Item()->get([
 				'output'      => ['hostid', 'lastvalue'],
@@ -230,7 +271,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 			$in_vmware_vm_group = false;
 			foreach ($host['hostgroups'] ?? [] as $group) {
-				if ($group['name'] === HOLOZTEK_MM_VMWARE_VM_GROUP) {
+				if (holoztek_mm_is_vmware_vm_group($group['name'])) {
 					$in_vmware_vm_group = true;
 					break;
 				}
@@ -249,7 +290,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$upstream_node = $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
 			$group_node = $this->placeHost(
 				$upstream_node, $host, (string) $hostid, $comm_methods, $prefix_length,
-				$vmware_dc_by_hostid, $vmware_cl_by_hostid, false
+				$vmware_dc_by_hostid, $vmware_cl_by_hostid, false,
+				$k8s_cluster_hostid_by_hostid, $k8s_cluster_name_by_master_hostid
 			);
 
 			$host_node = $this->addHostNode((string) $hostid, $host, $comm_methods);
@@ -276,7 +318,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 			$group_node = $this->placeHost(
 				$upstream_node, $host, (string) $hostid, $comm_methods, $prefix_length,
-				$vmware_dc_by_hostid, $vmware_cl_by_hostid, true
+				$vmware_dc_by_hostid, $vmware_cl_by_hostid, true,
+				$k8s_cluster_hostid_by_hostid, $k8s_cluster_name_by_master_hostid
 			);
 
 			$host_node = $this->addHostNode((string) $hostid, $host, $comm_methods);
@@ -289,7 +332,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		// A VM host's only current link to its parent ESXi is the host group the
 		// official "VMware" template's vmware.vm.discovery rule auto-assigns to
 		// it, named identically to the ESXi's own Zabbix host name (see
-		// includes/helpers.php's HOLOZTEK_MM_VMWARE_VM_GROUP). If that ESXi isn't
+		// includes/helpers.php's holoztek_mm_is_vmware_vm_group()). If that ESXi isn't
 		// in this widget's own host selection, the VM falls back to plain Network
 		// placement instead of being silently dropped.
 		foreach ($vmware_vm_hostids as $hostid) {
@@ -419,11 +462,14 @@ class WidgetView extends CControllerDashboardWidgetView {
 		return $id;
 	}
 
-	// One cluster node per (upstream, comm method) pair - see
-	// holoztek_mm_node_id_cluster() for the scoping rationale.
-	private function addClusterNode(string $upstream, string $method): string {
-		$id = holoztek_mm_node_id_cluster($upstream, $method);
-		$this->addNode($id, holoztek_mm_cluster_label($method), HOLOZTEK_MM_NODE_CLUSTER);
+	// One cluster node per (upstream, comm method, identity) triple - see
+	// holoztek_mm_node_id_cluster() for the scoping rationale. $label overrides
+	// the generic per-method label (holoztek_mm_cluster_label()) when the
+	// caller has a more specific name to show (e.g. the Kubernetes cluster's
+	// own aggregate host name).
+	private function addClusterNode(string $upstream, string $method, ?string $identity = null, ?string $label = null): string {
+		$id = holoztek_mm_node_id_cluster($upstream, $method, $identity);
+		$this->addNode($id, $label ?? holoztek_mm_cluster_label($method), HOLOZTEK_MM_NODE_CLUSTER);
 
 		return $id;
 	}
@@ -464,7 +510,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 	// by every caller.
 	private function placeHost(
 		string $upstream, array $host, string $hostid, array $comm_methods, int $prefix_length,
-		array $vmware_dc_by_hostid, array $vmware_cl_by_hostid, bool $is_vmware_hypervisor
+		array $vmware_dc_by_hostid, array $vmware_cl_by_hostid, bool $is_vmware_hypervisor,
+		array $k8s_cluster_hostid_by_hostid, array $k8s_cluster_name_by_master_hostid
 	): string {
 		if ($is_vmware_hypervisor) {
 			return $this->addVmwareHierarchy($upstream, $hostid, $vmware_dc_by_hostid, $vmware_cl_by_hostid);
@@ -500,7 +547,18 @@ class WidgetView extends CControllerDashboardWidgetView {
 		// it scales). A known IP is kept on the Cluster node as extra info
 		// instead - see applyClusterMemberIps().
 		if ($cluster_method !== null) {
-			$group_node = $this->addClusterNode($upstream, $cluster_method);
+			// Only Kubernetes currently has a per-cluster identity to key off of
+			// (see $k8s_cluster_hostid_by_hostid in doAction()); any future
+			// cluster comm method without one falls back to the old flat
+			// per-(upstream, method) node, same as before this parameter existed.
+			$cluster_identity = $cluster_method === HOLOZTEK_MM_COMM_K8S
+				? ($k8s_cluster_hostid_by_hostid[$hostid] ?? null)
+				: null;
+			$cluster_label = $cluster_identity !== null
+				? ($k8s_cluster_name_by_master_hostid[$cluster_identity] ?? null)
+				: null;
+
+			$group_node = $this->addClusterNode($upstream, $cluster_method, $cluster_identity, $cluster_label);
 			if ($host_ip !== null) {
 				$this->cluster_member_ips[$group_node][$host_ip] = true;
 			}

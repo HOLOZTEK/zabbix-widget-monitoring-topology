@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.0.5
+Version:        1.0.6
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,6 +121,17 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Mon Aug 24 2026 claude <noreply> - 1.0.6-0
+- コードレビュー issue #7/#8 対応（v1.0.5レビュー、reviewer codex）:
+  issue #7: VM識別用ホストグループの判定を固定文字列"(vm)"との完全一致から、
+  公式VMwareテンプレートが実際に生成する"<cluster> (vm)"/"<dc>/<folder> (vm)"
+  形式に対応する末尾一致（" (vm)"で終わるか）へ修正。従来の完全一致では
+  標準構成のVMが一切ESXi配下にネストされなかった不具合を解消
+- issue #8: 複数Kubernetesクラスタが同じZabbix Server/Proxy配下で単一の
+  Clusterノードへ統合されてしまう不具合を修正。host.get()のselectDiscoveryRule
+  で判明するクラスタ集約(状態取得)ホスト自身のhostidをクラスタ識別子として
+  ノードIDに組み込み、クラスタごとに別ノードとして表示。ノードラベルも
+  集約ホスト名（例: "K8s Cluster (163/164)"）を優先表示するよう改善
 * Mon Aug 24 2026 claude <noreply> - 1.0.5-0
 - CHost::get()の非推奨パラメータselectGroupsをselectHostGroupsに修正
   （170のダッシュボード表示時に出ていたE_USER_WARNINGを解消）

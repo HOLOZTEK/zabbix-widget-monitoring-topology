@@ -21,14 +21,22 @@ const HOLOZTEK_MM_COMM_ODBC = 'odbc';
 const HOLOZTEK_MM_COMM_JMX = 'jmx';
 const HOLOZTEK_MM_COMM_K8S = 'k8s';
 
-// Host group name the official Zabbix "VMware" template's VM discovery rule
-// (vmware.vm.discovery) auto-assigns to every VM host it creates via host
-// prototype - a fixed marker distinguishing a VM host from a Hypervisor host.
-// A VM host has no comm-method-classifiable item of its own (no items at all
-// until a guest-monitoring template is separately assigned to it), so this
-// group membership is the only current way to identify one - see
+// Host group name suffix the official Zabbix "VMware" template's VM
+// discovery rule (vmware.vm.discovery) auto-assigns to every VM host it
+// creates via host prototype - a marker distinguishing a VM host from a
+// Hypervisor host. The upstream template's group prototypes are
+// "{#CLUSTER.NAME} (vm)" and "{#DATACENTER.NAME}/{#VM.FOLDER} (vm)" (see
+// templates/app/vmware/template_app_vmware.yaml) - never a bare "(vm)" - so
+// this must be matched as a suffix, not an exact string. A VM host has no
+// comm-method-classifiable item of its own (no items at all until a
+// guest-monitoring template is separately assigned to it), so this group
+// membership is the only current way to identify one - see
 // WidgetView::doAction().
-const HOLOZTEK_MM_VMWARE_VM_GROUP = '(vm)';
+const HOLOZTEK_MM_VMWARE_VM_GROUP_SUFFIX = ' (vm)';
+
+function holoztek_mm_is_vmware_vm_group(string $group_name): bool {
+	return str_ends_with($group_name, HOLOZTEK_MM_VMWARE_VM_GROUP_SUFFIX);
+}
 
 // Communication methods whose host population scales up/down on its own and
 // has no Datacenter/vCenter-style hierarchy of its own (Kubernetes node/
@@ -367,11 +375,19 @@ function holoztek_mm_cluster_label(string $method): string {
 	};
 }
 
-// One cluster node per (upstream node, comm method) pair - same per-upstream
-// scoping rationale as holoztek_mm_node_id_network(), so a Kubernetes cluster
-// under one upstream doesn't collapse with one under another.
-function holoztek_mm_node_id_cluster(string $upstream, string $method): string {
-	return 'c_' . $upstream . '_' . $method;
+// One cluster node per (upstream node, comm method, cluster identity) triple.
+// $identity distinguishes multiple distinct clusters of the same comm method
+// under the same upstream (e.g. two separate Kubernetes clusters monitored
+// through the same Zabbix Server) - see
+// WidgetView::doAction()'s $k8s_cluster_hostid_by_hostid, which supplies the
+// LLD-discovered cluster's own master/aggregate hostid as this value. A null
+// $identity (no such distinguishing id available for this comm method/host)
+// falls back to the old per-(upstream, method) scoping, same as before this
+// parameter existed.
+function holoztek_mm_node_id_cluster(string $upstream, string $method, ?string $identity = null): string {
+	$suffix = $identity !== null ? '_' . holoztek_mm_id_slug($identity) : '';
+
+	return 'c_' . $upstream . '_' . $method . $suffix;
 }
 
 // Deterministic, filesystem/id-safe representation of an arbitrary
