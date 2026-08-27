@@ -133,6 +133,45 @@ class WidgetView extends CControllerDashboardWidgetView {
 			}
 		}
 
+		// A Hypervisor's master/connection host lives in its own administrative
+		// host group (e.g. "Hypervisors") that's normally entirely disjoint from
+		// the vCenter inventory hostgroup hierarchy ("<datacenter>",
+		// "<datacenter>/vm (vm)", etc.) the Hypervisor/VM hosts themselves get
+		// auto-assigned to - so a widget host selection reached by browsing that
+		// inventory hierarchy (the common case) never includes the master host,
+		// even though every Hypervisor under it depends on it as the root of its
+		// Datacenter/Cluster chain (see placeHost()). Fetch any such master host
+		// in regardless of the widget's own selection, the same way Server/Proxy/
+		// Proxy Group nodes are always shown regardless of selection - otherwise
+		// that whole chain has no real node to nest under.
+		$vmware_master_hostids = array_values(array_unique(array_values($vmware_master_hostid_by_hv_hostid)));
+		$missing_master_hostids = array_values(array_diff($vmware_master_hostids, array_keys($hosts)));
+
+		if ($missing_master_hostids) {
+			$extra_hosts = API::Host()->get([
+				'hostids'               => $missing_master_hostids,
+				'output'                => [
+					'hostid', 'name', 'status', 'monitored_by', 'proxyid', 'proxy_groupid', 'assigned_proxyid',
+					'maintenance_status'
+				],
+				'selectInterfaces'      => ['type', 'ip', 'dns', 'useip', 'main', 'available'],
+				'selectInventory'       => ['type', 'os'],
+				'selectParentTemplates' => ['name'],
+				'selectHostGroups'      => ['name'],
+				'selectMacros'          => ['macro', 'value'],
+				'preservekeys'          => true
+			]);
+			$hosts += $extra_hosts;
+
+			if ($extra_hosts) {
+				$extra_items = API::Item()->get([
+					'output'  => ['itemid', 'hostid', 'type', 'key_'],
+					'hostids' => array_keys($extra_hosts)
+				]);
+				$comm_methods_by_host += holoztek_mm_comm_methods_by_host($extra_items);
+			}
+		}
+
 		// The official "Kubernetes ... by HTTP" templates' component hosts (API/
 		// Scheduler/Controller manager/Kubelet, discovered by an LLD rule) all
 		// share one aggregate "cluster state" host as their discoveryRule parent
@@ -305,7 +344,9 @@ class WidgetView extends CControllerDashboardWidgetView {
 		// datacenter - cluster - host - VM), found via
 		// $vmware_master_hostid_by_hv_hostid above. If that master host isn't
 		// in this widget's own host selection, fall back to plain Network
-		// placement - same graceful-degradation pattern as the VM pass below.
+		// placement (same graceful-degradation pattern as the VM pass below) -
+		// otherwise the Datacenter node would hang directly off the Server/
+		// Proxy node with no Network node in between at all.
 		foreach ($vmware_hv_hostids_pending as $hostid) {
 			$host = $hosts[$hostid];
 			$comm_methods = $comm_methods_by_host[$hostid] ?? [];
@@ -313,8 +354,16 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$master_hostid = $vmware_master_hostid_by_hv_hostid[$hostid] ?? null;
 			$master_node = $master_hostid !== null ? ($host_node_by_hostid[$master_hostid] ?? null) : null;
 
-			$upstream_node = $master_node
-				?? $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
+			if ($master_node !== null) {
+				$upstream_node = $master_node;
+			}
+			else {
+				$plain_upstream = $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
+				$host_ip = holoztek_mm_host_primary_ip($host['interfaces'] ?? []);
+				$host_cidr = $host_ip !== null ? holoztek_mm_ipv4_cidr($host_ip, $prefix_length) : null;
+				$upstream_node = $this->addNetworkNode($plain_upstream, $host_cidr);
+				$this->addEdge($plain_upstream, $upstream_node);
+			}
 
 			$group_node = $this->placeHost(
 				$upstream_node, $host, (string) $hostid, $comm_methods, $prefix_length,

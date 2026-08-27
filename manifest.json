@@ -5,7 +5,7 @@
     "name": "Monitoring Topology",
     "namespace": "HoloztekMonitoringMap",
     "author": "HOLOZTEK",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "widget": {
         "size": {"width": 12, "height": 8},
         "js_class": "CWidgetHoloztekMonitoringMap",

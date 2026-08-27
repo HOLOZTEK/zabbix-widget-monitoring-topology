@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.0.6
+Version:        1.0.7
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,6 +121,22 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Thu Aug 27 2026 claude <noreply> - 1.0.7-0
+- ユーザー報告のVMware表示不具合2件を修正:
+  1. Hypervisorホストの接続用ホスト（master）がウィジェットの選択範囲外の
+     場合、Datacenterノードがフォールバック時にNetworkノードを経由せず
+     Server/Proxyへ直結し、Networkノードが表示されない不具合を修正。VMの
+     フォールバックと同様に接続元IP/マクロからNetworkノードを生成しその
+     配下へ接続するよう変更
+  2. Hypervisorの接続用ホスト（例:"ESXi#1 (VMware ESXi)"）自身が、vCenter
+     インベントリのホストグループ階層（Hypervisor/VM側が自動所属する
+     「<datacenter>」「<datacenter>/vm (vm)」等）と全く接点のない別グループ
+     （例:"Hypervisors"）にのみ所属しているため、そのインベントリ階層経由の
+     ホスト選択では接続用ホストが常に選択範囲から漏れ、Datacenter/Cluster
+     チェーンの根となるノードごと表示されない不具合を修正。
+     host.get()のselectDiscoveryRuleで判明する接続用ホストを、Server/Proxy/
+     Proxy Groupノードと同様にウィジェットの選択範囲に関わらず自動取得し
+     表示するよう変更
 * Mon Aug 24 2026 claude <noreply> - 1.0.6-0
 - コードレビュー issue #7/#8 対応（v1.0.5レビュー、reviewer codex）:
   issue #7: VM識別用ホストグループの判定を固定文字列"(vm)"との完全一致から、
