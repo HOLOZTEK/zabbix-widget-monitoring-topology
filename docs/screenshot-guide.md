@@ -25,4 +25,4 @@ Use a sanitized demo Zabbix environment. Never capture production dashboards or 
 
 ## README Integration
 
-The README files use the dashboard example as the main preview, place topology reference images in the model table, place the filter image to the right of its explanation table, and use the locale-specific settings image. Recheck all images against the sanitizing checklist whenever they are replaced.
+The README files use the dashboard example as the main preview, place topology reference images in the model table, place the filter image below its explanation table, and use the locale-specific settings image. Recheck all images against the sanitizing checklist whenever they are replaced.

@@ -55,9 +55,6 @@ The exact structure depends on the data available in Zabbix. Only Host nodes car
 The filter panel limits which Host nodes remain visible. Within one category, selected values are combined with OR; the six categories are combined with AND. Parent infrastructure nodes and edges disappear automatically when none of their descendant hosts remain visible.
 
 <table>
-  <tr>
-    <td valign="top">
-      <table>
         <tr><th align="left" nowrap>Category</th><th align="left">Choices</th><th align="left">Purpose and default</th></tr>
         <tr><td nowrap>Problem events</td><td>Unacknowledged, Acknowledged</td><td>Controls which problem severities contribute to host coloring rather than host visibility. Both are enabled by default; clearing both removes problem coloring.</td></tr>
         <tr><td nowrap>Host status</td><td>Enabled hosts, In maintenance, Disabled hosts</td><td>Includes hosts by operational state. Only Enabled hosts is selected by default.</td></tr>
@@ -65,11 +62,9 @@ The filter panel limits which Host nodes remain visible. Within one category, se
         <tr><td nowrap>Interface</td><td>Available, Mixed, Not available, Unknown</td><td>Includes hosts by interface availability. All choices are enabled by default.</td></tr>
         <tr><td nowrap>Monitoring route</td><td>Zabbix Server, Zabbix Proxy, Proxy Group</td><td>Includes hosts by their upstream monitoring route. All choices are enabled by default.</td></tr>
         <tr><td nowrap>Monitoring method</td><td>Ping, Zabbix Agent, SNMP, IPMI, JMX, Other</td><td>Includes hosts by detected monitoring method. All choices are enabled by default. Other includes VMware, ODBC, Kubernetes, and methods that cannot be classified separately.</td></tr>
-      </table>
-    </td>
-    <td valign="top" align="center"><a href="screenshots/monitoring-topology-filters.png" target="_blank"><img src="screenshots/monitoring-topology-filters.png" width="180" alt="Monitoring Topology display filter panel"></a></td>
-  </tr>
 </table>
+
+<a href="screenshots/monitoring-topology-filters.png" target="_blank"><img src="screenshots/monitoring-topology-filters.png" width="180" alt="Monitoring Topology display filter panel"></a>
 
 Except for Problem events, clearing every choice in a category hides every host. Filter state is saved per widget in the browser, and Reset restores the defaults above.
 
