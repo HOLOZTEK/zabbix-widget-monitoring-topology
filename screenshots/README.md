@@ -1,5 +1,14 @@
 # Screenshots
 
-Place sanitized public screenshots in this directory.
+The public README uses these screenshots:
 
-Required filenames are documented in `../docs/screenshot-guide.md`. README preview links must be added only after the corresponding reviewed PNG files are present.
+- `monitoring-topology-dashboard-example.png` — dashboard integration overview
+- `monitoring-topology-overview.png` — Server / Proxy / Network / Host topology
+- `monitoring-topology-virtualization.png` — virtualization overview
+- `monitoring-topology-esxi.png` — detailed VMware ESXi hierarchy
+- `monitoring-topology-kubernetes.png` — Kubernetes cluster topology
+- `monitoring-topology-filters.png` — display filter panel
+- `monitoring-topology-settings.png` — English settings form
+- `monitoring-topology-settings-ja.png` — Japanese settings form
+
+See `../docs/screenshot-guide.md` for capture, replacement, and sanitizing requirements.

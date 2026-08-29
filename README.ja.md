@@ -8,6 +8,8 @@ Monitoring Topology は、Zabbix Server から Proxy、ネットワーク、仮�
 
 [Tree Navigator](https://github.com/HOLOZTEK/zabbix-widget-tree-navigator) などからホストまたはホストグループの選択を受信し、選択範囲に対応するトポロジーを再描画します。グラフ描画には Vis Network の Canvas2D を使用し、WebGL は不要です。
 
+<img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator と連携した Monitoring Topology ダッシュボード" />
+
 [最新リリース](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.0.6) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology_1.0.6_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.tar.gz)
 
 ## Monitoring Topology を使う理由
@@ -32,6 +34,19 @@ Server／Proxy とホストの対応、サブネット別の配置、VMware や 
 | ウィジェット連携 | Tree Navigator 等からホスト／ホストグループの動的パラメータを受信します。 |
 | 表示設定 | ノード文字、エッジ、Serverラベル、サブネット、フィルタボタン位置を設定できます。 |
 
+## 表示例
+
+<table>
+  <tr>
+    <td align="center" valign="top" width="50%"><strong>監視経路の全体表示</strong><br><img src="screenshots/monitoring-topology-overview.png" width="360" alt="Zabbix Server、Proxy、Network、Host のトポロジー"></td>
+    <td align="center" valign="top" width="50%"><strong>仮想化環境の全体表示</strong><br><img src="screenshots/monitoring-topology-virtualization.png" width="360" alt="仮想化環境の監視トポロジー"></td>
+  </tr>
+  <tr>
+    <td align="center" valign="top" width="50%"><strong>VMware ESXi 階層</strong><br><img src="screenshots/monitoring-topology-esxi.png" width="360" alt="VMware Datacenter、Cluster、ESXi、VM の階層"></td>
+    <td align="center" valign="top" width="50%"><strong>Kubernetes クラスタ</strong><br><img src="screenshots/monitoring-topology-kubernetes.png" width="360" alt="複数の Kubernetes クラスタを表示した Monitoring Topology"></td>
+  </tr>
+</table>
+
 ## トポロジーモデル
 
 代表的な経路は次のとおりです。
@@ -44,6 +59,12 @@ Zabbix Server/Proxy -> Kubernetes Cluster -> Kubernetesホスト
 ```
 
 実際の構成はインターフェース、Proxy割り当て、ディスカバリ関係、マクロ、監視アイテムに依存します。障害重要度を集約するのはHostノードだけで、グルーピング用ノードは配下全体の正常性を表しません。
+
+## 表示フィルタ
+
+フィルタパネルから、障害確認状態、ホスト状態、ホスト設定、インターフェース、監視経路、監視方式で表示対象を絞り込めます。カテゴリ間の条件を組み合わせ、大規模なトポロジーから現在調査する範囲だけを表示できます。
+
+<img src="screenshots/monitoring-topology-filters.png" width="320" alt="Monitoring Topology の表示フィルタパネル" />
 
 ## 設定項目
 
@@ -58,6 +79,8 @@ Zabbix Server/Proxy -> Kubernetes Cluster -> Kubernetesホスト
 | エッジ色 | ノード間を結ぶ線の色です。 |
 | エッジ幅 | 1〜8pxの線幅です。 |
 | フィルタアイコン位置 | 左上、右上、左下、右下から選択します。 |
+
+<img src="screenshots/monitoring-topology-settings-ja.png" width="620" alt="Monitoring Topology ウィジェットの日本語設定画面" />
 
 ## ダッシュボード連携
 

@@ -8,6 +8,8 @@ Monitoring Topology is a Zabbix dashboard widget that visualizes the monitoring 
 
 It receives host or host-group selections from another dashboard widget, such as [Tree Navigator](https://github.com/HOLOZTEK/zabbix-widget-tree-navigator), and redraws the topology for the selected scope. Vis Network renders the graph in Canvas2D; WebGL is not required.
 
+<img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator driving a Monitoring Topology dashboard" />
+
 [Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.0.6) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology_1.0.6_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.tar.gz)
 
 ## Why Monitoring Topology?
@@ -32,6 +34,19 @@ Use it when operators need to see which server or proxy monitors a host, how hos
 | Widget integration | Receives host and host-group dynamic parameters from Tree Navigator or another compatible widget. |
 | Theme controls | Configures node font, edge appearance, server label, subnet prefix, and filter-button position. |
 
+## Preview
+
+<table>
+  <tr>
+    <td align="center" valign="top" width="50%"><strong>Monitoring Path Overview</strong><br><img src="screenshots/monitoring-topology-overview.png" width="360" alt="Zabbix Server, proxy, network, and host topology"></td>
+    <td align="center" valign="top" width="50%"><strong>Virtualization Overview</strong><br><img src="screenshots/monitoring-topology-virtualization.png" width="360" alt="Virtualization monitoring topology"></td>
+  </tr>
+  <tr>
+    <td align="center" valign="top" width="50%"><strong>VMware ESXi Hierarchy</strong><br><img src="screenshots/monitoring-topology-esxi.png" width="360" alt="VMware Datacenter, Cluster, ESXi, and VM hierarchy"></td>
+    <td align="center" valign="top" width="50%"><strong>Kubernetes Clusters</strong><br><img src="screenshots/monitoring-topology-kubernetes.png" width="360" alt="Multiple Kubernetes clusters in Monitoring Topology"></td>
+  </tr>
+</table>
+
 ## Topology Model
 
 Typical paths include:
@@ -44,6 +59,12 @@ Zabbix Server/Proxy -> Kubernetes Cluster -> Kubernetes hosts
 ```
 
 The exact structure depends on available interfaces, proxy assignments, discovery relationships, macros, and monitoring items. Only host nodes aggregate problem severity; infrastructure grouping nodes do not imply an aggregated health state.
+
+## Display Filters
+
+Use the filter panel to focus the graph by problem acknowledgement, host state, host configuration, interface, monitoring route, or monitoring method. Filters are combined across categories to reduce a large topology to the operational scope currently under investigation.
+
+<img src="screenshots/monitoring-topology-filters.png" width="320" alt="Monitoring Topology display filter panel" />
 
 ## Settings
 
@@ -58,6 +79,8 @@ The exact structure depends on available interfaces, proxy assignments, discover
 | Edge color | Color of graph edges. |
 | Edge width | Edge width from 1 to 8 pixels. |
 | Filter icon position | Top-left, top-right, bottom-left, or bottom-right. |
+
+<img src="screenshots/monitoring-topology-settings.png" width="620" alt="Monitoring Topology widget settings" />
 
 ## Dashboard Integration
 
