@@ -5,7 +5,6 @@ The public README uses these screenshots:
 - `monitoring-topology-dashboard-example.png` — dashboard integration overview
 - `monitoring-topology-overview.png` — Server / Proxy / Network / Host topology
 - `monitoring-topology-virtualization.png` — virtualization overview
-- `monitoring-topology-esxi.png` — detailed VMware ESXi hierarchy
 - `monitoring-topology-kubernetes.png` — Kubernetes cluster topology
 - `monitoring-topology-filters.png` — display filter panel
 - `monitoring-topology-settings.png` — English settings form
