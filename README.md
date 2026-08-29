@@ -40,10 +40,11 @@ Monitoring Topology derives the graph from proxy assignments, interfaces, discov
 
 | Pattern | Typical path | How it is determined |
 | --- | --- | --- |
-| Direct monitoring | `Zabbix Server -> Network -> Host` | The host is monitored directly by Zabbix Server; its primary interface and subnet prefix determine the Network node. |
-| Proxy monitoring | `Zabbix Server -> Proxy Group -> Proxy -> Network -> Host` | The host's assigned Proxy or Proxy Group determines the upstream route before the Network node. |
-| VMware hierarchy | `Server/Proxy -> Network -> VMware connection host -> Datacenter -> Cluster -> ESXi -> VM` | Official VMware template discovery and `vmware.hv.*` item data provide the connection host, inventory hierarchy, and VM-to-ESXi relationship. |
-| Kubernetes cluster | `Server/Proxy -> Kubernetes Cluster -> Kubernetes hosts` | Official Kubernetes template item keys and discovery parents identify each cluster and keep multiple clusters on the same route separate. |
+| Zabbix Server route | `Zabbix Server -> Network -> Host` | The host is monitored directly by Zabbix Server; its primary interface and subnet prefix determine the Network node. |
+| Zabbix Proxy route | `Zabbix Server -> Zabbix Proxy -> Network -> Host` | A host assigned to a standalone Zabbix Proxy is placed below that Proxy and its derived Network node. |
+| Proxy Group route | `Zabbix Server -> Proxy Group -> Zabbix Proxy -> Network -> Host` | A host monitored through a Proxy Group is placed below the group and the active member Proxy used for its route. |
+| VMware monitoring | `Server/Proxy -> Network -> VMware connection host -> Datacenter -> Cluster -> ESXi -> VM` | Official VMware template discovery and `vmware.hv.*` item data provide the connection host, inventory hierarchy, and VM-to-ESXi relationship. |
+| Kubernetes monitoring | `Server/Proxy -> Kubernetes Cluster -> Kubernetes hosts` | Official Kubernetes template item keys and discovery parents identify each cluster and keep multiple clusters on the same route separate. |
 
 The exact structure depends on the data available in Zabbix. Only Host nodes carry problem-severity coloring; Server, Proxy Group, Proxy, Network, Datacenter, and Cluster nodes do not represent aggregated health.
 

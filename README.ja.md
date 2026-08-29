@@ -25,7 +25,7 @@ Server／Proxy とホストの対応、サブネット別の配置、VMware や 
 | 監視経路グラフ | Zabbix Server、Proxy Group、Proxy、Network、Cluster、Datacenter、Host、VM を接続して表示します。 |
 | ネットワーク自動算出 | ホスト／Proxy のインターフェースIPと設定可能なIPv4プレフィックス長からNetworkノードを算出します。 |
 | VMware階層 | 公式VMwareテンプレートのディスカバリとアイテムから Datacenter / Cluster / ESXi / VM 階層を構成します。 |
-| Kubernetesクラスタ | 公式Kubernetesテンプレートのキーを検出し、同じ監視経路上の複数クラスタも個別に表示します。 |
+| Kubernetes監視 | 公式Kubernetesテンプレートのキーを検出し、同じ監視経路上の複数クラスタも個別に表示します。 |
 | Proxmox対応 | インターフェースを持たない監視ホストでは接続先マクロからネットワークまたはラベルを決定します。 |
 | 機器・監視方式表示 | ホスト種別アイコンと Ping、SNMP、Agent、IPMI、VMware、ODBC、JMX、Kubernetes 等のバッジを表示します。 |
 | 運用状態表示 | 応答のないProxyを識別し、障害重要度の色はHostノードだけに適用します。 |
@@ -40,10 +40,11 @@ Monitoring Topology は、Proxy割り当て、インターフェース、ディ�
 
 | パターン | 代表的な経路 | 判定方法 |
 | --- | --- | --- |
-| 直接監視 | `Zabbix Server -> Network -> Host` | Zabbix Serverがホストを直接監視し、プライマリインターフェースとサブネットプレフィックスからNetworkノードを決定します。 |
-| Proxy経由監視 | `Zabbix Server -> Proxy Group -> Proxy -> Network -> Host` | ホストに割り当てられたProxyまたはProxy Groupから、Networkより上流の経路を決定します。 |
-| VMware階層 | `Server/Proxy -> Network -> VMware接続ホスト -> Datacenter -> Cluster -> ESXi -> VM` | 公式VMwareテンプレートのディスカバリと `vmware.hv.*` アイテムから、接続ホスト、インベントリ階層、VMとESXiの関係を構成します。 |
-| Kubernetesクラスタ | `Server/Proxy -> Kubernetes Cluster -> Kubernetesホスト` | 公式Kubernetesテンプレートのアイテムキーとディスカバリ親からクラスタを識別し、同じ経路上の複数クラスタも分離します。 |
+| ZabbixServer経由 | `Zabbix Server -> Network -> Host` | Zabbix Serverがホストを直接監視し、プライマリインターフェースとサブネットプレフィックスからNetworkノードを決定します。 |
+| ZabbixProxy経由 | `Zabbix Server -> Zabbix Proxy -> Network -> Host` | 単体のZabbix Proxyが割り当てられたホストを、そのProxyと算出したNetworkノードの配下に配置します。 |
+| Proxy Group経由 | `Zabbix Server -> Proxy Group -> Zabbix Proxy -> Network -> Host` | Proxy Group経由で監視するホストを、グループと監視経路に使われるメンバーProxyの配下に配置します。 |
+| VMware監視 | `Server/Proxy -> Network -> VMware接続ホスト -> Datacenter -> Cluster -> ESXi -> VM` | 公式VMwareテンプレートのディスカバリと `vmware.hv.*` アイテムから、接続ホスト、インベントリ階層、VMとESXiの関係を構成します。 |
+| Kubernetes監視 | `Server/Proxy -> Kubernetes Cluster -> Kubernetesホスト` | 公式Kubernetesテンプレートのアイテムキーとディスカバリ親からクラスタを識別し、同じ経路上の複数クラスタも分離します。 |
 
 実際の構造はZabbixで取得できるデータに依存します。障害重要度の色を持つのはHostノードだけで、Server、Proxy Group、Proxy、Network、Datacenter、Clusterノードは配下全体の正常性を表しません。
 
