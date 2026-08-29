@@ -34,11 +34,22 @@ Server／Proxy とホストの対応、サブネット別の配置、VMware や 
 | ウィジェット連携 | Tree Navigator 等からホスト／ホストグループの動的パラメータを受信します。 |
 | 表示設定 | ノード文字、エッジ、Serverラベル、サブネット、フィルタボタン位置を設定できます。 |
 
-## 表示例
+## トポロジーモデル
+
+Monitoring Topology は、Proxy割り当て、インターフェース、ディスカバリ関係、マクロ、監視アイテムからグラフを構成します。主なモデルパターンは次のとおりです。
+
+| パターン | 代表的な経路 | 判定方法 |
+| --- | --- | --- |
+| 直接監視 | `Zabbix Server -> Network -> Host` | Zabbix Serverがホストを直接監視し、プライマリインターフェースとサブネットプレフィックスからNetworkノードを決定します。 |
+| Proxy経由監視 | `Zabbix Server -> Proxy Group -> Proxy -> Network -> Host` | ホストに割り当てられたProxyまたはProxy Groupから、Networkより上流の経路を決定します。 |
+| VMware階層 | `Server/Proxy -> Network -> VMware接続ホスト -> Datacenter -> Cluster -> ESXi -> VM` | 公式VMwareテンプレートのディスカバリと `vmware.hv.*` アイテムから、接続ホスト、インベントリ階層、VMとESXiの関係を構成します。 |
+| Kubernetesクラスタ | `Server/Proxy -> Kubernetes Cluster -> Kubernetesホスト` | 公式Kubernetesテンプレートのアイテムキーとディスカバリ親からクラスタを識別し、同じ経路上の複数クラスタも分離します。 |
+
+実際の構造はZabbixで取得できるデータに依存します。障害重要度の色を持つのはHostノードだけで、Server、Proxy Group、Proxy、Network、Datacenter、Clusterノードは配下全体の正常性を表しません。
 
 <table>
   <tr>
-    <td align="center" valign="top" width="50%"><strong>監視経路の全体表示</strong><br><img src="screenshots/monitoring-topology-overview.png" width="360" alt="Zabbix Server、Proxy、Network、Host のトポロジー"></td>
+    <td align="center" valign="top" width="50%"><strong>直接監視・Proxy経由監視</strong><br><img src="screenshots/monitoring-topology-overview.png" width="360" alt="Zabbix Server、Proxy、Network、Host のトポロジー"></td>
     <td align="center" valign="top" width="50%"><strong>仮想化環境の全体表示</strong><br><img src="screenshots/monitoring-topology-virtualization.png" width="360" alt="仮想化環境の監視トポロジー"></td>
   </tr>
   <tr>
@@ -47,24 +58,22 @@ Server／Proxy とホストの対応、サブネット別の配置、VMware や 
   </tr>
 </table>
 
-## トポロジーモデル
-
-代表的な経路は次のとおりです。
-
-```text
-Zabbix Server -> Network -> Host
-Zabbix Server -> Proxy Group -> Proxy -> Network -> Host
-Zabbix Server/Proxy -> Network -> VMware接続ホスト -> Datacenter -> Cluster -> ESXi -> VM
-Zabbix Server/Proxy -> Kubernetes Cluster -> Kubernetesホスト
-```
-
-実際の構成はインターフェース、Proxy割り当て、ディスカバリ関係、マクロ、監視アイテムに依存します。障害重要度を集約するのはHostノードだけで、グルーピング用ノードは配下全体の正常性を表しません。
-
 ## 表示フィルタ
 
-フィルタパネルから、障害確認状態、ホスト状態、ホスト設定、インターフェース、監視経路、監視方式で表示対象を絞り込めます。カテゴリ間の条件を組み合わせ、大規模なトポロジーから現在調査する範囲だけを表示できます。
+フィルタパネルは、グラフに残すHostノードを絞り込みます。同じカテゴリ内の選択肢はOR、6つのカテゴリ間はANDで組み合わせます。表示対象の子孫Hostがなくなった上位ノードとエッジも自動的に非表示になります。
 
-<img src="screenshots/monitoring-topology-filters.png" width="320" alt="Monitoring Topology の表示フィルタパネル" />
+| カテゴリ | 選択肢 | 用途と既定状態 |
+| --- | --- | --- |
+| 障害イベント | 未確認、確認済み | Hostの表示／非表示ではなく、背景色に反映する障害重要度を制御します。既定では両方ONで、両方OFFにすると障害色を表示しません。 |
+| ホスト状態 | 有効ホスト、メンテナンス中、無効ホスト | 運用状態でHostを絞り込みます。既定では有効ホストだけがONです。 |
+| ホスト設定 | 通常ホスト、インターフェイス設定なし、ローカルホスト監視 | 通常のインターフェース監視、インターフェースなし、ローカル監視のHostを選択します。既定では通常ホストだけがONです。 |
+| インターフェイス | 正常、一部監視不可、監視不可、状況不明 | インターフェースの可用性でHostを絞り込みます。既定ではすべてONです。 |
+| 監視経路 | Zabbix Server、Zabbix Proxy、Proxy Group | 上流の監視経路でHostを絞り込みます。既定ではすべてONです。 |
+| 監視方式 | Ping、Zabbix Agent、SNMP、IPMI、JMX、その他 | 検出した監視方式でHostを絞り込みます。既定ではすべてONです。「その他」にはVMware、ODBC、Kubernetes、個別分類できない方式を含みます。 |
+
+障害イベント以外のカテゴリで全項目をOFFにすると、すべてのHostが非表示になります。フィルタ状態はウィジェットごとにブラウザへ保存され、「リセット」で上記の既定状態へ戻ります。
+
+<img src="screenshots/monitoring-topology-filters.png" width="180" alt="Monitoring Topology の表示フィルタパネル" />
 
 ## 設定項目
 

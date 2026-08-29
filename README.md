@@ -34,11 +34,22 @@ Use it when operators need to see which server or proxy monitors a host, how hos
 | Widget integration | Receives host and host-group dynamic parameters from Tree Navigator or another compatible widget. |
 | Theme controls | Configures node font, edge appearance, server label, subnet prefix, and filter-button position. |
 
-## Preview
+## Topology Models
+
+Monitoring Topology derives the graph from proxy assignments, interfaces, discovery relationships, macros, and monitoring items. The main model patterns are:
+
+| Pattern | Typical path | How it is determined |
+| --- | --- | --- |
+| Direct monitoring | `Zabbix Server -> Network -> Host` | The host is monitored directly by Zabbix Server; its primary interface and subnet prefix determine the Network node. |
+| Proxy monitoring | `Zabbix Server -> Proxy Group -> Proxy -> Network -> Host` | The host's assigned Proxy or Proxy Group determines the upstream route before the Network node. |
+| VMware hierarchy | `Server/Proxy -> Network -> VMware connection host -> Datacenter -> Cluster -> ESXi -> VM` | Official VMware template discovery and `vmware.hv.*` item data provide the connection host, inventory hierarchy, and VM-to-ESXi relationship. |
+| Kubernetes cluster | `Server/Proxy -> Kubernetes Cluster -> Kubernetes hosts` | Official Kubernetes template item keys and discovery parents identify each cluster and keep multiple clusters on the same route separate. |
+
+The exact structure depends on the data available in Zabbix. Only Host nodes carry problem-severity coloring; Server, Proxy Group, Proxy, Network, Datacenter, and Cluster nodes do not represent aggregated health.
 
 <table>
   <tr>
-    <td align="center" valign="top" width="50%"><strong>Monitoring Path Overview</strong><br><img src="screenshots/monitoring-topology-overview.png" width="360" alt="Zabbix Server, proxy, network, and host topology"></td>
+    <td align="center" valign="top" width="50%"><strong>Direct and Proxy Monitoring</strong><br><img src="screenshots/monitoring-topology-overview.png" width="360" alt="Zabbix Server, proxy, network, and host topology"></td>
     <td align="center" valign="top" width="50%"><strong>Virtualization Overview</strong><br><img src="screenshots/monitoring-topology-virtualization.png" width="360" alt="Virtualization monitoring topology"></td>
   </tr>
   <tr>
@@ -47,24 +58,22 @@ Use it when operators need to see which server or proxy monitors a host, how hos
   </tr>
 </table>
 
-## Topology Model
-
-Typical paths include:
-
-```text
-Zabbix Server -> Network -> Host
-Zabbix Server -> Proxy Group -> Proxy -> Network -> Host
-Zabbix Server/Proxy -> Network -> VMware connection host -> Datacenter -> Cluster -> ESXi -> VM
-Zabbix Server/Proxy -> Kubernetes Cluster -> Kubernetes hosts
-```
-
-The exact structure depends on available interfaces, proxy assignments, discovery relationships, macros, and monitoring items. Only host nodes aggregate problem severity; infrastructure grouping nodes do not imply an aggregated health state.
-
 ## Display Filters
 
-Use the filter panel to focus the graph by problem acknowledgement, host state, host configuration, interface, monitoring route, or monitoring method. Filters are combined across categories to reduce a large topology to the operational scope currently under investigation.
+The filter panel limits which Host nodes remain visible. Within one category, selected values are combined with OR; the six categories are combined with AND. Parent infrastructure nodes and edges disappear automatically when none of their descendant hosts remain visible.
 
-<img src="screenshots/monitoring-topology-filters.png" width="320" alt="Monitoring Topology display filter panel" />
+| Category | Choices | Purpose and default |
+| --- | --- | --- |
+| Problem events | Unacknowledged, Acknowledged | Controls which problem severities contribute to host coloring rather than host visibility. Both are enabled by default; clearing both removes problem coloring. |
+| Host status | Enabled hosts, In maintenance, Disabled hosts | Includes hosts by operational state. Only Enabled hosts is selected by default. |
+| Host configuration | Normal hosts, No interface configured, Local host monitoring | Includes ordinary interface-based hosts, interface-less hosts, or locally monitored hosts. Only Normal hosts is selected by default. |
+| Interface | Available, Mixed, Not available, Unknown | Includes hosts by interface availability. All choices are enabled by default. |
+| Monitoring route | Zabbix Server, Zabbix Proxy, Proxy Group | Includes hosts by their upstream monitoring route. All choices are enabled by default. |
+| Monitoring method | Ping, Zabbix Agent, SNMP, IPMI, JMX, Other | Includes hosts by detected monitoring method. All choices are enabled by default. Other includes VMware, ODBC, Kubernetes, and methods that cannot be classified separately. |
+
+Except for Problem events, clearing every choice in a category hides every host. Filter state is saved per widget in the browser, and Reset restores the defaults above.
+
+<img src="screenshots/monitoring-topology-filters.png" width="180" alt="Monitoring Topology display filter panel" />
 
 ## Settings
 
