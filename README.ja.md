@@ -38,26 +38,15 @@ Server／Proxy とホストの対応、サブネット別の配置、VMware や 
 
 Monitoring Topology は、Proxy割り当て、インターフェース、ディスカバリ関係、マクロ、監視アイテムからグラフを構成します。主なモデルパターンは次のとおりです。
 
-| パターン | 代表的な経路 | 判定方法 |
+| パターン | 判定方法（代表的な経路を含む） | 参考画像 |
 | --- | --- | --- |
-| ZabbixServer経由 | `Zabbix Server -> Network -> Host` | Zabbix Serverがホストを直接監視し、プライマリインターフェースとサブネットプレフィックスからNetworkノードを決定します。 |
-| ZabbixProxy経由 | `Zabbix Server -> Zabbix Proxy -> Network -> Host` | 単体のZabbix Proxyが割り当てられたホストを、そのProxyと算出したNetworkノードの配下に配置します。 |
-| Proxy Group経由 | `Zabbix Server -> Proxy Group -> Zabbix Proxy -> Network -> Host` | Proxy Group経由で監視するホストを、グループと監視経路に使われるメンバーProxyの配下に配置します。 |
-| VMware監視 | `Server/Proxy -> Network -> VMware接続ホスト -> Datacenter -> Cluster -> ESXi -> VM` | 公式VMwareテンプレートのディスカバリと `vmware.hv.*` アイテムから、接続ホスト、インベントリ階層、VMとESXiの関係を構成します。 |
-| Kubernetes監視 | `Server/Proxy -> Kubernetes Cluster -> Kubernetesホスト` | 公式Kubernetesテンプレートのアイテムキーとディスカバリ親からクラスタを識別し、同じ経路上の複数クラスタも分離します。 |
+| ZabbixServer経由 | **代表的な経路:** `Zabbix Server -> Network -> Host`<br>Zabbix Serverがホストを直接監視します。プライマリインターフェースと設定されたサブネットプレフィックスからNetworkノードを決定します。 | <img src="screenshots/monitoring-topology-overview.png" width="150" alt="ZabbixServer経由の監視経路"> |
+| ZabbixProxy経由 | **代表的な経路:** `Zabbix Server -> Zabbix Proxy -> Network -> Host`<br>単体のZabbix Proxyが割り当てられたホストを、そのProxyと算出したNetworkノードの配下に配置します。 | <img src="screenshots/monitoring-topology-overview.png" width="150" alt="ZabbixProxy経由の監視経路"> |
+| Proxy Group経由 | **代表的な経路:** `Zabbix Server -> Proxy Group -> Zabbix Proxy -> Network -> Host`<br>Proxy Group経由で監視するホストを、グループと監視経路に使われるメンバーProxyの配下に配置します。 | <img src="screenshots/monitoring-topology-overview.png" width="150" alt="Proxy Group経由の監視経路"> |
+| VMware監視 | **代表的な経路:** `Server/Proxy -> Network -> VMware接続ホスト -> Datacenter -> Cluster -> ESXi -> VM`<br>公式VMwareテンプレートのディスカバリと `vmware.hv.*` アイテムから、接続ホスト、インベントリ階層、VMとESXiの関係を構成します。 | <img src="screenshots/monitoring-topology-virtualization.png" width="120" alt="VMware監視の全体表示"><br><img src="screenshots/monitoring-topology-esxi.png" width="120" alt="VMware ESXi階層"> |
+| Kubernetes監視 | **代表的な経路:** `Server/Proxy -> Kubernetes Cluster -> Kubernetesホスト`<br>公式Kubernetesテンプレートのアイテムキーとディスカバリ親からクラスタを識別し、同じ経路上の複数クラスタも分離します。 | <img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes監視の経路"> |
 
 実際の構造はZabbixで取得できるデータに依存します。障害重要度の色を持つのはHostノードだけで、Server、Proxy Group、Proxy、Network、Datacenter、Clusterノードは配下全体の正常性を表しません。
-
-<table>
-  <tr>
-    <td align="center" valign="top" width="50%"><strong>直接監視・Proxy経由監視</strong><br><img src="screenshots/monitoring-topology-overview.png" width="360" alt="Zabbix Server、Proxy、Network、Host のトポロジー"></td>
-    <td align="center" valign="top" width="50%"><strong>仮想化環境の全体表示</strong><br><img src="screenshots/monitoring-topology-virtualization.png" width="360" alt="仮想化環境の監視トポロジー"></td>
-  </tr>
-  <tr>
-    <td align="center" valign="top" width="50%"><strong>VMware ESXi 階層</strong><br><img src="screenshots/monitoring-topology-esxi.png" width="360" alt="VMware Datacenter、Cluster、ESXi、VM の階層"></td>
-    <td align="center" valign="top" width="50%"><strong>Kubernetes クラスタ</strong><br><img src="screenshots/monitoring-topology-kubernetes.png" width="360" alt="複数の Kubernetes クラスタを表示した Monitoring Topology"></td>
-  </tr>
-</table>
 
 ## 表示フィルタ
 

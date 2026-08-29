@@ -38,26 +38,15 @@ Use it when operators need to see which server or proxy monitors a host, how hos
 
 Monitoring Topology derives the graph from proxy assignments, interfaces, discovery relationships, macros, and monitoring items. The main model patterns are:
 
-| Pattern | Typical path | How it is determined |
+| Pattern | Detection method and typical path | Reference image |
 | --- | --- | --- |
-| Zabbix Server route | `Zabbix Server -> Network -> Host` | The host is monitored directly by Zabbix Server; its primary interface and subnet prefix determine the Network node. |
-| Zabbix Proxy route | `Zabbix Server -> Zabbix Proxy -> Network -> Host` | A host assigned to a standalone Zabbix Proxy is placed below that Proxy and its derived Network node. |
-| Proxy Group route | `Zabbix Server -> Proxy Group -> Zabbix Proxy -> Network -> Host` | A host monitored through a Proxy Group is placed below the group and the active member Proxy used for its route. |
-| VMware monitoring | `Server/Proxy -> Network -> VMware connection host -> Datacenter -> Cluster -> ESXi -> VM` | Official VMware template discovery and `vmware.hv.*` item data provide the connection host, inventory hierarchy, and VM-to-ESXi relationship. |
-| Kubernetes monitoring | `Server/Proxy -> Kubernetes Cluster -> Kubernetes hosts` | Official Kubernetes template item keys and discovery parents identify each cluster and keep multiple clusters on the same route separate. |
+| Zabbix Server route | **Typical path:** `Zabbix Server -> Network -> Host`<br>The host is monitored directly by Zabbix Server. Its primary interface and configured subnet prefix determine the Network node. | <img src="screenshots/monitoring-topology-overview.png" width="150" alt="Zabbix Server monitoring route"> |
+| Zabbix Proxy route | **Typical path:** `Zabbix Server -> Zabbix Proxy -> Network -> Host`<br>A host assigned to a standalone Zabbix Proxy is placed below that Proxy and its derived Network node. | <img src="screenshots/monitoring-topology-overview.png" width="150" alt="Zabbix Proxy monitoring route"> |
+| Proxy Group route | **Typical path:** `Zabbix Server -> Proxy Group -> Zabbix Proxy -> Network -> Host`<br>A host monitored through a Proxy Group is placed below the group and the member Proxy used for its route. | <img src="screenshots/monitoring-topology-overview.png" width="150" alt="Proxy Group monitoring route"> |
+| VMware monitoring | **Typical path:** `Server/Proxy -> Network -> VMware connection host -> Datacenter -> Cluster -> ESXi -> VM`<br>Official VMware template discovery and `vmware.hv.*` item data provide the connection host, inventory hierarchy, and VM-to-ESXi relationship. | <img src="screenshots/monitoring-topology-virtualization.png" width="120" alt="VMware monitoring overview"><br><img src="screenshots/monitoring-topology-esxi.png" width="120" alt="VMware ESXi hierarchy"> |
+| Kubernetes monitoring | **Typical path:** `Server/Proxy -> Kubernetes Cluster -> Kubernetes hosts`<br>Official Kubernetes template item keys and discovery parents identify each cluster and keep multiple clusters on the same route separate. | <img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes monitoring route"> |
 
 The exact structure depends on the data available in Zabbix. Only Host nodes carry problem-severity coloring; Server, Proxy Group, Proxy, Network, Datacenter, and Cluster nodes do not represent aggregated health.
-
-<table>
-  <tr>
-    <td align="center" valign="top" width="50%"><strong>Direct and Proxy Monitoring</strong><br><img src="screenshots/monitoring-topology-overview.png" width="360" alt="Zabbix Server, proxy, network, and host topology"></td>
-    <td align="center" valign="top" width="50%"><strong>Virtualization Overview</strong><br><img src="screenshots/monitoring-topology-virtualization.png" width="360" alt="Virtualization monitoring topology"></td>
-  </tr>
-  <tr>
-    <td align="center" valign="top" width="50%"><strong>VMware ESXi Hierarchy</strong><br><img src="screenshots/monitoring-topology-esxi.png" width="360" alt="VMware Datacenter, Cluster, ESXi, and VM hierarchy"></td>
-    <td align="center" valign="top" width="50%"><strong>Kubernetes Clusters</strong><br><img src="screenshots/monitoring-topology-kubernetes.png" width="360" alt="Multiple Kubernetes clusters in Monitoring Topology"></td>
-  </tr>
-</table>
 
 ## Display Filters
 
