@@ -130,29 +130,6 @@ cp -a manifest.json Module.php Widget.php actions assets includes locale views /
 
 旧パスを使用する環境では `/usr/share/zabbix/modules/holoztek_monitoringmap` に配置します。Zabbixフロントエンドが読める所有者・権限を設定し、モジュールを再スキャンして有効化してください。
 
-## 旧モジュールIDからの移行
-
-v1.0.1でモジュールIDを `monitoringmap` から `holoztek_monitoringmap` に変更しました。パッケージ名は `zabbix-widget-monitoring-topology` のままです。
-
-1. 現行パッケージまたはソースを配置してモジュールを再スキャンします。
-2. `holoztek_monitoringmap` を有効化し、残っている旧 `monitoringmap` を無効化します。
-3. ダッシュボードをバックアップまたはエクスポートします。
-4. `dashboard.get` で全ページ・全ウィジェットを含む完全な構造を取得します。
-5. `type` が `monitoringmap` のウィジェットだけを `holoztek_monitoringmap` へ変更し、`widgetid`、`fields`、`reference` は保持します。
-6. 完全な `pages` 構造を指定して `dashboard.update` を呼びます。必要に応じてテンプレートダッシュボードにも適用します。
-
-```php
-foreach ($dashboard['pages'] as &$page) {
-    foreach ($page['widgets'] as &$widget) {
-        if ($widget['type'] === 'monitoringmap') {
-            $widget['type'] = 'holoztek_monitoringmap';
-        }
-    }
-}
-```
-
-パッケージスクリプトは、manifestから本ウィジェット由来と安全に識別できる場合だけ旧ディレクトリを削除します。判定できないディレクトリは手動確認のため残します。
-
 ## ドキュメント
 
 - [変更履歴](docs/CHANGELOG.md)

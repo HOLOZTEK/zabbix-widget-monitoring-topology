@@ -130,29 +130,6 @@ cp -a manifest.json Module.php Widget.php actions assets includes locale views /
 
 Use `/usr/share/zabbix/modules/holoztek_monitoringmap` if the installation uses the legacy frontend module path. Set readable ownership and permissions, scan modules, and enable Monitoring Topology.
 
-## Upgrading from the Old Module ID
-
-Version 1.0.1 changed the module ID from `monitoringmap` to `holoztek_monitoringmap` to avoid vendor collisions. The package name remains `zabbix-widget-monitoring-topology`.
-
-1. Install the current package or source files and rescan modules.
-2. Enable `holoztek_monitoringmap` and disable the old `monitoringmap` entry if it remains.
-3. Back up or export the dashboard.
-4. Retrieve the complete dashboard, including all pages and widgets, with `dashboard.get`.
-5. Change only widget entries whose `type` is `monitoringmap` to `holoztek_monitoringmap`; preserve `widgetid`, `fields`, and `reference`.
-6. Call `dashboard.update` with the complete `pages` structure. Apply the same migration to template dashboards when applicable.
-
-```php
-foreach ($dashboard['pages'] as &$page) {
-    foreach ($page['widgets'] as &$widget) {
-        if ($widget['type'] === 'monitoringmap') {
-            $widget['type'] = 'holoztek_monitoringmap';
-        }
-    }
-}
-```
-
-Package scripts remove the old module directory only when its manifest can be safely identified as this HOLOZTEK widget. Ambiguous directories are left in place for manual inspection.
-
 ## Documentation
 
 - [CHANGELOG](docs/CHANGELOG.md)
