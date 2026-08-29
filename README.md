@@ -8,7 +8,7 @@ Monitoring Topology is a Zabbix dashboard widget that visualizes the monitoring 
 
 It receives host or host-group selections from another dashboard widget, such as [Tree Navigator](https://github.com/HOLOZTEK/zabbix-widget-tree-navigator), and redraws the topology for the selected scope. Vis Network renders the graph in Canvas2D; WebGL is not required.
 
-<img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator driving a Monitoring Topology dashboard" />
+<a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator driving a Monitoring Topology dashboard" /></a>
 
 [Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.0.6) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology_1.0.6_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.tar.gz)
 
@@ -40,11 +40,11 @@ Monitoring Topology derives the graph from proxy assignments, interfaces, discov
 
 | Pattern | Detection method and typical path | Reference image |
 | --- | --- | --- |
-| Zabbix Server route | **Typical path:** `Zabbix Server -> Network -> Host`<br>The host is monitored directly by Zabbix Server. Its primary interface and configured subnet prefix determine the Network node. | <img src="screenshots/monitoring-topology-overview.png" width="150" alt="Zabbix Server monitoring route"> |
-| Zabbix Proxy route | **Typical path:** `Zabbix Server -> Zabbix Proxy -> Network -> Host`<br>A host assigned to a standalone Zabbix Proxy is placed below that Proxy and its derived Network node. | <img src="screenshots/monitoring-topology-overview.png" width="150" alt="Zabbix Proxy monitoring route"> |
-| Proxy Group route | **Typical path:** `Zabbix Server -> Proxy Group -> Zabbix Proxy -> Network -> Host`<br>A host monitored through a Proxy Group is placed below the group and the member Proxy used for its route. | <img src="screenshots/monitoring-topology-overview.png" width="150" alt="Proxy Group monitoring route"> |
-| VMware monitoring | **Typical path:** `Server/Proxy -> Network -> VMware connection host -> Datacenter -> Cluster -> ESXi -> VM`<br>Official VMware template discovery and `vmware.hv.*` item data provide the connection host, inventory hierarchy, and VM-to-ESXi relationship. | <img src="screenshots/monitoring-topology-virtualization.png" width="120" alt="VMware monitoring overview"><br><img src="screenshots/monitoring-topology-esxi.png" width="120" alt="VMware ESXi hierarchy"> |
-| Kubernetes monitoring | **Typical path:** `Server/Proxy -> Kubernetes Cluster -> Kubernetes hosts`<br>Official Kubernetes template item keys and discovery parents identify each cluster and keep multiple clusters on the same route separate. | <img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes monitoring route"> |
+| Zabbix Server route | **Typical path:** `Zabbix Server -> Network -> Host`<br>The host is monitored directly by Zabbix Server. Its primary interface and configured subnet prefix determine the Network node. | <a href="screenshots/monitoring-topology-overview.png" target="_blank"><img src="screenshots/monitoring-topology-overview.png" width="150" alt="Zabbix Server monitoring route"></a> |
+| Zabbix Proxy route | **Typical path:** `Zabbix Server -> Zabbix Proxy -> Network -> Host`<br>A host assigned to a standalone Zabbix Proxy is placed below that Proxy and its derived Network node. | <a href="screenshots/monitoring-topology-overview.png" target="_blank"><img src="screenshots/monitoring-topology-overview.png" width="150" alt="Zabbix Proxy monitoring route"></a> |
+| Proxy Group route | **Typical path:** `Zabbix Server -> Proxy Group -> Zabbix Proxy -> Network -> Host`<br>A host monitored through a Proxy Group is placed below the group and the member Proxy used for its route. | <a href="screenshots/monitoring-topology-overview.png" target="_blank"><img src="screenshots/monitoring-topology-overview.png" width="150" alt="Proxy Group monitoring route"></a> |
+| VMware monitoring | **Typical path:** `Server/Proxy -> Network -> VMware connection host -> Datacenter -> Cluster -> ESXi -> VM`<br>Official VMware template discovery and `vmware.hv.*` item data provide the connection host, inventory hierarchy, and VM-to-ESXi relationship. | <a href="screenshots/monitoring-topology-virtualization.png" target="_blank"><img src="screenshots/monitoring-topology-virtualization.png" width="120" alt="VMware monitoring overview"></a><br><a href="screenshots/monitoring-topology-esxi.png" target="_blank"><img src="screenshots/monitoring-topology-esxi.png" width="120" alt="VMware ESXi hierarchy"></a> |
+| Kubernetes monitoring | **Typical path:** `Server/Proxy -> Kubernetes Cluster -> Kubernetes hosts`<br>Official Kubernetes template item keys and discovery parents identify each cluster and keep multiple clusters on the same route separate. | <a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes monitoring route"></a> |
 
 The exact structure depends on the data available in Zabbix. Only Host nodes carry problem-severity coloring; Server, Proxy Group, Proxy, Network, Datacenter, and Cluster nodes do not represent aggregated health.
 
@@ -63,7 +63,7 @@ The filter panel limits which Host nodes remain visible. Within one category, se
 
 Except for Problem events, clearing every choice in a category hides every host. Filter state is saved per widget in the browser, and Reset restores the defaults above.
 
-<img src="screenshots/monitoring-topology-filters.png" width="180" alt="Monitoring Topology display filter panel" />
+<a href="screenshots/monitoring-topology-filters.png" target="_blank"><img src="screenshots/monitoring-topology-filters.png" width="180" alt="Monitoring Topology display filter panel" /></a>
 
 ## Settings
 
@@ -79,7 +79,7 @@ Except for Problem events, clearing every choice in a category hides every host.
 | Edge width | Edge width from 1 to 8 pixels. |
 | Filter icon position | Top-left, top-right, bottom-left, or bottom-right. |
 
-<img src="screenshots/monitoring-topology-settings.png" width="620" alt="Monitoring Topology widget settings" />
+<a href="screenshots/monitoring-topology-settings.png" target="_blank"><img src="screenshots/monitoring-topology-settings.png" width="620" alt="Monitoring Topology widget settings" /></a>
 
 ## Dashboard Integration
 

@@ -8,7 +8,7 @@ Monitoring Topology は、Zabbix Server から Proxy、ネットワーク、仮�
 
 [Tree Navigator](https://github.com/HOLOZTEK/zabbix-widget-tree-navigator) などからホストまたはホストグループの選択を受信し、選択範囲に対応するトポロジーを再描画します。グラフ描画には Vis Network の Canvas2D を使用し、WebGL は不要です。
 
-<img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator と連携した Monitoring Topology ダッシュボード" />
+<a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator と連携した Monitoring Topology ダッシュボード" /></a>
 
 [最新リリース](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.0.6) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology_1.0.6_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.tar.gz)
 
@@ -40,11 +40,11 @@ Monitoring Topology は、Proxy割り当て、インターフェース、ディ�
 
 | パターン | 判定方法（代表的な経路を含む） | 参考画像 |
 | --- | --- | --- |
-| ZabbixServer経由 | **代表的な経路:** `Zabbix Server -> Network -> Host`<br>Zabbix Serverがホストを直接監視します。プライマリインターフェースと設定されたサブネットプレフィックスからNetworkノードを決定します。 | <img src="screenshots/monitoring-topology-overview.png" width="150" alt="ZabbixServer経由の監視経路"> |
-| ZabbixProxy経由 | **代表的な経路:** `Zabbix Server -> Zabbix Proxy -> Network -> Host`<br>単体のZabbix Proxyが割り当てられたホストを、そのProxyと算出したNetworkノードの配下に配置します。 | <img src="screenshots/monitoring-topology-overview.png" width="150" alt="ZabbixProxy経由の監視経路"> |
-| Proxy Group経由 | **代表的な経路:** `Zabbix Server -> Proxy Group -> Zabbix Proxy -> Network -> Host`<br>Proxy Group経由で監視するホストを、グループと監視経路に使われるメンバーProxyの配下に配置します。 | <img src="screenshots/monitoring-topology-overview.png" width="150" alt="Proxy Group経由の監視経路"> |
-| VMware監視 | **代表的な経路:** `Server/Proxy -> Network -> VMware接続ホスト -> Datacenter -> Cluster -> ESXi -> VM`<br>公式VMwareテンプレートのディスカバリと `vmware.hv.*` アイテムから、接続ホスト、インベントリ階層、VMとESXiの関係を構成します。 | <img src="screenshots/monitoring-topology-virtualization.png" width="120" alt="VMware監視の全体表示"><br><img src="screenshots/monitoring-topology-esxi.png" width="120" alt="VMware ESXi階層"> |
-| Kubernetes監視 | **代表的な経路:** `Server/Proxy -> Kubernetes Cluster -> Kubernetesホスト`<br>公式Kubernetesテンプレートのアイテムキーとディスカバリ親からクラスタを識別し、同じ経路上の複数クラスタも分離します。 | <img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes監視の経路"> |
+| ZabbixServer経由 | **代表的な経路:** `Zabbix Server -> Network -> Host`<br>Zabbix Serverがホストを直接監視します。プライマリインターフェースと設定されたサブネットプレフィックスからNetworkノードを決定します。 | <a href="screenshots/monitoring-topology-overview.png" target="_blank"><img src="screenshots/monitoring-topology-overview.png" width="150" alt="ZabbixServer経由の監視経路"></a> |
+| ZabbixProxy経由 | **代表的な経路:** `Zabbix Server -> Zabbix Proxy -> Network -> Host`<br>単体のZabbix Proxyが割り当てられたホストを、そのProxyと算出したNetworkノードの配下に配置します。 | <a href="screenshots/monitoring-topology-overview.png" target="_blank"><img src="screenshots/monitoring-topology-overview.png" width="150" alt="ZabbixProxy経由の監視経路"></a> |
+| Proxy Group経由 | **代表的な経路:** `Zabbix Server -> Proxy Group -> Zabbix Proxy -> Network -> Host`<br>Proxy Group経由で監視するホストを、グループと監視経路に使われるメンバーProxyの配下に配置します。 | <a href="screenshots/monitoring-topology-overview.png" target="_blank"><img src="screenshots/monitoring-topology-overview.png" width="150" alt="Proxy Group経由の監視経路"></a> |
+| VMware監視 | **代表的な経路:** `Server/Proxy -> Network -> VMware接続ホスト -> Datacenter -> Cluster -> ESXi -> VM`<br>公式VMwareテンプレートのディスカバリと `vmware.hv.*` アイテムから、接続ホスト、インベントリ階層、VMとESXiの関係を構成します。 | <a href="screenshots/monitoring-topology-virtualization.png" target="_blank"><img src="screenshots/monitoring-topology-virtualization.png" width="120" alt="VMware監視の全体表示"></a><br><a href="screenshots/monitoring-topology-esxi.png" target="_blank"><img src="screenshots/monitoring-topology-esxi.png" width="120" alt="VMware ESXi階層"></a> |
+| Kubernetes監視 | **代表的な経路:** `Server/Proxy -> Kubernetes Cluster -> Kubernetesホスト`<br>公式Kubernetesテンプレートのアイテムキーとディスカバリ親からクラスタを識別し、同じ経路上の複数クラスタも分離します。 | <a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes監視の経路"></a> |
 
 実際の構造はZabbixで取得できるデータに依存します。障害重要度の色を持つのはHostノードだけで、Server、Proxy Group、Proxy、Network、Datacenter、Clusterノードは配下全体の正常性を表しません。
 
@@ -63,7 +63,7 @@ Monitoring Topology は、Proxy割り当て、インターフェース、ディ�
 
 障害イベント以外のカテゴリで全項目をOFFにすると、すべてのHostが非表示になります。フィルタ状態はウィジェットごとにブラウザへ保存され、「リセット」で上記の既定状態へ戻ります。
 
-<img src="screenshots/monitoring-topology-filters.png" width="180" alt="Monitoring Topology の表示フィルタパネル" />
+<a href="screenshots/monitoring-topology-filters.png" target="_blank"><img src="screenshots/monitoring-topology-filters.png" width="180" alt="Monitoring Topology の表示フィルタパネル" /></a>
 
 ## 設定項目
 
@@ -79,7 +79,7 @@ Monitoring Topology は、Proxy割り当て、インターフェース、ディ�
 | エッジ幅 | 1〜8pxの線幅です。 |
 | フィルタアイコン位置 | 左上、右上、左下、右下から選択します。 |
 
-<img src="screenshots/monitoring-topology-settings-ja.png" width="620" alt="Monitoring Topology ウィジェットの日本語設定画面" />
+<a href="screenshots/monitoring-topology-settings-ja.png" target="_blank"><img src="screenshots/monitoring-topology-settings-ja.png" width="620" alt="Monitoring Topology ウィジェットの日本語設定画面" /></a>
 
 ## ダッシュボード連携
 
