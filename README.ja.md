@@ -4,9 +4,11 @@
 
 ## 概要
 
-Monitoring Topology は、Zabbix Server から Proxy、ネットワーク、仮想化・クラスタ階層、ホストへ至る監視経路を、対話型のトポロジーグラフとして可視化する Zabbix ダッシュボードウィジェットです。
+Monitoring Topology は、Zabbix が監視しているホストへ至る監視経路をトポロジーとして可視化するダッシュボードウィジェットです。
 
-[Tree Navigator](https://github.com/HOLOZTEK/zabbix-widget-tree-navigator) などからホストまたはホストグループの選択を受信し、選択範囲に対応するトポロジーを再描画します。グラフ描画には Vis Network の Canvas2D を使用し、WebGL は不要です。
+ホストまたはホストグループの単位での描画に対応し、Server・Proxy・Proxy Groupの監視経路、並びにVMware仮想化とKubernetesクラスタの階層を可視化することができます。描画対象は固定指定の他にナビゲータからの受信にも対応しており、選択範囲に対応するトポロジーを描画します。
+
+グラフ描画には Vis Network の Canvas2D を使用しています。（WebGL は不要）
 
 <a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator と連携した Monitoring Topology ダッシュボード" /></a>
 
@@ -14,30 +16,33 @@ Monitoring Topology は、Zabbix Server から Proxy、ネットワーク、仮�
 
 ## Monitoring Topology を使う理由
 
-通常のダッシュボードではホスト状態を確認できますが、各ホストがどの Server／Proxy から、どの経路で監視されているかを一覧で把握するのは容易ではありません。本ウィジェットは、Zabbix の設定・アイテム・ディスカバリ関係を基に監視経路を可視化します。
+通常のダッシュボードではホスト状態を確認できますが、各ホストがどの Server／Proxy から監視されているかを一覧で把握することは容易ではありません。本ウィジェットは、Zabbix の設定・アイテム・ディスカバリ関係を基に監視経路をトポロジーとして描画することで、監視網全体を可視化すると同時に、監視経路の親子関係の把握を助けます。
 
-Server／Proxy とホストの対応、サブネット別の配置、VMware や Kubernetes の親子関係を運用者が俯瞰したい場合に適しています。
+監視対象のホスト数が多い環境または高度な分散監視を行う環境において、Server／Proxy とホストの対応、サブネット別の配置、VMware や Kubernetes の親子関係を運用者が俯瞰したい場合に適しています。
 
 ## 機能
 
 <table>
   <tr><th align="left" nowrap>機能</th><th align="left">説明</th></tr>
-  <tr><td nowrap>監視経路グラフ</td><td>Zabbix Server、Proxy Group、Proxy、Network、Cluster、Datacenter、Host、VM を接続して表示します。</td></tr>
-  <tr><td nowrap>ネットワーク自動算出</td><td>ホスト／Proxy のインターフェースIPと設定可能なIPv4プレフィックス長からNetworkノードを算出します。</td></tr>
-  <tr><td nowrap>VMware階層</td><td>公式VMwareテンプレートのディスカバリとアイテムから Datacenter / Cluster / ESXi / VM 階層を構成します。</td></tr>
-  <tr><td nowrap>Kubernetes監視</td><td>公式Kubernetesテンプレートのキーを検出し、同じ監視経路上の複数クラスタも個別に表示します。</td></tr>
-  <tr><td nowrap>Proxmox対応</td><td>インターフェースを持たない監視ホストでは接続先マクロからネットワークまたはラベルを決定します。</td></tr>
-  <tr><td nowrap>機器・監視方式表示</td><td>ホスト種別アイコンと Ping、SNMP、Agent、IPMI、VMware、ODBC、JMX、Kubernetes 等のバッジを表示します。</td></tr>
-  <tr><td nowrap>運用状態表示</td><td>応答のないProxyを識別し、障害重要度の色はHostノードだけに適用します。</td></tr>
-  <tr><td nowrap>対話操作</td><td>自動レイアウト、ノード移動、ツールチップ、ホスト詳細画面への移動に対応します。</td></tr>
-  <tr><td nowrap>表示フィルタ</td><td>障害確認状態、ホスト状態、ホスト設定、インターフェース、監視経路、監視方式で絞り込みます。</td></tr>
-  <tr><td nowrap>ウィジェット連携</td><td>Tree Navigator 等からホスト／ホストグループの動的パラメータを受信します。</td></tr>
-  <tr><td nowrap>表示設定</td><td>ノード文字、エッジ、Serverラベル、サブネット、フィルタボタン位置を設定できます。</td></tr>
+  <tr><td nowrap>監視経路グラフ</td><td>Zabbix Server、Zabbix Proxy、Proxy Group、Network、Host を接続して表示します。</td></tr>
+  <tr><td nowrap>ネットワーク表示</td><td>ホストのインターフェースIPと設定可能なIPv4プレフィックス長からNetworkノードを算出します。監視経路の描画を優先しているため、同一のネットワークが異なる経路で接続される場合には、同一のネットワークセグメントが複数ヶ所に描画される場合があります。</td></tr>
+  <tr><td nowrap>VMware監視</td><td>公式VMwareテンプレートのディスカバリとアイテムから Datacenter / Cluster / Host / VM 階層を表示します。</td></tr>
+  <tr><td nowrap>Kubernetes監視</td><td>公式Kubernetesテンプレートのキーを検出し、ノードとクラスタの階層を表示します。</td></tr>
+  <tr><td nowrap>インターフェイスなしホスト</td><td>インターフェースを持たない監視ホストでは、接続先マクロからネットワークまたはラベルを判定して表示します。</td></tr>
+  <tr><td nowrap>機器・監視方式表示</td><td>ホスト種別アイコンに対して、監視方式のバッジ（Ping、SNMP、Agent、IPMI、VMware、ODBC、JMX、Kubernetes 等）を表示します。</td></tr>
+  <tr><td nowrap>障害状態の表示</td><td>ホストで検知されている障害の深刻度の色をアイコンの背景に表示します。複数の障害が発生している場合は、深刻度が最も高い障害の色が選択されます。</td></tr>
+  <tr><td nowrap>表示フィルタ</td><td>障害確認状態、ホスト状態、ホスト設定、インターフェース、監視経路、監視方式で表示内容の絞り込みを行います。ホスト、ホストグループによる絞り込みを行いたい場合はナビゲータと連携させる必要があります。</td></tr>
+  <tr><td nowrap>ウィジェット間連携</td><td>ナビゲータからホスト／ホストグループのパラメータを受信し、動的に描画内容を変更します。</td></tr>
+  <tr><td nowrap>対話操作</td><td>ノードの移動とレイアウトの調整、ホストのメニューへのアクセスに対応します。</td></tr>
 </table>
 
 ## トポロジーモデル
 
-Monitoring Topology は、Proxy割り当て、インターフェース、ディスカバリ関係、マクロ、監視アイテムからグラフを構成します。主なモデルパターンは次のとおりです。
+Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経由の分散監視、インターフェース情報、ディスカバリ関係、ホストマクロ、監視アイテムからトポロジーを構成します。実際の構造はZabbixで取得できるデータに依存します。
+
+障害の深刻度はホストに対してのみ表示を行い、Server、Proxy、Proxy Group、ネットワーク、クラスタなどのグループに対しては表示しません。
+
+描画が対応している主なモデルパターンは次のとおりです。
 
 <table>
   <tr><th align="left" nowrap>パターン</th><th align="left">判定方法（代表的な経路を含む）</th><th align="left">参考画像</th></tr>
@@ -47,8 +52,6 @@ Monitoring Topology は、Proxy割り当て、インターフェース、ディ�
   <tr><td nowrap>VMware監視</td><td><strong>代表的な経路:</strong> <code>Server/Proxy -&gt; Network -&gt; VMware接続ホスト -&gt; Datacenter -&gt; Cluster -&gt; ESXi -&gt; VM</code><br>公式VMwareテンプレートのディスカバリと <code>vmware.hv.*</code> アイテムから、接続ホスト、インベントリ階層、VMとESXiの関係を構成します。</td><td><a href="screenshots/monitoring-topology-virtualization.png" target="_blank"><img src="screenshots/monitoring-topology-virtualization.png" width="150" alt="VMware監視の全体表示"></a></td></tr>
   <tr><td nowrap>Kubernetes監視</td><td><strong>代表的な経路:</strong> <code>Server/Proxy -&gt; Kubernetes Cluster -&gt; Kubernetesホスト</code><br>公式Kubernetesテンプレートのアイテムキーとディスカバリ親からクラスタを識別し、同じ経路上の複数クラスタも分離します。</td><td><a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes監視の経路"></a></td></tr>
 </table>
-
-実際の構造はZabbixで取得できるデータに依存します。障害重要度の色を持つのはHostノードだけで、Server、Proxy Group、Proxy、Network、Datacenter、Clusterノードは配下全体の正常性を表しません。
 
 ## 表示フィルタ
 
@@ -87,9 +90,10 @@ Monitoring Topology は、Proxy割り当て、インターフェース、ディ�
 
 ## ダッシュボード連携
 
-本ウィジェットは受信専用で、ホストまたはホストグループを受信するまでは空状態を表示します。
+本ウィジェットは受信専用です。
+ホストまたはホストグループを受信するまでは空状態を表示します。
 
-1. `_hostid` または `_hostgroupid` を配信する Tree Navigator 等を配置します。
+1. `_hostid` または `_hostgroupid` を配信するナビゲーターを配置します。
 2. 同じページへ Monitoring Topology を追加します。
 3. 設定画面でホスト／ホストグループを送信元ウィジェットへ接続します。
 4. ホスト選択時はそのホストの経路、ホストグループ選択時はグループ内ホストの経路を表示します。
