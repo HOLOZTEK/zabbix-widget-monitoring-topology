@@ -99,11 +99,23 @@ msgstr "リセット"
 msgid "Problem events"
 msgstr "障害イベント"
 
+msgid "Problem status"
+msgstr "障害状態"
+
 msgid "Unacknowledged"
 msgstr "未確認"
 
 msgid "Acknowledged"
 msgstr "確認済み"
+
+msgid "No problem"
+msgstr "障害なし"
+
+msgid "Include hosts in maintenance"
+msgstr "メンテナンス中を含む"
+
+msgid "Colorize by severity"
+msgstr "深刻度で色分け表示"
 
 msgid "Host status"
 msgstr "ホスト状態"

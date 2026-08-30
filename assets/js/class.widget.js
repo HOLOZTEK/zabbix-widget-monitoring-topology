@@ -96,32 +96,38 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	// that value, and every category is a complete/covering partition (every
 	// possible host state maps to at least one checkbox) so that leaving a
 	// whole category unchecked hides every host via that category, never
-	// "no restriction". Categories combine with AND. The one exception is
-	// "障害イベント" (fault*), which controls whether/which problem severities
-	// are displayed rather than host visibility itself - an empty selection
-	// there means "don't display problem severity at all", not "show every
-	// host" (see #recomputeSeverity()).
+	// "no restriction". Categories combine with AND. Two keys in the
+	// "障害状態" category are special: faultMaintenance is an independent OR
+	// gate for hosts in maintenance (checked = show them whatever their
+	// problem state, unchecked = hide them), and faultColor controls only
+	// whether problem severity is colored onto the icon, never host
+	// visibility (see #recomputeSeverity()).
 	static #DEFAULT_FILTER = {
-		// 障害イベント - unchanged from the widget's pre-existing default
-		// (show every problem, both ack and unack).
+		// 障害状態 - faultUnack/faultAck/faultNone are a covering partition over
+		// non-maintenance hosts (all on by default = every non-maintenance host
+		// shown). faultMaintenance is an independent OR gate: a host in
+		// maintenance is shown iff it is checked (default off), regardless of
+		// its problem state. faultColor toggles severity-color display only, it
+		// never hides a host (see #recomputeSeverity()).
 		faultUnack:        true,
 		faultAck:          true,
-		// ホスト状態 - statusEnabled defaults on so maintenance/disabled hosts
-		// are hidden out of the box (see #hostVisible()).
-		statusEnabled:     true,
-		statusMaintenance: false,
-		statusDisabled:    false,
+		faultNone:         true,
+		faultMaintenance:  false,
+		faultColor:        true,
 		// インターフェイス - all checked by default (show every host).
 		ifaceAvailable:    true,
 		ifaceMixed:        true,
 		ifaceUnavailable:  true,
 		ifaceUnknown:      true,
-		// ホスト設定 - cfgNormal defaults on so ordinary hosts (an interface
-		// configured, not local-only) are shown out of the box; see the
-		// cfgNormal entry in #hostVisible()'s tagMatch pairs.
+		// ホスト状態 - cfgNormal defaults on so ordinary hosts (an interface
+		// configured, not local-only, monitoring enabled) are shown out of the
+		// box. cfgDisabled (default off) is the only bucket that admits
+		// host_status === 1; the other three are guarded on host_status === 0
+		// so this stays an exclusive 4-way partition (see #hostVisible()).
 		cfgNormal:         true,
 		cfgNoInterface:    false,
 		cfgLocal:          false,
+		cfgDisabled:       false,
 		// 監視経路 - all checked by default (show every host).
 		routeServer:       true,
 		routeProxy:        true,
@@ -570,10 +576,41 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 					localStorage.setItem(this.#filterStorageKey(), raw);
 				}
 			}
-			this.#filter = raw ? Object.assign(defaults, JSON.parse(raw)) : defaults;
+			const stored = raw ? JSON.parse(raw) : null;
+			this.#filter = stored
+				? Object.assign(defaults, this.#migrateFilterState(stored))
+				: defaults;
 		} catch (_) {
 			this.#filter = defaults;
 		}
+	}
+
+	// Pre-v1.0.8 the filter had a separate ホスト状態 category
+	// (statusEnabled/statusMaintenance/statusDisabled) and no faultNone /
+	// faultMaintenance / faultColor keys. A blob from that era is detected by
+	// the absence of faultMaintenance; carry the user's intent across the
+	// restructure and drop the now-dead keys so Object.assign doesn't keep
+	// them around.
+	#migrateFilterState(stored) {
+		if (stored === null || typeof stored !== 'object' || 'faultMaintenance' in stored) {
+			return stored;
+		}
+
+		stored.faultMaintenance = stored.statusMaintenance === true;
+		stored.cfgDisabled      = stored.statusDisabled === true;
+		// Old severity-color rule: shown iff faultAck or faultUnack was checked.
+		stored.faultColor = stored.faultUnack !== false || stored.faultAck !== false;
+		// The presence partition is new; default it fully on so a migrated user
+		// keeps seeing every non-maintenance host exactly as before.
+		stored.faultUnack = true;
+		stored.faultAck   = true;
+		stored.faultNone  = true;
+
+		delete stored.statusEnabled;
+		delete stored.statusMaintenance;
+		delete stored.statusDisabled;
+
+		return stored;
 	}
 
 	#saveFilterState() {
@@ -588,11 +625,11 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	// Recomputes a host's effective severity from its ack/unack problem
 	// buckets (see WidgetView::applyProblems()) and the current filter state,
 	// entirely client-side. severity stays -1 (MM_SEVERITY_OK, see
-	// helpers.php) when neither checkbox is on or neither enabled bucket has
-	// an active problem - unlike every other category, an empty selection
-	// here means "don't display problem severity", not "no restriction".
+	// helpers.php) when neither faultAck nor faultUnack is checked or neither
+	// enabled bucket has an active problem. faultColor then gates whether the
+	// resulting severity is painted onto the icon at all - it never changes
+	// host visibility.
 	#recomputeSeverity(meta) {
-		const filterActive = this.#filter.faultAck || this.#filter.faultUnack;
 		let severity = null;
 
 		if (this.#filter.faultAck && meta.severity_ack !== null) {
@@ -604,11 +641,11 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		meta.severity = severity === null ? -1 : severity;
 
-		// Both checkboxes off means "don't display problem events" (see the
-		// comment above this method) - showing the OK/green circle here would
-		// misleadingly imply a confirmed-healthy status we never checked, so
-		// the host icon's background goes fully transparent instead.
-		if (!filterActive) {
+		// "深刻度で色分け表示" off means the severity color is not painted onto
+		// the icon - showing the OK/green circle here would misleadingly imply
+		// a confirmed-healthy status, so the host icon's background goes fully
+		// transparent instead. Host visibility is unaffected either way.
+		if (!this.#filter.faultColor) {
 			meta.severity_color = 'none';
 			meta.severity_label = null;
 			return;
@@ -646,9 +683,9 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 	// True if the host has at least one of the checked tags (OR) - an
 	// unchecked category matches nothing, hiding every host via this
-	// category. Used for ホスト状態/ホスト設定 (independent boolean tags); both
-	// categories include a "baseline" tag (statusEnabled / cfgNormal) so an
-	// ordinary host always has at least one tag available to match.
+	// category. Used for ホスト状態 (independent boolean tags); the category
+	// includes a "baseline" tag (cfgNormal) so an ordinary host always has at
+	// least one tag available to match.
 	#tagMatch(pairs) {
 		return pairs.some(([key, hostHasTag]) => this.#filter[key] && hostHasTag);
 	}
@@ -669,28 +706,47 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		});
 	}
 
-	// AND-combines the 5 host-level categories (障害イベント doesn't hide hosts -
-	// it only controls severity display, see #recomputeSeverity()).
+	// AND-combines the host-level categories. 障害状態 gates first: a host in
+	// maintenance passes only through the faultMaintenance OR-gate, every
+	// other host through the faultUnack/faultAck/faultNone partition (see
+	// #faultStateMatch()). The faultColor key is display-only, not consulted
+	// here.
 	#hostVisible(meta) {
+		if (meta.maintenance_status === 1 && meta.host_status === 0) {
+			// Independent OR gate: a host in maintenance is shown iff
+			// faultMaintenance is checked, whatever its problem state.
+			if (!this.#filter.faultMaintenance) return false;
+		}
+		else if (!this.#faultStateMatch(meta)) {
+			return false;
+		}
+
 		if (!this.#tagMatch([
-			['statusEnabled',     meta.host_status === 0 && meta.maintenance_status !== 1],
-			['statusMaintenance', meta.maintenance_status === 1],
-			['statusDisabled',    meta.host_status === 1],
+			['cfgNormal',      meta.host_status === 0 && meta.has_interface && !meta.is_local],
+			['cfgNoInterface', meta.host_status === 0 && !meta.has_interface],
+			['cfgLocal',       meta.host_status === 0 && meta.is_local],
+			['cfgDisabled',    meta.host_status === 1],
 		])) return false;
 
 		if (!this.#singleMatch(CWidgetHoloztekMonitoringMap.#IFACE_KEYS, meta.availability)) return false;
-
-		if (!this.#tagMatch([
-			['cfgNormal',      meta.has_interface && !meta.is_local],
-			['cfgNoInterface', !meta.has_interface],
-			['cfgLocal',       meta.is_local],
-		])) return false;
 
 		if (!this.#singleMatch(CWidgetHoloztekMonitoringMap.#ROUTE_KEYS, meta.route)) return false;
 
 		if (!this.#methodMatch(meta.comm_methods)) return false;
 
 		return true;
+	}
+
+	// 障害状態 partition over non-maintenance hosts: faultUnack/faultAck match a
+	// host carrying an unacknowledged / acknowledged active problem, faultNone
+	// matches a host with no active problem at all. All three checked = every
+	// non-maintenance host matches. Hosts in maintenance never reach here -
+	// they go through the faultMaintenance gate in #hostVisible() instead.
+	#faultStateMatch(meta) {
+		if (this.#filter.faultUnack && meta.severity_unack !== null) return true;
+		if (this.#filter.faultAck   && meta.severity_ack   !== null) return true;
+		if (this.#filter.faultNone  && meta.severity_unack === null && meta.severity_ack === null) return true;
+		return false;
 	}
 
 	// A non-host node (Server/Proxy/Proxy Group/Network/Cluster) is visible iff at
@@ -733,7 +789,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	}
 
 	#onFilterChanged(key) {
-		if (key === 'faultAck' || key === 'faultUnack') {
+		if (key === 'faultAck' || key === 'faultUnack' || key === 'faultColor') {
 			this.#refreshSeverities();
 		}
 		this.#applyVisibility();
@@ -768,21 +824,20 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				<button type="button" class="mm-filter-reset">${this.#escape(t('Reset'))}</button>
 			</div>
 			<details class="mm-filter-category">
-				<summary>${this.#escape(t('Problem events'))}</summary>
+				<summary>${this.#escape(t('Problem status'))}</summary>
 				${row('faultUnack', t('Unacknowledged'))}
 				${row('faultAck', t('Acknowledged'))}
+				${row('faultNone', t('No problem'))}
+				${row('faultMaintenance', t('Include hosts in maintenance'))}
+				<div class="mm-filter-divider"></div>
+				${row('faultColor', t('Colorize by severity'))}
 			</details>
 			<details class="mm-filter-category">
 				<summary>${this.#escape(t('Host status'))}</summary>
-				${row('statusEnabled', t('Enabled hosts'))}
-				${row('statusMaintenance', t('In maintenance'))}
-				${row('statusDisabled', t('Disabled hosts'))}
-			</details>
-			<details class="mm-filter-category">
-				<summary>${this.#escape(t('Host configuration'))}</summary>
 				${row('cfgNormal', t('Normal hosts'))}
 				${row('cfgNoInterface', t('No interface configured'))}
 				${row('cfgLocal', t('Local host monitoring'))}
+				${row('cfgDisabled', t('Disabled hosts'))}
 			</details>
 			<details class="mm-filter-category">
 				<summary>${this.#escape(t('Interface'))}</summary>

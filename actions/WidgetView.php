@@ -54,11 +54,48 @@ class WidgetView extends CControllerDashboardWidgetView {
 			return;
 		}
 
-		$host_filter = $hostgroupids
-			? ['groupids' => $this->resolveHostGroupIds($hostgroupids)]
-			: ['hostids' => $hostids];
+		// A broadcasting source (Tree Navigator in multi-select mode) can send a
+		// group selection and an explicit host selection at the same time - e.g.
+		// "this ESXi host group, plus that one extra VM". The two are a union:
+		// every host in the selected groups OR named directly. Passing both
+		// groupids and hostids to one Host.get() would intersect them instead
+		// (a host not in any selected group drops out entirely - the reported
+		// "add a VM and it disappears" bug), so the groups are resolved to
+		// their own host ids here and merged with the explicit list.
+		if ($hostgroupids) {
+			$group_hostids = [];
+			$resolved_groupids = $this->resolveHostGroupIds($hostgroupids);
 
-		$hosts = API::Host()->get($host_filter + [
+			// A broadcast can carry the multiselect "nothing selected" sentinel
+			// ('0'), which resolves to no real group. Host.get() with an empty
+			// groupids returns false, not [], so guard before querying/merging.
+			if ($resolved_groupids) {
+				$group_hostids = array_column(API::Host()->get([
+					'output'   => ['hostid'],
+					'groupids' => $resolved_groupids
+				]), 'hostid');
+			}
+
+			$hostids = array_merge($group_hostids, $hostids);
+		}
+
+		// Drop the '0' / '' sentinel a multiselect broadcast can send for an
+		// empty field, so it neither rides along as a bogus host id nor hides
+		// the empty state below.
+		$hostids = array_values(array_unique(array_filter($hostids,
+			static fn($id): bool => $id !== null && (string) $id !== '0' && (string) $id !== ''
+		)));
+
+		if (!$hostids) {
+			$this->setResponse(new CControllerResponseData($common + [
+				'error'    => 'no_hosts',
+				'elements' => []
+			]));
+			return;
+		}
+
+		$hosts = API::Host()->get([
+			'hostids'               => $hostids,
 			'output'                => [
 				'hostid', 'name', 'status', 'monitored_by', 'proxyid', 'proxy_groupid', 'assigned_proxyid',
 				'maintenance_status'
