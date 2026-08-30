@@ -6,8 +6,10 @@ Use a sanitized demo Zabbix environment. Never capture production dashboards or 
 
 | File | Purpose | Suggested size |
 | --- | --- | --- |
-| `screenshots/monitoring-topology-overview.png` | Main Server / Proxy / Network / Host topology | 1600 x 980 |
-| `screenshots/monitoring-topology-virtualization.png` | VMware Datacenter / Cluster / ESXi / VM hierarchy | 1600 x 980 |
+| `screenshots/monitoring-topology-zabbix-server.png` | Zabbix Server / Network / Host topology | 1600 x 980 |
+| `screenshots/monitoring-topology-zabbix-proxy.png` | Zabbix Server / Proxy / Network / Host topology | 1600 x 980 |
+| `screenshots/monitoring-topology-proxy-group.png` | Zabbix Server / Proxy Group / Proxy / Network / Host topology | 1600 x 980 |
+| `screenshots/monitoring-topology-vmware.png` | VMware Datacenter / Cluster / Host / VM hierarchy | 1600 x 980 |
 | `screenshots/monitoring-topology-kubernetes.png` | Two distinct Kubernetes clusters | 1600 x 980 |
 | `screenshots/monitoring-topology-filters.png` | Expanded display filter panel | 1200 x 800 |
 | `screenshots/monitoring-topology-settings.png` | English settings form | 900 x 720 |
