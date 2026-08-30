@@ -4,9 +4,11 @@ English | [日本語](README.ja.md)
 
 ## Overview
 
-Monitoring Topology is a Zabbix dashboard widget that visualizes the monitoring path from Zabbix Server through proxy, network, virtualization, cluster, and host layers as an interactive topology graph.
+Monitoring Topology is a dashboard widget that visualizes the monitoring paths to hosts monitored by Zabbix as a topology.
 
-It receives host or host-group selections from another dashboard widget, such as [Tree Navigator](https://github.com/HOLOZTEK/zabbix-widget-tree-navigator), and redraws the topology for the selected scope. Vis Network renders the graph in Canvas2D; WebGL is not required.
+It draws a selected host or host group and visualizes Zabbix Server, Zabbix Proxy, and Proxy Group monitoring routes together with VMware virtualization and Kubernetes cluster hierarchies. It receives the target from Navigator or another compatible widget and draws the topology for the selected scope.
+
+Vis Network renders the graph in Canvas2D; WebGL is not required.
 
 <a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator driving a Monitoring Topology dashboard" /></a>
 
@@ -14,41 +16,42 @@ It receives host or host-group selections from another dashboard widget, such as
 
 ## Why Monitoring Topology?
 
-Zabbix dashboards usually show host status, but the monitoring route behind each host can be difficult to understand at a glance. Monitoring Topology exposes that route and groups infrastructure by the relationships detected from Zabbix configuration and item data.
+A standard dashboard can show host status, but it is not easy to see at a glance which Zabbix Server or Proxy monitors each host. Monitoring Topology draws monitoring routes from Zabbix configuration, item, and discovery relationships, making the monitoring network visible while clarifying its parent-child relationships.
 
-Use it when operators need to see which server or proxy monitors a host, how hosts map to subnets, or how VMware and Kubernetes resources relate to their parent infrastructure.
+It is suited to environments with many monitored hosts or advanced distributed monitoring where operators need an overview of Server/Proxy-to-host assignments, subnet placement, and VMware or Kubernetes parent-child relationships.
 
 ## Features
 
 <table>
-  <tr><th align="left" nowrap>Function</th><th align="left">What it does</th></tr>
-  <tr><td nowrap>Monitoring-path graph</td><td>Shows Zabbix Server, Proxy Group, Proxy, Network, Cluster, Datacenter, Host, and VM nodes with connecting edges.</td></tr>
-  <tr><td nowrap>Network derivation</td><td>Calculates network nodes from host and proxy interface addresses using a configurable IPv4 prefix length.</td></tr>
-  <tr><td nowrap>VMware hierarchy</td><td>Builds Datacenter / Cluster / ESXi / VM branches from official VMware template discovery and item data.</td></tr>
-  <tr><td nowrap>Kubernetes grouping</td><td>Detects official Kubernetes template item keys and separates multiple clusters under the same monitoring path.</td></tr>
-  <tr><td nowrap>Proxmox handling</td><td>Uses the Proxmox endpoint macro to label or derive a network when the monitored host has no Zabbix interface.</td></tr>
-  <tr><td nowrap>Device and method indicators</td><td>Uses host-type icons and badges for Ping, SNMP, Agent, IPMI, VMware, ODBC, JMX, Kubernetes, and other methods.</td></tr>
-  <tr><td nowrap>Operational status</td><td>Marks non-responding proxies and applies problem-severity colors to host nodes only.</td></tr>
-  <tr><td nowrap>Interactive graph</td><td>Supports physics-based layout, node dragging, hover tooltips, and host-detail navigation.</td></tr>
-  <tr><td nowrap>Display filters</td><td>Filters by problem acknowledgement, host state, host configuration, interface, monitoring route, and monitoring method.</td></tr>
-  <tr><td nowrap>Widget integration</td><td>Receives host and host-group dynamic parameters from Tree Navigator or another compatible widget.</td></tr>
-  <tr><td nowrap>Theme controls</td><td>Configures node font, edge appearance, server label, subnet prefix, and filter-button position.</td></tr>
+  <tr><th align="left" nowrap>Function</th><th align="left">Description</th></tr>
+  <tr><td nowrap>Monitoring-path graph</td><td>Connects and displays Zabbix Server, Zabbix Proxy, Proxy Group, Network, and Host nodes.</td></tr>
+  <tr><td nowrap>Network display</td><td>Calculates Network nodes from host interface IP addresses and a configurable IPv4 prefix length. Because monitoring-route clarity takes priority, the same network segment can appear in multiple places when it is reached through different routes.</td></tr>
+  <tr><td nowrap>VMware monitoring</td><td>Uses official VMware template discovery and item data to display the Datacenter → Cluster → ESXi Host → VM hierarchy.</td></tr>
+  <tr><td nowrap>Kubernetes monitoring</td><td>Uses official Kubernetes template keys and discovery relationships to display clusters and Kubernetes component hosts (Zabbix Hosts).</td></tr>
+  <tr><td nowrap>Hosts without interfaces</td><td>For monitored hosts without interfaces, derives a network or label from the connection-target macro.</td></tr>
+  <tr><td nowrap>Device and monitoring-method display</td><td>Shows monitoring-method badges such as Ping, SNMP, Agent, IPMI, VMware, ODBC, JMX, and Kubernetes on host-type icons.</td></tr>
+  <tr><td nowrap>Problem status display</td><td>Colors each host icon background by the highest severity among problems detected on that host.</td></tr>
+  <tr><td nowrap>Display filters</td><td>Filters by problem acknowledgement, host state, host configuration, interface, monitoring route, and monitoring method. Host or host-group filtering requires integration with Navigator or another compatible widget.</td></tr>
+  <tr><td nowrap>Widget integration</td><td>Receives host or host-group parameters from Navigator and updates the topology dynamically.</td></tr>
+  <tr><td nowrap>Interactive operation</td><td>Supports moving nodes, adjusting the layout, and opening host menus.</td></tr>
 </table>
 
 ## Topology Models
 
-Monitoring Topology derives the graph from proxy assignments, interfaces, discovery relationships, macros, and monitoring items. The main model patterns are:
+Monitoring Topology builds the topology from direct Zabbix Server monitoring, distributed monitoring through Zabbix Proxy, interface data, discovery relationships, host macros, and monitoring items. The actual structure depends on the data available from Zabbix.
+
+Problem severity is displayed only for hosts. It is not displayed for groups such as Server, Proxy, Proxy Group, Network, or Cluster.
+
+The main supported model patterns are as follows.
 
 <table>
   <tr><th align="left" nowrap>Pattern</th><th align="left">Detection method and typical path</th><th align="left">Reference image</th></tr>
   <tr><td nowrap>Zabbix Server route</td><td><strong>Typical path:</strong> <code>Zabbix Server -&gt; Network -&gt; Host</code><br>The host is monitored directly by Zabbix Server. Its primary interface and configured subnet prefix determine the Network node.</td><td><a href="screenshots/monitoring-topology-zabbix-server.png" target="_blank"><img src="screenshots/monitoring-topology-zabbix-server.png" width="150" alt="Zabbix Server monitoring route"></a></td></tr>
   <tr><td nowrap>Zabbix Proxy route</td><td><strong>Typical path:</strong> <code>Zabbix Server -&gt; Zabbix Proxy -&gt; Network -&gt; Host</code><br>A host assigned to a standalone Zabbix Proxy is placed below that Proxy and its derived Network node.</td><td><a href="screenshots/monitoring-topology-zabbix-proxy.png" target="_blank"><img src="screenshots/monitoring-topology-zabbix-proxy.png" width="150" alt="Zabbix Proxy monitoring route"></a></td></tr>
   <tr><td nowrap>Proxy Group route</td><td><strong>Typical path:</strong> <code>Zabbix Server -&gt; Proxy Group -&gt; Zabbix Proxy -&gt; Network -&gt; Host</code><br>A host monitored through a Proxy Group is placed below the group and the member Proxy used for its route.</td><td><a href="screenshots/monitoring-topology-proxy-group.png" target="_blank"><img src="screenshots/monitoring-topology-proxy-group.png" width="150" alt="Proxy Group monitoring route"></a></td></tr>
-  <tr><td nowrap>VMware monitoring</td><td><strong>Typical path:</strong> <code>Server/Proxy -&gt; Network -&gt; VMware connection host -&gt; Datacenter -&gt; Cluster -&gt; ESXi -&gt; VM</code><br>Official VMware template discovery and <code>vmware.hv.*</code> item data provide the connection host, inventory hierarchy, and VM-to-ESXi relationship.</td><td><a href="screenshots/monitoring-topology-vmware.png" target="_blank"><img src="screenshots/monitoring-topology-vmware.png" width="150" alt="VMware monitoring overview"></a></td></tr>
-  <tr><td nowrap>Kubernetes monitoring</td><td><strong>Typical path:</strong> <code>Server/Proxy -&gt; Kubernetes Cluster -&gt; Kubernetes hosts</code><br>Official Kubernetes template item keys and discovery parents identify each cluster and keep multiple clusters on the same route separate.</td><td><a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes monitoring route"></a></td></tr>
+  <tr><td nowrap>VMware monitoring</td><td><strong>Typical path:</strong> <code>Server/Proxy -&gt; Network -&gt; VMware monitoring host (Zabbix Host) -&gt; Datacenter -&gt; Cluster -&gt; ESXi Host -&gt; VM</code><br>Official VMware template discovery and <code>vmware.hv.*</code> item data provide the VMware monitoring host, inventory hierarchy, and VM-to-ESXi Host relationship.</td><td><a href="screenshots/monitoring-topology-vmware.png" target="_blank"><img src="screenshots/monitoring-topology-vmware.png" width="150" alt="VMware monitoring overview"></a></td></tr>
+  <tr><td nowrap>Kubernetes monitoring</td><td><strong>Typical path:</strong> <code>Server/Proxy -&gt; Kubernetes Cluster -&gt; Kubernetes component host (Zabbix Host)</code><br>Official Kubernetes template item keys and discovery parents identify each cluster and place component hosts such as API Server, Scheduler, Controller Manager, and Kubelet. Multiple clusters on the same route remain separate.</td><td><a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes monitoring route"></a></td></tr>
 </table>
-
-The exact structure depends on the data available in Zabbix. Only Host nodes carry problem-severity coloring; Server, Proxy Group, Proxy, Network, Datacenter, and Cluster nodes do not represent aggregated health.
 
 ## Display Filters
 
@@ -96,8 +99,9 @@ This widget is receive-only and intentionally shows an empty state until a host 
 
 ## Requirements
 
-- Zabbix 7.0 or later
-- PHP 8.3 or later for packaged installation
+- Supported version: Zabbix 7.0
+- Tested version: Zabbix 7.0
+- PHP 8.1 or later
 - Browser with Canvas2D support
 
 ## Installation
@@ -105,7 +109,7 @@ This widget is receive-only and intentionally shows an empty state until a host 
 ### Install from RPM
 
 ```bash
-rpm -Uvh zabbix-widget-monitoring-topology-1.0.6.noarch.rpm
+dnf install ./zabbix-widget-monitoring-topology-1.0.6.noarch.rpm
 ```
 
 ### Install from DEB

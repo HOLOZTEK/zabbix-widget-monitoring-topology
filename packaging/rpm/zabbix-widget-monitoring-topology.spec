@@ -5,8 +5,8 @@ Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
 BuildArch:      noarch
-Requires:       (php >= 8.3 or php8.3-common or php8.4-common or php8.5-common)
-Requires:       (php-fpm >= 8.3 or php8.3-fpm or php8.4-fpm or php8.5-fpm)
+Requires:       (php >= 8.1 or php8.1-common or php8.2-common or php8.3-common or php8.4-common or php8.5-common)
+Requires:       (php-fpm >= 8.1 or php8.1-fpm or php8.2-fpm or php8.3-fpm or php8.4-fpm or php8.5-fpm)
 
 %description
 Zabbix dashboard widget that visualizes the monitoring path (Zabbix Server -
