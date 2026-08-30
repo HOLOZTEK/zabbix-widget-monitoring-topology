@@ -6,6 +6,7 @@
 - Routed VMware VMs through Network nodes below their ESXi Host and scoped same-named ESXi hosts by vCenter.
 - Reorganized Kubernetes as Network / aggregate host / Cluster / component-host branches with role-specific icons.
 - Reworked display filters to include problem-free and maintenance states while preserving ancestor paths for matching descendants.
+- Rebuilt the v1.1.0 RPM and DEB assets with a PHP 8.1 minimum dependency; the RPM release is 1 and the DEB now declares `php (>= 2:8.1~)`.
 
 
 All notable public-facing changes are documented here.
