@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.0.8
+Version:        1.0.9
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,6 +121,19 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sun Aug 30 2026 claude <noreply> - 1.0.9-0
+- VMware VMノードの直上にNetworkノードを挿入し、Zabbix→…→ESXi→
+  Datacenter→Cluster→Network→VM の階層に統一（VM群がClusterへ直結
+  していた従来表示を、他ホストと同じくNetwork経由に揃えた）
+- vCenter／ESXi／VM のアイコンをそれぞれ固有の3Dキューブ字形に差し替え、
+  device_type（vcenter／esxi／vm）で描き分け
+- Kubernetesトポロジをrestructureし、VMware型のツリー構造に再編
+  （Zabbix→(Proxy)→Network→集約「クラスタ状態」ホスト→Cluster→
+  LLDで検出された構成要素ホスト）。集約ホストをClusterノードの親に配置
+  （従来は子ノードだった）。ウィジェット選択範囲外でも集約ホストを自動取得
+- Kubernetes構成要素をロール別アイコンで表示（Kubernetesブランド青
+  #326ce5 のヘプタゴン字形。API server=API／controller manager=CTL／
+  scheduler=SCH／kubelet=KBL／集約ホスト=K8S のタグ）
 * Sun Aug 30 2026 claude <noreply> - 1.0.8-0
 - 表示フィルタの「障害イベント」区分を「障害状態」区分に再編し、障害の
   有無による絞り込み機能を追加。未確認／確認済みに加えて「障害なし」

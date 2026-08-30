@@ -1,3 +1,20 @@
+zabbix-widget-monitoring-topology (1.0.9) unstable; urgency=medium
+
+  * VMware VMノードの直上にNetworkノードを挿入し、Zabbix→…→ESXi→
+    Datacenter→Cluster→Network→VM の階層に統一（VM群がClusterへ直結
+    していた従来表示を、他ホストと同じくNetwork経由に揃えた）。
+  * vCenter／ESXi／VM のアイコンをそれぞれ固有の3Dキューブ字形に差し替え、
+    device_type（vcenter／esxi／vm）で描き分け。
+  * Kubernetesトポロジをrestructureし、VMware型のツリー構造に再編
+    （Zabbix→(Proxy)→Network→集約「クラスタ状態」ホスト→Cluster→
+    LLDで検出された構成要素ホスト）。集約ホストをClusterノードの親に配置
+    （従来は子ノードだった）。ウィジェット選択範囲外でも集約ホストを自動取得。
+  * Kubernetes構成要素をロール別アイコンで表示（Kubernetesブランド青
+    #326ce5 のヘプタゴン字形。API server=API／controller manager=CTL／
+    scheduler=SCH／kubelet=KBL／集約ホスト=K8S のタグ）。
+
+ -- claude <noreply@example.com>  Sun, 30 Aug 2026 18:00:00 +0000
+
 zabbix-widget-monitoring-topology (1.0.8) unstable; urgency=medium
 
   * 表示フィルタの「障害イベント」区分を「障害状態」区分に再編し、障害の
