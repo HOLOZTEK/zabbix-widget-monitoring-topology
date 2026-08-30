@@ -5,8 +5,12 @@ zabbix-widget-monitoring-topology (1.1.0) unstable; urgency=medium
     Kubernetes ツリー再編）とそのコードレビュー対応（Gitea issue #10 / #11）
     一式を、マイナーバージョンの区切りとして再リリース。
   * v1.0.10 からの機能・コード変更なし（バージョン番号のみ更新）。
+  * パッケージメタデータ修正（機能・コードは不変、資材差し替え）: 欠落して
+    いた PHP 依存を追加（Depends: php (>= 2:8.1~)）。公開ステージング
+    （public-staging）の PHP 8.1 依存と整合。php-fpm は RPM 側限定のため
+    DEB では要求しない（190/191 は Apache mod_php 運用）。
 
- -- claude <noreply@example.com>  Sun, 30 Aug 2026 22:00:00 +0000
+ -- claude <noreply@example.com>  Sun, 30 Aug 2026 23:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.10) unstable; urgency=medium
 

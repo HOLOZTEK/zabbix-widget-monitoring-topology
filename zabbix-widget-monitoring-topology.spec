@@ -1,12 +1,12 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
 Version:        1.1.0
-Release:        0
+Release:        1
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
 BuildArch:      noarch
-Requires:       (php >= 8.3 or php8.3-common or php8.4-common or php8.5-common)
-Requires:       (php-fpm >= 8.3 or php8.3-fpm or php8.4-fpm or php8.5-fpm)
+Requires:       (php >= 8.1 or php8.1-common or php8.2-common or php8.3-common or php8.4-common or php8.5-common)
+Requires:       (php-fpm >= 8.1 or php8.1-fpm or php8.2-fpm or php8.3-fpm or php8.4-fpm or php8.5-fpm)
 
 %description
 Zabbix dashboard widget that visualizes the monitoring path (Zabbix Server -
@@ -121,6 +121,15 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sun Aug 30 2026 claude <noreply> - 1.1.0-1
+- パッケージメタデータのみの修正（ウィジェットの機能・コードは 1.1.0-0 と同一）。
+  公開ステージング（public-staging）との整合のため PHP 依存の下限を 8.3 から
+  8.1 へ引き下げ。RPM の Requires を
+  `(php >= 8.1 or php8.1-common .. php8.5-common)` および
+  `(php-fpm >= 8.1 or php8.1-fpm .. php8.5-fpm)` に変更
+- あわせて DEB 側（debian/control）に欠落していた PHP 依存
+  `Depends: php (>= 2:8.1~)` を追加（php-fpm は RPM 側限定のまま）。
+  リリース済み v1.1.0 の DEB 資材に PHP Depends が無かった指摘への対応
 * Sun Aug 30 2026 claude <noreply> - 1.1.0-0
 - マイナーバージョンリリース。v1.0.9〜v1.0.10 の VMware／Kubernetes トポロジ
   改修（VMノードの Network 経由化・vCenter／ESXi／VM／k8s ロール別アイコン・
