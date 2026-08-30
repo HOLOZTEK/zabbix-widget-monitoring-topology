@@ -99,11 +99,23 @@ msgstr "Reset"
 msgid "Problem events"
 msgstr "Problem events"
 
+msgid "Problem status"
+msgstr "Problem status"
+
 msgid "Unacknowledged"
 msgstr "Unacknowledged"
 
 msgid "Acknowledged"
 msgstr "Acknowledged"
+
+msgid "No problem"
+msgstr "No problem"
+
+msgid "Include hosts in maintenance"
+msgstr "Include hosts in maintenance"
+
+msgid "Colorize by severity"
+msgstr "Colorize by severity"
 
 msgid "Host status"
 msgstr "Host status"

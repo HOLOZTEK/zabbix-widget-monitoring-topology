@@ -12,7 +12,7 @@ Vis Network renders the graph in Canvas2D; WebGL is not required.
 
 <a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator driving a Monitoring Topology dashboard" /></a>
 
-[Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.0.6) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology_1.0.6_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.tar.gz)
+[Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.1.0) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.0/zabbix-widget-monitoring-topology-1.1.0.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.0/zabbix-widget-monitoring-topology_1.1.0_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.0/zabbix-widget-monitoring-topology-1.1.0.tar.gz)
 
 ## Why Monitoring Topology?
 
@@ -26,12 +26,12 @@ It is suited to environments with many monitored hosts or advanced distributed m
   <tr><th align="left" nowrap>Function</th><th align="left">Description</th></tr>
   <tr><td nowrap>Monitoring-path graph</td><td>Connects and displays Zabbix Server, Zabbix Proxy, Proxy Group, Network, and Host nodes.</td></tr>
   <tr><td nowrap>Network display</td><td>Calculates Network nodes from host interface IP addresses and a configurable IPv4 prefix length. Because monitoring-route clarity takes priority, the same network segment can appear in multiple places when it is reached through different routes.</td></tr>
-  <tr><td nowrap>VMware monitoring</td><td>Uses official VMware template discovery and item data to display the Datacenter → Cluster → ESXi Host → VM hierarchy.</td></tr>
-  <tr><td nowrap>Kubernetes monitoring</td><td>Uses official Kubernetes template keys and discovery relationships to display clusters and Kubernetes component hosts (Zabbix Hosts).</td></tr>
+  <tr><td nowrap>VMware monitoring</td><td>Uses official VMware template discovery and item data to build the Datacenter → Cluster → ESXi Host hierarchy and displays VMs through Network nodes below their ESXi Host.</td></tr>
+  <tr><td nowrap>Kubernetes monitoring</td><td>Uses official Kubernetes template keys and discovery relationships to display the Network → aggregate host → Kubernetes Cluster → component host hierarchy.</td></tr>
   <tr><td nowrap>Hosts without interfaces</td><td>For monitored hosts without interfaces, derives a network or label from the connection-target macro.</td></tr>
   <tr><td nowrap>Device and monitoring-method display</td><td>Shows monitoring-method badges such as Ping, SNMP, Agent, IPMI, VMware, ODBC, JMX, and Kubernetes on host-type icons.</td></tr>
   <tr><td nowrap>Problem status display</td><td>Colors each host icon background by the highest severity among problems detected on that host.</td></tr>
-  <tr><td nowrap>Display filters</td><td>Filters by problem acknowledgement, host state, host configuration, interface, monitoring route, and monitoring method. Host or host-group filtering requires integration with Navigator or another compatible widget.</td></tr>
+  <tr><td nowrap>Display filters</td><td>Filters by problem status, host status, interface, monitoring route, and monitoring method. Host or host-group filtering requires integration with Navigator or another compatible widget.</td></tr>
   <tr><td nowrap>Widget integration</td><td>Receives host or host-group parameters from Navigator and updates the topology dynamically.</td></tr>
   <tr><td nowrap>Interactive operation</td><td>Supports moving nodes, adjusting the layout, and opening host menus.</td></tr>
 </table>
@@ -49,19 +49,18 @@ The main supported model patterns are as follows.
   <tr><td nowrap>Zabbix Server route</td><td><strong>Typical path:</strong> <code>Zabbix Server -&gt; Network -&gt; Host</code><br>The host is monitored directly by Zabbix Server. Its primary interface and configured subnet prefix determine the Network node.</td><td><a href="screenshots/monitoring-topology-zabbix-server.png" target="_blank"><img src="screenshots/monitoring-topology-zabbix-server.png" width="150" alt="Zabbix Server monitoring route"></a></td></tr>
   <tr><td nowrap>Zabbix Proxy route</td><td><strong>Typical path:</strong> <code>Zabbix Server -&gt; Zabbix Proxy -&gt; Network -&gt; Host</code><br>A host assigned to a standalone Zabbix Proxy is placed below that Proxy and its derived Network node.</td><td><a href="screenshots/monitoring-topology-zabbix-proxy.png" target="_blank"><img src="screenshots/monitoring-topology-zabbix-proxy.png" width="150" alt="Zabbix Proxy monitoring route"></a></td></tr>
   <tr><td nowrap>Proxy Group route</td><td><strong>Typical path:</strong> <code>Zabbix Server -&gt; Proxy Group -&gt; Zabbix Proxy -&gt; Network -&gt; Host</code><br>A host monitored through a Proxy Group is placed below the group and the member Proxy used for its route.</td><td><a href="screenshots/monitoring-topology-proxy-group.png" target="_blank"><img src="screenshots/monitoring-topology-proxy-group.png" width="150" alt="Proxy Group monitoring route"></a></td></tr>
-  <tr><td nowrap>VMware monitoring</td><td><strong>Typical path:</strong> <code>Server/Proxy -&gt; Network -&gt; VMware monitoring host (Zabbix Host) -&gt; Datacenter -&gt; Cluster -&gt; ESXi Host -&gt; VM</code><br>Official VMware template discovery and <code>vmware.hv.*</code> item data provide the VMware monitoring host, inventory hierarchy, and VM-to-ESXi Host relationship.</td><td><a href="screenshots/monitoring-topology-vmware.png" target="_blank"><img src="screenshots/monitoring-topology-vmware.png" width="150" alt="VMware monitoring overview"></a></td></tr>
-  <tr><td nowrap>Kubernetes monitoring</td><td><strong>Typical path:</strong> <code>Server/Proxy -&gt; Kubernetes Cluster -&gt; Kubernetes component host (Zabbix Host)</code><br>Official Kubernetes template item keys and discovery parents identify each cluster and place component hosts such as API Server, Scheduler, Controller Manager, and Kubelet. Multiple clusters on the same route remain separate.</td><td><a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes monitoring route"></a></td></tr>
+  <tr><td nowrap>VMware monitoring</td><td><strong>Typical path:</strong> <code>Server/Proxy -&gt; Network -&gt; VMware monitoring host (Zabbix Host) -&gt; Datacenter -&gt; Cluster -&gt; ESXi Host -&gt; Network -&gt; VM</code><br>Official VMware template discovery and <code>vmware.hv.*</code> item data provide the VMware monitoring host and inventory hierarchy. Each VM is matched to its vCenter and ESXi Host, then placed below a Network node derived from the guest IP address.</td><td><a href="screenshots/monitoring-topology-vmware.png" target="_blank"><img src="screenshots/monitoring-topology-vmware.png" width="150" alt="VMware monitoring overview"></a></td></tr>
+  <tr><td nowrap>Kubernetes monitoring</td><td><strong>Typical path:</strong> <code>Server/Proxy -&gt; Network -&gt; aggregate host (Zabbix Host) -&gt; Kubernetes Cluster -&gt; Kubernetes component host (Zabbix Host)</code><br>Official Kubernetes template item keys and discovery parents identify each cluster. The aggregate host is obtained automatically as the cluster parent, and component hosts such as API Server, Scheduler, Controller Manager, and Kubelet are placed by role. Multiple clusters on the same route remain separate.</td><td><a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes monitoring route"></a></td></tr>
 </table>
 
 ## Display Filters
 
-The filter panel limits which Host nodes remain visible. Within one category, selected values are combined with OR; the six categories are combined with AND. Parent infrastructure nodes and edges disappear automatically when none of their descendant hosts remain visible.
+The filter panel limits which Host nodes remain visible. Within one category, selected values are combined with OR; the five categories are combined with AND. Ancestor nodes and edges leading to matching descendant hosts remain visible so that paths are not disconnected.
 
 <table>
         <tr><th align="left" nowrap>Category</th><th align="left">Choices</th><th align="left">Purpose and default</th></tr>
-        <tr><td nowrap>Problem events</td><td>Unacknowledged, Acknowledged</td><td>Controls which problem severities contribute to host coloring rather than host visibility. Both are enabled by default; clearing both removes problem coloring.</td></tr>
-        <tr><td nowrap>Host status</td><td>Enabled hosts, In maintenance, Disabled hosts</td><td>Includes hosts by operational state. Only Enabled hosts is selected by default.</td></tr>
-        <tr><td nowrap>Host configuration</td><td>Normal hosts, No interface configured, Local host monitoring</td><td>Includes ordinary interface-based hosts, interface-less hosts, or locally monitored hosts. Only Normal hosts is selected by default.</td></tr>
+        <tr><td nowrap>Problem status</td><td>Unacknowledged, Acknowledged, No problem, Include hosts in maintenance, Colorize by severity</td><td>Filters non-maintenance hosts by problem state. Unacknowledged, Acknowledged, and No problem are enabled by default. Include hosts in maintenance is an independent visibility condition and is disabled by default. Colorize by severity affects color only and is enabled by default.</td></tr>
+        <tr><td nowrap>Host status</td><td>Normal hosts, No interface configured, Local host monitoring, Disabled hosts</td><td>Partitions hosts by configuration and operational state. Only Normal hosts is enabled by default.</td></tr>
         <tr><td nowrap>Interface</td><td>Available, Mixed, Not available, Unknown</td><td>Includes hosts by interface availability. All choices are enabled by default.</td></tr>
         <tr><td nowrap>Monitoring route</td><td>Zabbix Server, Zabbix Proxy, Proxy Group</td><td>Includes hosts by their upstream monitoring route. All choices are enabled by default.</td></tr>
         <tr><td nowrap>Monitoring method</td><td>Ping, Zabbix Agent, SNMP, IPMI, JMX, Other</td><td>Includes hosts by detected monitoring method. All choices are enabled by default. Other includes VMware, ODBC, Kubernetes, and methods that cannot be classified separately.</td></tr>
@@ -69,7 +68,7 @@ The filter panel limits which Host nodes remain visible. Within one category, se
 
 <a href="screenshots/monitoring-topology-filters.png" target="_blank"><img src="screenshots/monitoring-topology-filters.png" height="395" alt="Monitoring Topology display filter panel"></a>
 
-Except for Problem events, clearing every choice in a category hides every host. Filter state is saved per widget in the browser, and Reset restores the defaults above.
+Clearing every visibility choice in a category hides every host. Colorize by severity does not affect visibility. Filter state is saved per widget in the browser, and Reset restores the defaults above.
 
 ## Settings
 
@@ -109,13 +108,13 @@ This widget is receive-only and intentionally shows an empty state until a host 
 ### Install from RPM
 
 ```bash
-dnf install ./zabbix-widget-monitoring-topology-1.0.6.noarch.rpm
+dnf install ./zabbix-widget-monitoring-topology-1.1.0.noarch.rpm
 ```
 
 ### Install from DEB
 
 ```bash
-apt install ./zabbix-widget-monitoring-topology_1.0.6_all.deb
+apt install ./zabbix-widget-monitoring-topology_1.1.0_all.deb
 ```
 
 The packages install the runtime files into the active Zabbix frontend module directory. Then scan and enable the module from Administration -> Modules and add the widget to a dashboard.
@@ -125,10 +124,10 @@ The packages install the runtime files into the active Zabbix frontend module di
 RPM or DEB installation is recommended. For a source installation:
 
 ```bash
-curl -L -o zabbix-widget-monitoring-topology-1.0.6.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.0.6/zabbix-widget-monitoring-topology-1.0.6.tar.gz
-tar -xzf zabbix-widget-monitoring-topology-1.0.6.tar.gz
+curl -L -o zabbix-widget-monitoring-topology-1.1.0.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.0/zabbix-widget-monitoring-topology-1.1.0.tar.gz
+tar -xzf zabbix-widget-monitoring-topology-1.1.0.tar.gz
 install -d /usr/share/zabbix/ui/modules/holoztek_monitoringmap
-cd zabbix-widget-monitoring-topology-1.0.6
+cd zabbix-widget-monitoring-topology-1.1.0
 cp -a manifest.json Module.php Widget.php actions assets includes locale views /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
 ```
 

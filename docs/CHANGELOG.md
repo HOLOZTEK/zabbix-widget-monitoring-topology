@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.1.0 - 2026-08-30
+
+- Added the v1.0.7-v1.0.10 VMware and Kubernetes topology improvements as the v1.1 release line.
+- Routed VMware VMs through Network nodes below their ESXi Host and scoped same-named ESXi hosts by vCenter.
+- Reorganized Kubernetes as Network / aggregate host / Cluster / component-host branches with role-specific icons.
+- Reworked display filters to include problem-free and maintenance states while preserving ancestor paths for matching descendants.
+
+
 All notable public-facing changes are documented here.
 
 ## v1.0.6 - 2026-08-24

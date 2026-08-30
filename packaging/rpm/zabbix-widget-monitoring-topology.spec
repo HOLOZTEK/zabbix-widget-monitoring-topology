@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.0.6
+Version:        1.1.0
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,7 +121,72 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
-* Mon Aug 24 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.6-0
+* Sun Aug 30 2026 claude <noreply> - 1.1.0-0
+- マイナーバージョンリリース。v1.0.9〜v1.0.10 の VMware／Kubernetes トポロジ
+  改修（VMノードの Network 経由化・vCenter／ESXi／VM／k8s ロール別アイコン・
+  Kubernetes ツリー再編）とそのコードレビュー対応（Gitea issue #10 / #11）
+  一式を、マイナーバージョンの区切りとして再リリース
+- v1.0.10 からの機能・コード変更なし（バージョン番号のみ更新）
+* Sun Aug 30 2026 claude <noreply> - 1.0.10-0
+- コードレビュー対応（Gitea issue #10 / #11）
+- #10: フィルタで祖先 Host ノード（vCenter／ESXi／k8s 集約ホスト）が非表示に
+  なると、条件に一致する子孫（VM／component）がルートから分断される不具合を
+  修正。ノードは「自身が一致」または「子孫が1つでも一致」で可視とし、経路上の
+  edge も接続を維持するよう `#applyVisibility()` を変更。k8s 集約ホストは
+  インターフェースを持たず既定フィルタで隠れるため、既定表示で顕在化していた
+- #11: 複数 vCenter に同名 ESXi が存在すると、Hypervisor ノード索引
+  （$hv_node_by_name）が表示名だけのフラット map だったため後勝ちで上書きされ、
+  一方の vCenter の VM が別 vCenter の同名 ESXi 配下へ誤接続され得た不具合を
+  修正。索引を master/接続ホスト（vCenter）単位にスコープし、VM 側は自身の
+  discoveryRule から接続ホストを取得して解決。discoveryRule を持たない VM は
+  一意に定まる場合のみ従来どおり名前一致で解決
+* Sun Aug 30 2026 claude <noreply> - 1.0.9-0
+- VMware VMノードの直上にNetworkノードを挿入し、Zabbix→…→ESXi→
+  Datacenter→Cluster→Network→VM の階層に統一（VM群がClusterへ直結
+  していた従来表示を、他ホストと同じくNetwork経由に揃えた）
+- vCenter／ESXi／VM のアイコンをそれぞれ固有の3Dキューブ字形に差し替え、
+  device_type（vcenter／esxi／vm）で描き分け
+- Kubernetesトポロジをrestructureし、VMware型のツリー構造に再編
+  （Zabbix→(Proxy)→Network→集約「クラスタ状態」ホスト→Cluster→
+  LLDで検出された構成要素ホスト）。集約ホストをClusterノードの親に配置
+  （従来は子ノードだった）。ウィジェット選択範囲外でも集約ホストを自動取得
+- Kubernetes構成要素をロール別アイコンで表示（Kubernetesブランド青
+  #326ce5 のヘプタゴン字形。API server=API／controller manager=CTL／
+  scheduler=SCH／kubelet=KBL／集約ホスト=K8S のタグ）
+* Sun Aug 30 2026 claude <noreply> - 1.0.8-0
+- 表示フィルタの「障害イベント」区分を「障害状態」区分に再編し、障害の
+  有無による絞り込み機能を追加。未確認／確認済みに加えて「障害なし」
+  （障害を1件も持たないホスト）を選択肢に追加し、3項目とも既定ON
+  （従来どおりメンテナンス外の全ホストを表示）。さらに「メンテナンス中を
+  含む」を独立したORゲートとして追加（既定OFF。ONにするとメンテナンス中
+  ホストを障害状態に関わらず表示、OFFではメンテナンス中ホストを非表示）。
+  「深刻度で色分け表示」トグルを同区分内へ区切り線付きで移設（アイコンの
+  色分け表示のみを制御し、ホストの表示・非表示には影響しない独立トグルに）
+- 1項目のみとなる旧「ホスト状態」区分（有効／メンテナンス中／無効）を廃止し、
+  「ホスト設定」区分を「ホスト状態」へ改称。旧区分の「無効ホスト」
+  （host status 無効）を新「無効ホスト」項目として統合し、通常／インター
+  フェイス設定なし／ローカルホスト監視／無効ホストの排他4分割に整理。
+  旧構造のフィルタ設定はブラウザ localStorage 上で新構造へ自動移行する
+- ホストグループとホストを同時に受信した場合に、両者のOR（和集合）で対象
+  ホストを解決するよう修正（従来はホストグループ指定が優先され、同時に
+  指定された単一ホストが無視されていた）
+* Thu Aug 27 2026 claude <noreply> - 1.0.7-0
+- ユーザー報告のVMware表示不具合2件を修正:
+  1. Hypervisorホストの接続用ホスト（master）がウィジェットの選択範囲外の
+     場合、Datacenterノードがフォールバック時にNetworkノードを経由せず
+     Server/Proxyへ直結し、Networkノードが表示されない不具合を修正。VMの
+     フォールバックと同様に接続元IP/マクロからNetworkノードを生成しその
+     配下へ接続するよう変更
+  2. Hypervisorの接続用ホスト（例:"ESXi#1 (VMware ESXi)"）自身が、vCenter
+     インベントリのホストグループ階層（Hypervisor/VM側が自動所属する
+     「<datacenter>」「<datacenter>/vm (vm)」等）と全く接点のない別グループ
+     （例:"Hypervisors"）にのみ所属しているため、そのインベントリ階層経由の
+     ホスト選択では接続用ホストが常に選択範囲から漏れ、Datacenter/Cluster
+     チェーンの根となるノードごと表示されない不具合を修正。
+     host.get()のselectDiscoveryRuleで判明する接続用ホストを、Server/Proxy/
+     Proxy Groupノードと同様にウィジェットの選択範囲に関わらず自動取得し
+     表示するよう変更
+* Mon Aug 24 2026 claude <noreply> - 1.0.6-0
 - コードレビュー issue #7/#8 対応（v1.0.5レビュー、reviewer codex）:
   issue #7: VM識別用ホストグループの判定を固定文字列"(vm)"との完全一致から、
   公式VMwareテンプレートが実際に生成する"<cluster> (vm)"/"<dc>/<folder> (vm)"

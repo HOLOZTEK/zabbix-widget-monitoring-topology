@@ -15,6 +15,29 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		windows: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHJlY3QgeD0nMS41JyB5PScxLjUnIHdpZHRoPSc3LjgnIGhlaWdodD0nNy44JyByeD0nLjgnIGZpbGw9JyMwMDkwY2MnLz48cmVjdCB4PScxMC43JyB5PScxLjUnIHdpZHRoPSc3LjgnIGhlaWdodD0nNy44JyByeD0nLjgnIGZpbGw9JyMwMDkwY2MnLz48cmVjdCB4PScxLjUnIHk9JzEwLjcnIHdpZHRoPSc3LjgnIGhlaWdodD0nNy44JyByeD0nLjgnIGZpbGw9JyMwMDkwY2MnLz48cmVjdCB4PScxMC43JyB5PScxMC43JyB3aWR0aD0nNy44JyBoZWlnaHQ9JzcuOCcgcng9Jy44JyBmaWxsPScjMDA5MGNjJy8+PC9zdmc+",
 		network: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHJlY3QgeD0nMScgeT0nNicgd2lkdGg9JzE4JyBoZWlnaHQ9JzcnIHJ4PScxJyBmaWxsPScjY2RkNmRiJyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS40Jy8+PGNpcmNsZSBjeD0nNC41JyBjeT0nOS41JyByPScxLjEnIGZpbGw9JyMyN2EwNDAnLz48Y2lyY2xlIGN4PSc4JyBjeT0nOS41JyByPScxLjEnIGZpbGw9JyMyN2EwNDAnLz48Y2lyY2xlIGN4PScxMS41JyBjeT0nOS41JyByPScxLjEnIGZpbGw9JyM3NzgnLz48Y2lyY2xlIGN4PScxNScgY3k9JzkuNScgcj0nMS4xJyBmaWxsPScjNzc4Jy8+PGxpbmUgeDE9JzQuNScgeTE9JzEzJyB4Mj0nNC41JyB5Mj0nMTcnIHN0cm9rZT0nIzMzNCcgc3Ryb2tlLXdpZHRoPScxLjQnLz48bGluZSB4MT0nOCcgeTE9JzEzJyB4Mj0nOCcgeTI9JzE3JyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS40Jy8+PGxpbmUgeDE9JzExLjUnIHkxPScxMycgeDI9JzExLjUnIHkyPScxNycgc3Ryb2tlPScjMzM0JyBzdHJva2Utd2lkdGg9JzEuNCcvPjxsaW5lIHgxPScxNScgeTE9JzEzJyB4Mj0nMTUnIHkyPScxNycgc3Ryb2tlPScjMzM0JyBzdHJva2Utd2lkdGg9JzEuNCcvPjwvc3ZnPg==",
 		virtual: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHJlY3QgeD0nNCcgeT0nMicgd2lkdGg9JzE0JyBoZWlnaHQ9JzEwJyByeD0nMScgZmlsbD0nI2M1Y2FlOCcgc3Ryb2tlPScjNWM2YmMwJyBzdHJva2Utd2lkdGg9JzEuMicvPjxyZWN0IHg9JzInIHk9JzUnIHdpZHRoPScxNCcgaGVpZ2h0PScxMCcgcng9JzEnIGZpbGw9JyNlZWYnIHN0cm9rZT0nIzMzNCcgc3Ryb2tlLXdpZHRoPScxLjQnLz48bGluZSB4MT0nNCcgeTE9JzEwJyB4Mj0nMTQnIHkyPScxMCcgc3Ryb2tlPScjODg5JyBzdHJva2Utd2lkdGg9Jy45Jy8+PGxpbmUgeDE9JzknIHkxPSc1LjUnIHgyPSc5JyB5Mj0nMTQuNScgc3Ryb2tlPScjODg5JyBzdHJva2Utd2lkdGg9Jy45Jy8+PC9zdmc+",
+		// VMware-tree role glyphs (see WidgetView::addHostNode()'s
+		// $device_type_override): the same 3D cube outline for all three, tinted
+		// a pastel hue and stamped with a 2-letter tag so they read at a glance -
+		// pastel yellow "vC" for the vCenter connection host, pastel green "HV"
+		// for an ESXi Hypervisor, pastel blue "VM" for a guest.
+		vcenter: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHBvbHlnb24gcG9pbnRzPSczLDUgNiwyIDE5LDIgMTYsNScgZmlsbD0nI2Y4ZThiZCcgc3Ryb2tlPScjMzM0JyBzdHJva2Utd2lkdGg9JzEuMScgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcvPjxwb2x5Z29uIHBvaW50cz0nMTYsNSAxOSwyIDE5LDE1IDE2LDE4JyBmaWxsPScjZTZjODdlJyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4xJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nMycgeT0nNScgd2lkdGg9JzEzJyBoZWlnaHQ9JzEzJyByeD0nMS40JyBmaWxsPScjZjNkY2EwJyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4yJy8+PHRleHQgeD0nOS42JyB5PScxNC40JyBmb250LWZhbWlseT0nQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nNycgZm9udC13ZWlnaHQ9J2JvbGQnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyMyYjNhNGEnPnZDPC90ZXh0Pjwvc3ZnPg==",
+		esxi:    "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHBvbHlnb24gcG9pbnRzPSczLDUgNiwyIDE5LDIgMTYsNScgZmlsbD0nI2M4ZTZjMicgc3Ryb2tlPScjMzM0JyBzdHJva2Utd2lkdGg9JzEuMScgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcvPjxwb2x5Z29uIHBvaW50cz0nMTYsNSAxOSwyIDE5LDE1IDE2LDE4JyBmaWxsPScjOGZjNTg2JyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4xJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nMycgeT0nNScgd2lkdGg9JzEzJyBoZWlnaHQ9JzEzJyByeD0nMS40JyBmaWxsPScjYWVkOWE2JyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4yJy8+PHRleHQgeD0nOS42JyB5PScxNC40JyBmb250LWZhbWlseT0nQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nNycgZm9udC13ZWlnaHQ9J2JvbGQnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyMyYjNhNGEnPkhWPC90ZXh0Pjwvc3ZnPg==",
+		vm:      "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHBvbHlnb24gcG9pbnRzPSczLDUgNiwyIDE5LDIgMTYsNScgZmlsbD0nI2MzZGNmMCcgc3Ryb2tlPScjMzM0JyBzdHJva2Utd2lkdGg9JzEuMScgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcvPjxwb2x5Z29uIHBvaW50cz0nMTYsNSAxOSwyIDE5LDE1IDE2LDE4JyBmaWxsPScjODNiMGQ2JyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4xJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nMycgeT0nNScgd2lkdGg9JzEzJyBoZWlnaHQ9JzEzJyByeD0nMS40JyBmaWxsPScjYTZjOGU2JyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS4yJy8+PHRleHQgeD0nOS42JyB5PScxNC40JyBmb250LWZhbWlseT0nQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nNycgZm9udC13ZWlnaHQ9J2JvbGQnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyMyYjNhNGEnPlZNPC90ZXh0Pjwvc3ZnPg==",
+		// Kubernetes-tree role glyphs (see WidgetView::addHostNode()'s
+		// $device_type_override, set in the k8s aggregate/component passes): the
+		// same 7-sided Kubernetes helm outline for all of them, filled from a
+		// saturated Kubernetes-blue scale (brand blue is #326ce5) and set apart
+		// by a hue step plus a short tag so the roles read at icon size - brand
+		// blue "K8S" for the aggregate "cluster state" host, blue "API" for an
+		// API server, cyan-blue "CTL" for a controller manager, indigo-blue
+		// "SCH" for a scheduler, blue-teal "KBL" for a kubelet, muted blue-grey
+		// "K8S" for anything else.
+		k8s_cluster: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHBvbHlnb24gcG9pbnRzPScxMCwxLjggMTYuNDEsNC44OSAxNy45OSwxMS44MiAxMy41NiwxNy4zOSA2LjQ0LDE3LjM5IDIuMDEsMTEuODIgMy41OSw0Ljg5JyBmaWxsPScjMzI2Y2U1JyBzdHJva2U9JyMxZjNhNjMnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PGcgc3Ryb2tlPScjMWYzYTYzJyBzdHJva2Utd2lkdGg9JzAuOSc+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxMCcgeTI9JzEuOCcvPjxsaW5lIHgxPScxMCcgeTE9JzEwJyB4Mj0nMTYuNDEnIHkyPSc0Ljg5Jy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxNy45OScgeTI9JzExLjgyJy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxMy41NicgeTI9JzE3LjM5Jy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPSc2LjQ0JyB5Mj0nMTcuMzknLz48bGluZSB4MT0nMTAnIHkxPScxMCcgeDI9JzIuMDEnIHkyPScxMS44MicvPjxsaW5lIHgxPScxMCcgeTE9JzEwJyB4Mj0nMy41OScgeTI9JzQuODknLz48L2c+PGNpcmNsZSBjeD0nMTAnIGN5PScxMCcgcj0nNicgZmlsbD0nI2VlZjRmYycgc3Ryb2tlPScjMWYzYTYzJyBzdHJva2Utd2lkdGg9JzAuOScvPjx0ZXh0IHg9JzEwJyB5PScxMi4xNScgZm9udC1mYW1pbHk9J0FyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmJyBmb250LXNpemU9JzUnIGZvbnQtd2VpZ2h0PSdib2xkJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPScjMWYzYTYzJz5LOFM8L3RleHQ+PC9zdmc+",
+		k8s_api:     "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHBvbHlnb24gcG9pbnRzPScxMCwxLjggMTYuNDEsNC44OSAxNy45OSwxMS44MiAxMy41NiwxNy4zOSA2LjQ0LDE3LjM5IDIuMDEsMTEuODIgMy41OSw0Ljg5JyBmaWxsPScjM2Y4YWUwJyBzdHJva2U9JyMxZjNhNjMnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PGcgc3Ryb2tlPScjMWYzYTYzJyBzdHJva2Utd2lkdGg9JzAuOSc+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxMCcgeTI9JzEuOCcvPjxsaW5lIHgxPScxMCcgeTE9JzEwJyB4Mj0nMTYuNDEnIHkyPSc0Ljg5Jy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxNy45OScgeTI9JzExLjgyJy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxMy41NicgeTI9JzE3LjM5Jy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPSc2LjQ0JyB5Mj0nMTcuMzknLz48bGluZSB4MT0nMTAnIHkxPScxMCcgeDI9JzIuMDEnIHkyPScxMS44MicvPjxsaW5lIHgxPScxMCcgeTE9JzEwJyB4Mj0nMy41OScgeTI9JzQuODknLz48L2c+PGNpcmNsZSBjeD0nMTAnIGN5PScxMCcgcj0nNicgZmlsbD0nI2VlZjRmYycgc3Ryb2tlPScjMWYzYTYzJyBzdHJva2Utd2lkdGg9JzAuOScvPjx0ZXh0IHg9JzEwJyB5PScxMi4xNScgZm9udC1mYW1pbHk9J0FyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmJyBmb250LXNpemU9JzUnIGZvbnQtd2VpZ2h0PSdib2xkJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPScjMWYzYTYzJz5BUEk8L3RleHQ+PC9zdmc+",
+		k8s_cm:      "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHBvbHlnb24gcG9pbnRzPScxMCwxLjggMTYuNDEsNC44OSAxNy45OSwxMS44MiAxMy41NiwxNy4zOSA2LjQ0LDE3LjM5IDIuMDEsMTEuODIgMy41OSw0Ljg5JyBmaWxsPScjMmY5ZmQwJyBzdHJva2U9JyMxZjNhNjMnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PGcgc3Ryb2tlPScjMWYzYTYzJyBzdHJva2Utd2lkdGg9JzAuOSc+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxMCcgeTI9JzEuOCcvPjxsaW5lIHgxPScxMCcgeTE9JzEwJyB4Mj0nMTYuNDEnIHkyPSc0Ljg5Jy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxNy45OScgeTI9JzExLjgyJy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxMy41NicgeTI9JzE3LjM5Jy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPSc2LjQ0JyB5Mj0nMTcuMzknLz48bGluZSB4MT0nMTAnIHkxPScxMCcgeDI9JzIuMDEnIHkyPScxMS44MicvPjxsaW5lIHgxPScxMCcgeTE9JzEwJyB4Mj0nMy41OScgeTI9JzQuODknLz48L2c+PGNpcmNsZSBjeD0nMTAnIGN5PScxMCcgcj0nNicgZmlsbD0nI2VlZjRmYycgc3Ryb2tlPScjMWYzYTYzJyBzdHJva2Utd2lkdGg9JzAuOScvPjx0ZXh0IHg9JzEwJyB5PScxMi4xNScgZm9udC1mYW1pbHk9J0FyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmJyBmb250LXNpemU9JzUnIGZvbnQtd2VpZ2h0PSdib2xkJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPScjMWYzYTYzJz5DVEw8L3RleHQ+PC9zdmc+",
+		k8s_scheduler:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHBvbHlnb24gcG9pbnRzPScxMCwxLjggMTYuNDEsNC44OSAxNy45OSwxMS44MiAxMy41NiwxNy4zOSA2LjQ0LDE3LjM5IDIuMDEsMTEuODIgMy41OSw0Ljg5JyBmaWxsPScjNWI3OGQ2JyBzdHJva2U9JyMxZjNhNjMnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PGcgc3Ryb2tlPScjMWYzYTYzJyBzdHJva2Utd2lkdGg9JzAuOSc+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxMCcgeTI9JzEuOCcvPjxsaW5lIHgxPScxMCcgeTE9JzEwJyB4Mj0nMTYuNDEnIHkyPSc0Ljg5Jy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxNy45OScgeTI9JzExLjgyJy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxMy41NicgeTI9JzE3LjM5Jy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPSc2LjQ0JyB5Mj0nMTcuMzknLz48bGluZSB4MT0nMTAnIHkxPScxMCcgeDI9JzIuMDEnIHkyPScxMS44MicvPjxsaW5lIHgxPScxMCcgeTE9JzEwJyB4Mj0nMy41OScgeTI9JzQuODknLz48L2c+PGNpcmNsZSBjeD0nMTAnIGN5PScxMCcgcj0nNicgZmlsbD0nI2VlZjRmYycgc3Ryb2tlPScjMWYzYTYzJyBzdHJva2Utd2lkdGg9JzAuOScvPjx0ZXh0IHg9JzEwJyB5PScxMi4xNScgZm9udC1mYW1pbHk9J0FyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmJyBmb250LXNpemU9JzUnIGZvbnQtd2VpZ2h0PSdib2xkJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPScjMWYzYTYzJz5TQ0g8L3RleHQ+PC9zdmc+",
+		k8s_kubelet: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHBvbHlnb24gcG9pbnRzPScxMCwxLjggMTYuNDEsNC44OSAxNy45OSwxMS44MiAxMy41NiwxNy4zOSA2LjQ0LDE3LjM5IDIuMDEsMTEuODIgMy41OSw0Ljg5JyBmaWxsPScjMmJiMGM3JyBzdHJva2U9JyMxZjNhNjMnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PGcgc3Ryb2tlPScjMWYzYTYzJyBzdHJva2Utd2lkdGg9JzAuOSc+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxMCcgeTI9JzEuOCcvPjxsaW5lIHgxPScxMCcgeTE9JzEwJyB4Mj0nMTYuNDEnIHkyPSc0Ljg5Jy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxNy45OScgeTI9JzExLjgyJy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxMy41NicgeTI9JzE3LjM5Jy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPSc2LjQ0JyB5Mj0nMTcuMzknLz48bGluZSB4MT0nMTAnIHkxPScxMCcgeDI9JzIuMDEnIHkyPScxMS44MicvPjxsaW5lIHgxPScxMCcgeTE9JzEwJyB4Mj0nMy41OScgeTI9JzQuODknLz48L2c+PGNpcmNsZSBjeD0nMTAnIGN5PScxMCcgcj0nNicgZmlsbD0nI2VlZjRmYycgc3Ryb2tlPScjMWYzYTYzJyBzdHJva2Utd2lkdGg9JzAuOScvPjx0ZXh0IHg9JzEwJyB5PScxMi4xNScgZm9udC1mYW1pbHk9J0FyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmJyBmb250LXNpemU9JzUnIGZvbnQtd2VpZ2h0PSdib2xkJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPScjMWYzYTYzJz5LQkw8L3RleHQ+PC9zdmc+",
+		k8s_node:    "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHBvbHlnb24gcG9pbnRzPScxMCwxLjggMTYuNDEsNC44OSAxNy45OSwxMS44MiAxMy41NiwxNy4zOSA2LjQ0LDE3LjM5IDIuMDEsMTEuODIgMy41OSw0Ljg5JyBmaWxsPScjN2Y5Y2M0JyBzdHJva2U9JyMxZjNhNjMnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PGcgc3Ryb2tlPScjMWYzYTYzJyBzdHJva2Utd2lkdGg9JzAuOSc+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxMCcgeTI9JzEuOCcvPjxsaW5lIHgxPScxMCcgeTE9JzEwJyB4Mj0nMTYuNDEnIHkyPSc0Ljg5Jy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxNy45OScgeTI9JzExLjgyJy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPScxMy41NicgeTI9JzE3LjM5Jy8+PGxpbmUgeDE9JzEwJyB5MT0nMTAnIHgyPSc2LjQ0JyB5Mj0nMTcuMzknLz48bGluZSB4MT0nMTAnIHkxPScxMCcgeDI9JzIuMDEnIHkyPScxMS44MicvPjxsaW5lIHgxPScxMCcgeTE9JzEwJyB4Mj0nMy41OScgeTI9JzQuODknLz48L2c+PGNpcmNsZSBjeD0nMTAnIGN5PScxMCcgcj0nNicgZmlsbD0nI2VlZjRmYycgc3Ryb2tlPScjMWYzYTYzJyBzdHJva2Utd2lkdGg9JzAuOScvPjx0ZXh0IHg9JzEwJyB5PScxMi4xNScgZm9udC1mYW1pbHk9J0FyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmJyBmb250LXNpemU9JzUnIGZvbnQtd2VpZ2h0PSdib2xkJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPScjMWYzYTYzJz5LOFM8L3RleHQ+PC9zdmc+",
 		subnet:  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHBhdGggZD0nTTUuNiwxNS4zIEMzLjIsMTUuMyAxLjMsMTMuNSAxLjMsMTEuMyBDMS4zLDkuMiAyLjksNy41IDUsNy4zIEM1LjQsNC43IDcuNiwyLjcgMTAuMiwyLjcgQzEzLDIuNyAxNS4zLDQuOCAxNS42LDcuNSBDMTcuNSw3LjcgMTksOS4zIDE5LDExLjIgQzE5LDEzLjQgMTcuMSwxNS4zIDE0LjcsMTUuMyBaJyBmaWxsPScjY2RkNmRiJyBzdHJva2U9JyMzMzQnIHN0cm9rZS13aWR0aD0nMS40JyBzdHJva2UtbGluZWpvaW49J3JvdW5kJyBzdHJva2UtbGluZWNhcD0ncm91bmQnLz48L3N2Zz4=",
 	};
 
@@ -96,32 +119,38 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	// that value, and every category is a complete/covering partition (every
 	// possible host state maps to at least one checkbox) so that leaving a
 	// whole category unchecked hides every host via that category, never
-	// "no restriction". Categories combine with AND. The one exception is
-	// "障害イベント" (fault*), which controls whether/which problem severities
-	// are displayed rather than host visibility itself - an empty selection
-	// there means "don't display problem severity at all", not "show every
-	// host" (see #recomputeSeverity()).
+	// "no restriction". Categories combine with AND. Two keys in the
+	// "障害状態" category are special: faultMaintenance is an independent OR
+	// gate for hosts in maintenance (checked = show them whatever their
+	// problem state, unchecked = hide them), and faultColor controls only
+	// whether problem severity is colored onto the icon, never host
+	// visibility (see #recomputeSeverity()).
 	static #DEFAULT_FILTER = {
-		// 障害イベント - unchanged from the widget's pre-existing default
-		// (show every problem, both ack and unack).
+		// 障害状態 - faultUnack/faultAck/faultNone are a covering partition over
+		// non-maintenance hosts (all on by default = every non-maintenance host
+		// shown). faultMaintenance is an independent OR gate: a host in
+		// maintenance is shown iff it is checked (default off), regardless of
+		// its problem state. faultColor toggles severity-color display only, it
+		// never hides a host (see #recomputeSeverity()).
 		faultUnack:        true,
 		faultAck:          true,
-		// ホスト状態 - statusEnabled defaults on so maintenance/disabled hosts
-		// are hidden out of the box (see #hostVisible()).
-		statusEnabled:     true,
-		statusMaintenance: false,
-		statusDisabled:    false,
+		faultNone:         true,
+		faultMaintenance:  false,
+		faultColor:        true,
 		// インターフェイス - all checked by default (show every host).
 		ifaceAvailable:    true,
 		ifaceMixed:        true,
 		ifaceUnavailable:  true,
 		ifaceUnknown:      true,
-		// ホスト設定 - cfgNormal defaults on so ordinary hosts (an interface
-		// configured, not local-only) are shown out of the box; see the
-		// cfgNormal entry in #hostVisible()'s tagMatch pairs.
+		// ホスト状態 - cfgNormal defaults on so ordinary hosts (an interface
+		// configured, not local-only, monitoring enabled) are shown out of the
+		// box. cfgDisabled (default off) is the only bucket that admits
+		// host_status === 1; the other three are guarded on host_status === 0
+		// so this stays an exclusive 4-way partition (see #hostVisible()).
 		cfgNormal:         true,
 		cfgNoInterface:    false,
 		cfgLocal:          false,
+		cfgDisabled:       false,
 		// 監視経路 - all checked by default (show every host).
 		routeServer:       true,
 		routeProxy:        true,
@@ -570,10 +599,41 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 					localStorage.setItem(this.#filterStorageKey(), raw);
 				}
 			}
-			this.#filter = raw ? Object.assign(defaults, JSON.parse(raw)) : defaults;
+			const stored = raw ? JSON.parse(raw) : null;
+			this.#filter = stored
+				? Object.assign(defaults, this.#migrateFilterState(stored))
+				: defaults;
 		} catch (_) {
 			this.#filter = defaults;
 		}
+	}
+
+	// Pre-v1.0.8 the filter had a separate ホスト状態 category
+	// (statusEnabled/statusMaintenance/statusDisabled) and no faultNone /
+	// faultMaintenance / faultColor keys. A blob from that era is detected by
+	// the absence of faultMaintenance; carry the user's intent across the
+	// restructure and drop the now-dead keys so Object.assign doesn't keep
+	// them around.
+	#migrateFilterState(stored) {
+		if (stored === null || typeof stored !== 'object' || 'faultMaintenance' in stored) {
+			return stored;
+		}
+
+		stored.faultMaintenance = stored.statusMaintenance === true;
+		stored.cfgDisabled      = stored.statusDisabled === true;
+		// Old severity-color rule: shown iff faultAck or faultUnack was checked.
+		stored.faultColor = stored.faultUnack !== false || stored.faultAck !== false;
+		// The presence partition is new; default it fully on so a migrated user
+		// keeps seeing every non-maintenance host exactly as before.
+		stored.faultUnack = true;
+		stored.faultAck   = true;
+		stored.faultNone  = true;
+
+		delete stored.statusEnabled;
+		delete stored.statusMaintenance;
+		delete stored.statusDisabled;
+
+		return stored;
 	}
 
 	#saveFilterState() {
@@ -588,11 +648,11 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	// Recomputes a host's effective severity from its ack/unack problem
 	// buckets (see WidgetView::applyProblems()) and the current filter state,
 	// entirely client-side. severity stays -1 (MM_SEVERITY_OK, see
-	// helpers.php) when neither checkbox is on or neither enabled bucket has
-	// an active problem - unlike every other category, an empty selection
-	// here means "don't display problem severity", not "no restriction".
+	// helpers.php) when neither faultAck nor faultUnack is checked or neither
+	// enabled bucket has an active problem. faultColor then gates whether the
+	// resulting severity is painted onto the icon at all - it never changes
+	// host visibility.
 	#recomputeSeverity(meta) {
-		const filterActive = this.#filter.faultAck || this.#filter.faultUnack;
 		let severity = null;
 
 		if (this.#filter.faultAck && meta.severity_ack !== null) {
@@ -604,11 +664,11 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		meta.severity = severity === null ? -1 : severity;
 
-		// Both checkboxes off means "don't display problem events" (see the
-		// comment above this method) - showing the OK/green circle here would
-		// misleadingly imply a confirmed-healthy status we never checked, so
-		// the host icon's background goes fully transparent instead.
-		if (!filterActive) {
+		// "深刻度で色分け表示" off means the severity color is not painted onto
+		// the icon - showing the OK/green circle here would misleadingly imply
+		// a confirmed-healthy status, so the host icon's background goes fully
+		// transparent instead. Host visibility is unaffected either way.
+		if (!this.#filter.faultColor) {
 			meta.severity_color = 'none';
 			meta.severity_label = null;
 			return;
@@ -646,9 +706,9 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 	// True if the host has at least one of the checked tags (OR) - an
 	// unchecked category matches nothing, hiding every host via this
-	// category. Used for ホスト状態/ホスト設定 (independent boolean tags); both
-	// categories include a "baseline" tag (statusEnabled / cfgNormal) so an
-	// ordinary host always has at least one tag available to match.
+	// category. Used for ホスト状態 (independent boolean tags); the category
+	// includes a "baseline" tag (cfgNormal) so an ordinary host always has at
+	// least one tag available to match.
 	#tagMatch(pairs) {
 		return pairs.some(([key, hostHasTag]) => this.#filter[key] && hostHasTag);
 	}
@@ -669,22 +729,29 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		});
 	}
 
-	// AND-combines the 5 host-level categories (障害イベント doesn't hide hosts -
-	// it only controls severity display, see #recomputeSeverity()).
+	// AND-combines the host-level categories. 障害状態 gates first: a host in
+	// maintenance passes only through the faultMaintenance OR-gate, every
+	// other host through the faultUnack/faultAck/faultNone partition (see
+	// #faultStateMatch()). The faultColor key is display-only, not consulted
+	// here.
 	#hostVisible(meta) {
+		if (meta.maintenance_status === 1 && meta.host_status === 0) {
+			// Independent OR gate: a host in maintenance is shown iff
+			// faultMaintenance is checked, whatever its problem state.
+			if (!this.#filter.faultMaintenance) return false;
+		}
+		else if (!this.#faultStateMatch(meta)) {
+			return false;
+		}
+
 		if (!this.#tagMatch([
-			['statusEnabled',     meta.host_status === 0 && meta.maintenance_status !== 1],
-			['statusMaintenance', meta.maintenance_status === 1],
-			['statusDisabled',    meta.host_status === 1],
+			['cfgNormal',      meta.host_status === 0 && meta.has_interface && !meta.is_local],
+			['cfgNoInterface', meta.host_status === 0 && !meta.has_interface],
+			['cfgLocal',       meta.host_status === 0 && meta.is_local],
+			['cfgDisabled',    meta.host_status === 1],
 		])) return false;
 
 		if (!this.#singleMatch(CWidgetHoloztekMonitoringMap.#IFACE_KEYS, meta.availability)) return false;
-
-		if (!this.#tagMatch([
-			['cfgNormal',      meta.has_interface && !meta.is_local],
-			['cfgNoInterface', !meta.has_interface],
-			['cfgLocal',       meta.is_local],
-		])) return false;
 
 		if (!this.#singleMatch(CWidgetHoloztekMonitoringMap.#ROUTE_KEYS, meta.route)) return false;
 
@@ -693,12 +760,29 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		return true;
 	}
 
-	// A non-host node (Server/Proxy/Proxy Group/Network/Cluster) is visible iff at
-	// least one descendant host remains visible - every such node is only
-	// ever created because of an actual host in the current selection (see
-	// WidgetView::doAction()), so this cascade never spuriously hides an
-	// ancestor with no host descendants at all; it only fires because of
-	// these filters. Edges follow their endpoints.
+	// 障害状態 partition over non-maintenance hosts: faultUnack/faultAck match a
+	// host carrying an unacknowledged / acknowledged active problem, faultNone
+	// matches a host with no active problem at all. All three checked = every
+	// non-maintenance host matches. Hosts in maintenance never reach here -
+	// they go through the faultMaintenance gate in #hostVisible() instead.
+	#faultStateMatch(meta) {
+		if (this.#filter.faultUnack && meta.severity_unack !== null) return true;
+		if (this.#filter.faultAck   && meta.severity_ack   !== null) return true;
+		if (this.#filter.faultNone  && meta.severity_unack === null && meta.severity_ack === null) return true;
+		return false;
+	}
+
+	// A node stays visible iff it matches the filter itself OR at least one of
+	// its descendants does - every node is only ever created because of an
+	// actual host in the current selection (see WidgetView::doAction()), so this
+	// cascade never spuriously keeps an ancestor with no host descendants at
+	// all; it only fires because of these filters. This applies to Host nodes
+	// too: since v1.0.9 a Host can be the structural ancestor of a deeper Host
+	// (vCenter/ESXi over their VMs, a k8s aggregate host - which carries no
+	// interface, so the default filter hides it - over its Cluster + component
+	// hosts), and an ancestor that fails the filter must still be drawn so the
+	// root-to-match path and its edges stay connected. Edges follow their
+	// endpoints.
 	#applyVisibility() {
 		if (!this.#nodesDS || !this.#edgesDS) return;
 
@@ -706,16 +790,13 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		const computeVisible = (id) => {
 			if (id in visible) return visible[id];
 			const meta = this.#nodesMeta[id];
-			let result;
-			if (!meta) {
-				result = false;
-			}
-			else if (meta.node_type === 'host') {
-				result = this.#hostVisible(meta);
-			}
-			else {
-				result = (this.#children[id] || []).some(childId => computeVisible(childId));
-			}
+			// Seed against re-entrancy before recursing into children.
+			visible[id] = false;
+			const selfMatch = meta
+				? (meta.node_type === 'host' ? this.#hostVisible(meta) : false)
+				: false;
+			const result = selfMatch
+				|| (this.#children[id] || []).some(childId => computeVisible(childId));
 			visible[id] = result;
 			return result;
 		};
@@ -733,7 +814,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	}
 
 	#onFilterChanged(key) {
-		if (key === 'faultAck' || key === 'faultUnack') {
+		if (key === 'faultAck' || key === 'faultUnack' || key === 'faultColor') {
 			this.#refreshSeverities();
 		}
 		this.#applyVisibility();
@@ -768,21 +849,20 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				<button type="button" class="mm-filter-reset">${this.#escape(t('Reset'))}</button>
 			</div>
 			<details class="mm-filter-category">
-				<summary>${this.#escape(t('Problem events'))}</summary>
+				<summary>${this.#escape(t('Problem status'))}</summary>
 				${row('faultUnack', t('Unacknowledged'))}
 				${row('faultAck', t('Acknowledged'))}
+				${row('faultNone', t('No problem'))}
+				${row('faultMaintenance', t('Include hosts in maintenance'))}
+				<div class="mm-filter-divider"></div>
+				${row('faultColor', t('Colorize by severity'))}
 			</details>
 			<details class="mm-filter-category">
 				<summary>${this.#escape(t('Host status'))}</summary>
-				${row('statusEnabled', t('Enabled hosts'))}
-				${row('statusMaintenance', t('In maintenance'))}
-				${row('statusDisabled', t('Disabled hosts'))}
-			</details>
-			<details class="mm-filter-category">
-				<summary>${this.#escape(t('Host configuration'))}</summary>
 				${row('cfgNormal', t('Normal hosts'))}
 				${row('cfgNoInterface', t('No interface configured'))}
 				${row('cfgLocal', t('Local host monitoring'))}
+				${row('cfgDisabled', t('Disabled hosts'))}
 			</details>
 			<details class="mm-filter-category">
 				<summary>${this.#escape(t('Interface'))}</summary>

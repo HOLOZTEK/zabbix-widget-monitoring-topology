@@ -54,11 +54,48 @@ class WidgetView extends CControllerDashboardWidgetView {
 			return;
 		}
 
-		$host_filter = $hostgroupids
-			? ['groupids' => $this->resolveHostGroupIds($hostgroupids)]
-			: ['hostids' => $hostids];
+		// A broadcasting source (Tree Navigator in multi-select mode) can send a
+		// group selection and an explicit host selection at the same time - e.g.
+		// "this ESXi host group, plus that one extra VM". The two are a union:
+		// every host in the selected groups OR named directly. Passing both
+		// groupids and hostids to one Host.get() would intersect them instead
+		// (a host not in any selected group drops out entirely - the reported
+		// "add a VM and it disappears" bug), so the groups are resolved to
+		// their own host ids here and merged with the explicit list.
+		if ($hostgroupids) {
+			$group_hostids = [];
+			$resolved_groupids = $this->resolveHostGroupIds($hostgroupids);
 
-		$hosts = API::Host()->get($host_filter + [
+			// A broadcast can carry the multiselect "nothing selected" sentinel
+			// ('0'), which resolves to no real group. Host.get() with an empty
+			// groupids returns false, not [], so guard before querying/merging.
+			if ($resolved_groupids) {
+				$group_hostids = array_column(API::Host()->get([
+					'output'   => ['hostid'],
+					'groupids' => $resolved_groupids
+				]), 'hostid');
+			}
+
+			$hostids = array_merge($group_hostids, $hostids);
+		}
+
+		// Drop the '0' / '' sentinel a multiselect broadcast can send for an
+		// empty field, so it neither rides along as a bogus host id nor hides
+		// the empty state below.
+		$hostids = array_values(array_unique(array_filter($hostids,
+			static fn($id): bool => $id !== null && (string) $id !== '0' && (string) $id !== ''
+		)));
+
+		if (!$hostids) {
+			$this->setResponse(new CControllerResponseData($common + [
+				'error'    => 'no_hosts',
+				'elements' => []
+			]));
+			return;
+		}
+
+		$hosts = API::Host()->get([
+			'hostids'               => $hostids,
 			'output'                => [
 				'hostid', 'name', 'status', 'monitored_by', 'proxyid', 'proxy_groupid', 'assigned_proxyid',
 				'maintenance_status'
@@ -133,6 +170,45 @@ class WidgetView extends CControllerDashboardWidgetView {
 			}
 		}
 
+		// A Hypervisor's master/connection host lives in its own administrative
+		// host group (e.g. "Hypervisors") that's normally entirely disjoint from
+		// the vCenter inventory hostgroup hierarchy ("<datacenter>",
+		// "<datacenter>/vm (vm)", etc.) the Hypervisor/VM hosts themselves get
+		// auto-assigned to - so a widget host selection reached by browsing that
+		// inventory hierarchy (the common case) never includes the master host,
+		// even though every Hypervisor under it depends on it as the root of its
+		// Datacenter/Cluster chain (see placeHost()). Fetch any such master host
+		// in regardless of the widget's own selection, the same way Server/Proxy/
+		// Proxy Group nodes are always shown regardless of selection - otherwise
+		// that whole chain has no real node to nest under.
+		$vmware_master_hostids = array_values(array_unique(array_values($vmware_master_hostid_by_hv_hostid)));
+		$missing_master_hostids = array_values(array_diff($vmware_master_hostids, array_keys($hosts)));
+
+		if ($missing_master_hostids) {
+			$extra_hosts = API::Host()->get([
+				'hostids'               => $missing_master_hostids,
+				'output'                => [
+					'hostid', 'name', 'status', 'monitored_by', 'proxyid', 'proxy_groupid', 'assigned_proxyid',
+					'maintenance_status'
+				],
+				'selectInterfaces'      => ['type', 'ip', 'dns', 'useip', 'main', 'available'],
+				'selectInventory'       => ['type', 'os'],
+				'selectParentTemplates' => ['name'],
+				'selectHostGroups'      => ['name'],
+				'selectMacros'          => ['macro', 'value'],
+				'preservekeys'          => true
+			]);
+			$hosts += $extra_hosts;
+
+			if ($extra_hosts) {
+				$extra_items = API::Item()->get([
+					'output'  => ['itemid', 'hostid', 'type', 'key_'],
+					'hostids' => array_keys($extra_hosts)
+				]);
+				$comm_methods_by_host += holoztek_mm_comm_methods_by_host($extra_items);
+			}
+		}
+
 		// The official "Kubernetes ... by HTTP" templates' component hosts (API/
 		// Scheduler/Controller manager/Kubelet, discovered by an LLD rule) all
 		// share one aggregate "cluster state" host as their discoveryRule parent
@@ -173,6 +249,51 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'hostids' => $k8s_cluster_master_hostids
 			]), 'name', 'hostid')
 			: [];
+
+		// The aggregate "cluster state" host is the root the Cluster node and
+		// every LLD-discovered component host now hang off (Zabbix - Network -
+		// aggregate host - Cluster - component host), the same shape VMware's
+		// master/connection host gets. A widget selection that reached the
+		// component hosts by other means often won't include that aggregate
+		// host (the official Kubernetes templates put no host group on any of
+		// them), so pull it in regardless of the selection - otherwise the
+		// Cluster chain has no real Host node to nest under. Mirrors the
+		// $missing_master_hostids handling above for VMware.
+		$k8s_missing_aggregate_hostids = array_values(array_diff(
+			$k8s_cluster_master_hostids, array_keys($hosts)
+		));
+
+		if ($k8s_missing_aggregate_hostids) {
+			$extra_k8s_hosts = API::Host()->get([
+				'hostids'               => $k8s_missing_aggregate_hostids,
+				'output'                => [
+					'hostid', 'name', 'status', 'monitored_by', 'proxyid', 'proxy_groupid', 'assigned_proxyid',
+					'maintenance_status'
+				],
+				'selectInterfaces'      => ['type', 'ip', 'dns', 'useip', 'main', 'available'],
+				'selectInventory'       => ['type', 'os'],
+				'selectParentTemplates' => ['name'],
+				'selectHostGroups'      => ['name'],
+				'selectMacros'          => ['macro', 'value'],
+				'preservekeys'          => true
+			]);
+			$hosts += $extra_k8s_hosts;
+
+			if ($extra_k8s_hosts) {
+				$extra_k8s_items = API::Item()->get([
+					'output'  => ['itemid', 'hostid', 'type', 'key_'],
+					'hostids' => array_keys($extra_k8s_hosts)
+				]);
+				$comm_methods_by_host += holoztek_mm_comm_methods_by_host($extra_k8s_items);
+
+				// These are cluster roots by definition - their own hostid is
+				// the cluster identity - even though they were not part of the
+				// $k8s_hostids scan that built $k8s_cluster_hostid_by_hostid.
+				foreach (array_keys($extra_k8s_hosts) as $k8s_aggregate_hostid) {
+					$k8s_cluster_hostid_by_hostid[(string) $k8s_aggregate_hostid] = (string) $k8s_aggregate_hostid;
+				}
+			}
+		}
 
 		$vmware_dc_items = $vmware_hv_hostids
 			? API::Item()->get([
@@ -264,6 +385,12 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$host_node_by_hostid = [];
 		$vmware_vm_hostids = [];
 		$vmware_hv_hostids_pending = [];
+		$k8s_component_hostids_pending = [];
+
+		// Hostids of every Hypervisor's master/connection host (the vCenter-side
+		// host, see $vmware_master_hostid_by_hv_hostid) - used only to give that
+		// host node the 'vcenter' icon instead of the generic 'virtual' one.
+		$vmware_master_hostid_set = array_flip($vmware_master_hostids);
 
 		foreach ($hosts as $hostid => $host) {
 			$comm_methods = $comm_methods_by_host[$hostid] ?? [];
@@ -287,14 +414,39 @@ class WidgetView extends CControllerDashboardWidgetView {
 				continue;
 			}
 
+			// Kubernetes now mirrors the VMware tree shape: Zabbix - Network -
+			// aggregate "cluster state" host - Cluster - LLD-discovered
+			// component host. A component host (its own discoveryRule belongs
+			// to a different, aggregate host) is deferred to the pass below so
+			// its Cluster node can nest under that aggregate host's Host node,
+			// which this loop places. The aggregate host itself (its own hostid
+			// is the cluster identity) falls through to normal Network
+			// placement here; $is_k8s_aggregate only stops placeHost() from
+			// diverting it onto its own Cluster node.
+			$k8s_identity = $k8s_cluster_hostid_by_hostid[$hostid] ?? null;
+			$is_k8s_aggregate = $k8s_identity !== null && (string) $k8s_identity === (string) $hostid;
+
+			if ($k8s_identity !== null && !$is_k8s_aggregate) {
+				$k8s_component_hostids_pending[] = $hostid;
+				continue;
+			}
+
 			$upstream_node = $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
 			$group_node = $this->placeHost(
 				$upstream_node, $host, (string) $hostid, $comm_methods, $prefix_length,
 				$vmware_dc_by_hostid, $vmware_cl_by_hostid, false,
-				$k8s_cluster_hostid_by_hostid, $k8s_cluster_name_by_master_hostid
+				$k8s_cluster_hostid_by_hostid, $k8s_cluster_name_by_master_hostid,
+				$is_k8s_aggregate
 			);
 
-			$host_node = $this->addHostNode((string) $hostid, $host, $comm_methods);
+			$device_override = null;
+			if ($is_k8s_aggregate) {
+				$device_override = 'k8s_cluster';
+			}
+			elseif (isset($vmware_master_hostid_set[$hostid])) {
+				$device_override = 'vcenter';
+			}
+			$host_node = $this->addHostNode((string) $hostid, $host, $comm_methods, $device_override);
 			$this->addEdge($group_node, $host_node);
 
 			$host_node_by_hostid[$hostid] = $host_node;
@@ -305,7 +457,9 @@ class WidgetView extends CControllerDashboardWidgetView {
 		// datacenter - cluster - host - VM), found via
 		// $vmware_master_hostid_by_hv_hostid above. If that master host isn't
 		// in this widget's own host selection, fall back to plain Network
-		// placement - same graceful-degradation pattern as the VM pass below.
+		// placement (same graceful-degradation pattern as the VM pass below) -
+		// otherwise the Datacenter node would hang directly off the Server/
+		// Proxy node with no Network node in between at all.
 		foreach ($vmware_hv_hostids_pending as $hostid) {
 			$host = $hosts[$hostid];
 			$comm_methods = $comm_methods_by_host[$hostid] ?? [];
@@ -313,8 +467,16 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$master_hostid = $vmware_master_hostid_by_hv_hostid[$hostid] ?? null;
 			$master_node = $master_hostid !== null ? ($host_node_by_hostid[$master_hostid] ?? null) : null;
 
-			$upstream_node = $master_node
-				?? $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
+			if ($master_node !== null) {
+				$upstream_node = $master_node;
+			}
+			else {
+				$plain_upstream = $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
+				$host_ip = holoztek_mm_host_primary_ip($host['interfaces'] ?? []);
+				$host_cidr = $host_ip !== null ? holoztek_mm_ipv4_cidr($host_ip, $prefix_length) : null;
+				$upstream_node = $this->addNetworkNode($plain_upstream, $host_cidr);
+				$this->addEdge($plain_upstream, $upstream_node);
+			}
 
 			$group_node = $this->placeHost(
 				$upstream_node, $host, (string) $hostid, $comm_methods, $prefix_length,
@@ -322,11 +484,37 @@ class WidgetView extends CControllerDashboardWidgetView {
 				$k8s_cluster_hostid_by_hostid, $k8s_cluster_name_by_master_hostid
 			);
 
-			$host_node = $this->addHostNode((string) $hostid, $host, $comm_methods);
+			$host_node = $this->addHostNode((string) $hostid, $host, $comm_methods, 'esxi');
 			$this->addEdge($group_node, $host_node);
 
 			$host_node_by_hostid[$hostid] = $host_node;
-			$hv_node_by_name[$host['name']] = $host_node;
+			// Index the ESXi node under its master/connection host (vCenter), not
+			// globally: two vCenters can each expose a Hypervisor with the exact
+			// same Zabbix host name, and a flat name->node map would let the
+			// second silently overwrite the first (and misroute the first
+			// vCenter's VMs). '' groups every ESXi whose master can't be
+			// resolved, matching the pre-scoping behaviour for that case.
+			$hv_master_hostid = $vmware_master_hostid_by_hv_hostid[$hostid] ?? '';
+			$hv_node_by_name[$hv_master_hostid][$host['name']] = $host_node;
+		}
+
+		// Each VM's own discoveryRule (vmware.vm.discovery) belongs to the same
+		// master/connection host that discovered its parent Hypervisor - the only
+		// reliable way to tell which vCenter a VM belongs to, since the
+		// {#HV.NAME} host group name alone is ambiguous when two vCenters share
+		// an ESXi name.
+		$vmware_master_hostid_by_vm_hostid = [];
+		if ($vmware_vm_hostids) {
+			foreach (API::Host()->get([
+				'output'              => ['hostid'],
+				'hostids'             => $vmware_vm_hostids,
+				'selectDiscoveryRule' => ['hostid']
+			]) as $vm_host) {
+				$vm_master_hostid = $vm_host['discoveryRule']['hostid'] ?? null;
+				if ($vm_master_hostid !== null) {
+					$vmware_master_hostid_by_vm_hostid[$vm_host['hostid']] = $vm_master_hostid;
+				}
+			}
 		}
 
 		// A VM host's only current link to its parent ESXi is the host group the
@@ -340,26 +528,82 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$comm_methods = $comm_methods_by_host[$hostid] ?? [];
 
 			$hv_node = null;
+			$vm_master_hostid = $vmware_master_hostid_by_vm_hostid[$hostid] ?? null;
 			foreach ($host['hostgroups'] ?? [] as $group) {
-				if (isset($hv_node_by_name[$group['name']])) {
-					$hv_node = $hv_node_by_name[$group['name']];
+				$hv_node = $this->resolveVmHypervisorNode($hv_node_by_name, $group['name'], $vm_master_hostid);
+				if ($hv_node !== null) {
 					break;
 				}
 			}
 
-			if ($hv_node !== null) {
-				$group_node = $hv_node;
-			}
-			else {
-				$upstream_node = $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
-				$host_ip = holoztek_mm_host_primary_ip($host['interfaces'] ?? []);
-				$host_cidr = $host_ip !== null ? holoztek_mm_ipv4_cidr($host_ip, $prefix_length) : null;
-				$group_node = $this->addNetworkNode($upstream_node, $host_cidr);
-				$this->addEdge($upstream_node, $group_node);
+			// A running VM carries its own primary IP, so it always sits behind a
+			// Network node derived from that address - whether its parent ESXi is
+			// in this widget's selection (nest the Network under the ESXi host
+			// node) or not (fall back to Server/Proxy upstream). Chain:
+			// ... - datacenter - cluster - ESXi host - network - vm
+			$upstream_node = $hv_node !== null
+				? $hv_node
+				: $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
+			$host_ip = holoztek_mm_host_primary_ip($host['interfaces'] ?? []);
+			$host_cidr = $host_ip !== null ? holoztek_mm_ipv4_cidr($host_ip, $prefix_length) : null;
+			$group_node = $this->addNetworkNode($upstream_node, $host_cidr);
+			$this->addEdge($upstream_node, $group_node);
+
+			// Keep a concrete OS glyph when the guest runs an agent that reveals
+			// one (linux/windows); otherwise mark it as a generic VM so it stops
+			// sharing the 'virtual' icon with its ESXi and vCenter.
+			$vm_device_type = holoztek_mm_detect_device_type($host);
+			if (!in_array($vm_device_type, ['linux', 'windows'], true)) {
+				$vm_device_type = 'vm';
 			}
 
-			$host_node = $this->addHostNode((string) $hostid, $host, $comm_methods);
+			$host_node = $this->addHostNode((string) $hostid, $host, $comm_methods, $vm_device_type);
 			$this->addEdge($group_node, $host_node);
+		}
+
+		// A Kubernetes component host's Cluster node nests under its aggregate
+		// "cluster state" host's Host node (Zabbix - Network - aggregate host -
+		// Cluster - component host), found via $k8s_cluster_hostid_by_hostid.
+		// If that aggregate host node isn't available, fall back to a plain
+		// Network node under the Server/Proxy node (same graceful degradation
+		// as the VMware VM pass) so the Cluster chain still renders.
+		foreach ($k8s_component_hostids_pending as $hostid) {
+			$host = $hosts[$hostid];
+			$comm_methods = $comm_methods_by_host[$hostid] ?? [];
+
+			$identity = $k8s_cluster_hostid_by_hostid[$hostid] ?? null;
+			$aggregate_node = $identity !== null ? ($host_node_by_hostid[$identity] ?? null) : null;
+
+			if ($aggregate_node !== null) {
+				$cluster_upstream = $aggregate_node;
+			}
+			else {
+				$plain_upstream = $this->resolveUpstreamNode($host, $proxy_upstream_node, $proxy_group_upstream_node);
+				$host_ip = holoztek_mm_host_primary_ip($host['interfaces'] ?? []);
+				$host_cidr = $host_ip !== null ? holoztek_mm_ipv4_cidr($host_ip, $prefix_length) : null;
+				$cluster_upstream = $this->addNetworkNode($plain_upstream, $host_cidr);
+				$this->addEdge($plain_upstream, $cluster_upstream);
+			}
+
+			$cluster_label = $identity !== null
+				? ($k8s_cluster_name_by_master_hostid[$identity] ?? null)
+				: null;
+			$cluster_node = $this->addClusterNode($cluster_upstream, HOLOZTEK_MM_COMM_K8S, $identity, $cluster_label);
+			$this->addEdge($cluster_upstream, $cluster_node);
+
+			$host_ip = holoztek_mm_host_primary_ip($host['interfaces'] ?? []);
+			if ($host_ip !== null) {
+				$this->cluster_member_ips[$cluster_node][$host_ip] = true;
+			}
+
+			// Give each component its role-specific Kubernetes glyph instead of
+			// the generic 'server' one holoztek_mm_detect_device_type() returns
+			// for a "... by HTTP" host.
+			$k8s_role = holoztek_mm_k8s_component_role($host);
+			$host_node = $this->addHostNode(
+				(string) $hostid, $host, $comm_methods, $k8s_role !== null ? 'k8s_' . $k8s_role : 'k8s_node'
+			);
+			$this->addEdge($cluster_node, $host_node);
 		}
 
 		$this->applyClusterMemberIps();
@@ -424,6 +668,33 @@ class WidgetView extends CControllerDashboardWidgetView {
 		}
 
 		return holoztek_mm_node_id_server();
+	}
+
+	// Resolve a VM's parent ESXi Host node from the
+	// (master hostid -> ESXi Zabbix name -> node id) index built during the
+	// Hypervisor pass. Scoped to the VM's own master/connection host (vCenter)
+	// so two vCenters exposing an identically named ESXi never cross-link. When
+	// the VM carries no discoveryRule (manually created VM host, no LLD parent),
+	// $vm_master_hostid is null and we fall back to a name match across every
+	// vCenter - but only when it resolves to a single node, never guessing
+	// between vCenters.
+	private function resolveVmHypervisorNode(array $hv_node_by_name, string $group_name, ?string $vm_master_hostid): ?string {
+		if ($vm_master_hostid !== null) {
+			return $hv_node_by_name[$vm_master_hostid][$group_name] ?? null;
+		}
+
+		$found = null;
+		foreach ($hv_node_by_name as $by_name) {
+			if (!isset($by_name[$group_name])) {
+				continue;
+			}
+			if ($found !== null && $found !== $by_name[$group_name]) {
+				return null;
+			}
+			$found = $by_name[$group_name];
+		}
+
+		return $found;
 	}
 
 	// Route filter classification, independent of resolveUpstreamNode()'s
@@ -511,7 +782,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 	private function placeHost(
 		string $upstream, array $host, string $hostid, array $comm_methods, int $prefix_length,
 		array $vmware_dc_by_hostid, array $vmware_cl_by_hostid, bool $is_vmware_hypervisor,
-		array $k8s_cluster_hostid_by_hostid, array $k8s_cluster_name_by_master_hostid
+		array $k8s_cluster_hostid_by_hostid, array $k8s_cluster_name_by_master_hostid,
+		bool $is_cluster_root = false
 	): string {
 		if ($is_vmware_hypervisor) {
 			return $this->addVmwareHierarchy($upstream, $hostid, $vmware_dc_by_hostid, $vmware_cl_by_hostid);
@@ -538,7 +810,12 @@ class WidgetView extends CControllerDashboardWidgetView {
 			}
 		}
 
-		$cluster_method = holoztek_mm_host_cluster_method($comm_methods);
+		// A cluster-root host (a Kubernetes aggregate "cluster state" host) is
+		// the parent the Cluster node hangs off, not a member of it - route it
+		// through the normal Network-node branch below (its {$KUBE.API.URL}
+		// macro supplies the address) so the Cluster/component chain can nest
+		// under its own Host node.
+		$cluster_method = $is_cluster_root ? null : holoztek_mm_host_cluster_method($comm_methods);
 
 		// Kubernetes hosts always attach to their comm method's Cluster node,
 		// regardless of whether an IP is known - membership there comes from
@@ -575,12 +852,23 @@ class WidgetView extends CControllerDashboardWidgetView {
 		return $group_node;
 	}
 
-	private function addHostNode(string $hostid, array $host, array $comm_methods): string {
+	// $device_type_override forces the icon glyph for structured-monitoring
+	// roles the generic holoztek_mm_detect_device_type() can't tell apart, so
+	// they read differently in the graph. VMware (it returns 'virtual' for the
+	// connection host, every Hypervisor and every agent-less VM alike):
+	// 'vcenter' for the connection/management host, 'esxi' for a Hypervisor,
+	// 'vm' for a guest. Kubernetes (it returns 'server' for every "... by HTTP"
+	// host): 'k8s_cluster' for the aggregate "cluster state" host, and
+	// 'k8s_api' / 'k8s_cm' / 'k8s_scheduler' / 'k8s_kubelet' per component
+	// role, 'k8s_node' when the role can't be told from the template name.
+	private function addHostNode(
+		string $hostid, array $host, array $comm_methods, ?string $device_type_override = null
+	): string {
 		$interfaces = $host['interfaces'] ?? [];
 
 		$host_node = holoztek_mm_node_id_host($hostid);
 		$this->addNode($host_node, (string) $host['name'], HOLOZTEK_MM_NODE_HOST, [
-			'device_type'        => holoztek_mm_detect_device_type($host),
+			'device_type'        => $device_type_override ?? holoztek_mm_detect_device_type($host),
 			'comm_methods'       => $comm_methods,
 			'host_status'        => (int) $host['status'],
 			'maintenance_status' => (int) ($host['maintenance_status'] ?? 0),

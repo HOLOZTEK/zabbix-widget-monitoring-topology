@@ -38,17 +38,19 @@ function holoztek_mm_is_vmware_vm_group(string $group_name): bool {
 	return str_ends_with($group_name, HOLOZTEK_MM_VMWARE_VM_GROUP_SUFFIX);
 }
 
-// Communication methods whose host population scales up/down on its own and
-// has no Datacenter/vCenter-style hierarchy of its own (Kubernetes node/
-// component hosts) - see holoztek_mm_host_cluster_method(). All such hosts
-// under one upstream collapse into a single flat Cluster node. VMware is
-// deliberately NOT here: a VMware Hypervisor host gets its own dedicated
-// Datacenter/Cluster placement instead (see WidgetView::addVmwareHierarchy()),
-// since vCenter/ESXi's own Datacenter/Cluster/Host structure is real
-// discoverable data (vmware.hv.datacenter.name/vmware.hv.cluster.name), not
-// just a flat bucket. ODBC is also excluded: it's a fixed check against one
-// DB target, not a scaling host population, so it keeps the plain "Unknown
-// network" fallback.
+// Communication methods whose host population is discovered by LLD and grouped
+// under a dedicated Cluster node rather than an IP-subnet Network node
+// (Kubernetes API/Scheduler/Controller manager/Kubelet component hosts) - see
+// holoztek_mm_host_cluster_method(). That Cluster node in turn nests under the
+// aggregate "cluster state" host it was discovered from (Zabbix - Network -
+// aggregate host - Cluster - component host), mirroring the VMware tree shape.
+// VMware itself is deliberately NOT here: a VMware Hypervisor host gets its own
+// dedicated Datacenter/Cluster placement instead (see
+// WidgetView::addVmwareHierarchy()), since vCenter/ESXi's own Datacenter/
+// Cluster/Host structure is real discoverable data
+// (vmware.hv.datacenter.name/vmware.hv.cluster.name). ODBC is also excluded:
+// it's a fixed check against one DB target, not a scaling host population, so
+// it keeps the plain "Unknown network" fallback.
 const HOLOZTEK_MM_CLUSTER_COMM_METHODS = [HOLOZTEK_MM_COMM_K8S];
 
 // Zabbix 7.0 item type constants (see ITEM_TYPE_* in include/defines.inc.php).
@@ -281,13 +283,15 @@ function holoztek_mm_host_primary_ip(array $interfaces): ?string {
 
 // Macro names the official "... by HTTP"-style connection templates use to
 // hold the address a check actually connects to. A host running one of these
-// (e.g. "Proxmox VE by HTTP", whose own checks are Script/HTTP-agent items -
-// see holoztek_mm_item_comm_method()) has no Zabbix interface of its own, so
-// holoztek_mm_host_primary_ip() always returns null for it and it would
-// otherwise land on a plain "Unknown network" node instead of its real
-// subnet. Add further macro names here as more agent-less connection
-// templates come up.
-const HOLOZTEK_MM_CONNECTION_HOST_MACROS = ['{$PVE.URL.HOST}'];
+// (e.g. "Proxmox VE by HTTP" via {$PVE.URL.HOST}, or a Kubernetes aggregate
+// "cluster state" host via {$KUBE.API.URL}, whose own checks are Script/
+// HTTP-agent items - see holoztek_mm_item_comm_method()) has no Zabbix
+// interface of its own, so holoztek_mm_host_primary_ip() always returns null
+// for it and it would otherwise land on a plain "Unknown network" node instead
+// of its real subnet. The value may be a bare host or a full URL -
+// holoztek_mm_host_connection_macro_value() reduces a URL to its host part.
+// Add further macro names here as more agent-less connection templates come up.
+const HOLOZTEK_MM_CONNECTION_HOST_MACROS = ['{$PVE.URL.HOST}', '{$KUBE.API.URL}'];
 
 // $macros is a host's selectMacros() output. Returns the first configured
 // value among HOLOZTEK_MM_CONNECTION_HOST_MACROS, or null if the host has
@@ -297,9 +301,22 @@ function holoztek_mm_host_connection_macro_value(array $macros): ?string {
 
 	foreach (HOLOZTEK_MM_CONNECTION_HOST_MACROS as $macro_name) {
 		$value = trim((string) ($by_name[$macro_name] ?? ''));
-		if ($value !== '') {
-			return $value;
+		if ($value === '') {
+			continue;
 		}
+
+		// Some connection templates store a full URL (e.g. Kubernetes'
+		// {$KUBE.API.URL} = "https://10.0.0.1:6443/") rather than a bare host -
+		// reduce it to the host component so placeHost() can still resolve it
+		// to an IP/CIDR for Network-node placement.
+		if (str_contains($value, '://')) {
+			$url_host = parse_url($value, PHP_URL_HOST);
+			if (is_string($url_host) && $url_host !== '') {
+				$value = $url_host;
+			}
+		}
+
+		return $value;
 	}
 
 	return null;
@@ -373,6 +390,33 @@ function holoztek_mm_cluster_label(string $method): string {
 		HOLOZTEK_MM_COMM_K8S => _holoztek_mm('Kubernetes cluster'),
 		default              => _holoztek_mm('Cluster'),
 	};
+}
+
+// Maps a Kubernetes component host to a short role key ('api', 'cm',
+// 'scheduler', 'kubelet') from its parent template name - the official
+// "Kubernetes ... by HTTP" templates each attach exactly one, named
+// distinctively ("Kubernetes API server by HTTP", "Kubernetes Controller
+// manager by HTTP", "Kubernetes Scheduler by HTTP", "Kubernetes Kubelet by
+// HTTP"). Returns null when none matches, so the caller can fall back to a
+// generic Kubernetes glyph. Used only to pick the node icon (see
+// WidgetView::addHostNode()'s $device_type_override).
+function holoztek_mm_k8s_component_role(array $host): ?string {
+	$tmpl = strtolower(implode(' ', array_column($host['parentTemplates'] ?? [], 'name')));
+
+	if (str_contains($tmpl, 'controller manager')) {
+		return 'cm';
+	}
+	if (str_contains($tmpl, 'scheduler')) {
+		return 'scheduler';
+	}
+	if (str_contains($tmpl, 'kubelet')) {
+		return 'kubelet';
+	}
+	if (str_contains($tmpl, 'api server') || str_contains($tmpl, 'apiserver')) {
+		return 'api';
+	}
+
+	return null;
 }
 
 // One cluster node per (upstream node, comm method, cluster identity) triple.
