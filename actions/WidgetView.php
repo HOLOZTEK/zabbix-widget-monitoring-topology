@@ -488,7 +488,33 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$this->addEdge($group_node, $host_node);
 
 			$host_node_by_hostid[$hostid] = $host_node;
-			$hv_node_by_name[$host['name']] = $host_node;
+			// Index the ESXi node under its master/connection host (vCenter), not
+			// globally: two vCenters can each expose a Hypervisor with the exact
+			// same Zabbix host name, and a flat name->node map would let the
+			// second silently overwrite the first (and misroute the first
+			// vCenter's VMs). '' groups every ESXi whose master can't be
+			// resolved, matching the pre-scoping behaviour for that case.
+			$hv_master_hostid = $vmware_master_hostid_by_hv_hostid[$hostid] ?? '';
+			$hv_node_by_name[$hv_master_hostid][$host['name']] = $host_node;
+		}
+
+		// Each VM's own discoveryRule (vmware.vm.discovery) belongs to the same
+		// master/connection host that discovered its parent Hypervisor - the only
+		// reliable way to tell which vCenter a VM belongs to, since the
+		// {#HV.NAME} host group name alone is ambiguous when two vCenters share
+		// an ESXi name.
+		$vmware_master_hostid_by_vm_hostid = [];
+		if ($vmware_vm_hostids) {
+			foreach (API::Host()->get([
+				'output'              => ['hostid'],
+				'hostids'             => $vmware_vm_hostids,
+				'selectDiscoveryRule' => ['hostid']
+			]) as $vm_host) {
+				$vm_master_hostid = $vm_host['discoveryRule']['hostid'] ?? null;
+				if ($vm_master_hostid !== null) {
+					$vmware_master_hostid_by_vm_hostid[$vm_host['hostid']] = $vm_master_hostid;
+				}
+			}
 		}
 
 		// A VM host's only current link to its parent ESXi is the host group the
@@ -502,9 +528,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$comm_methods = $comm_methods_by_host[$hostid] ?? [];
 
 			$hv_node = null;
+			$vm_master_hostid = $vmware_master_hostid_by_vm_hostid[$hostid] ?? null;
 			foreach ($host['hostgroups'] ?? [] as $group) {
-				if (isset($hv_node_by_name[$group['name']])) {
-					$hv_node = $hv_node_by_name[$group['name']];
+				$hv_node = $this->resolveVmHypervisorNode($hv_node_by_name, $group['name'], $vm_master_hostid);
+				if ($hv_node !== null) {
 					break;
 				}
 			}
@@ -641,6 +668,33 @@ class WidgetView extends CControllerDashboardWidgetView {
 		}
 
 		return holoztek_mm_node_id_server();
+	}
+
+	// Resolve a VM's parent ESXi Host node from the
+	// (master hostid -> ESXi Zabbix name -> node id) index built during the
+	// Hypervisor pass. Scoped to the VM's own master/connection host (vCenter)
+	// so two vCenters exposing an identically named ESXi never cross-link. When
+	// the VM carries no discoveryRule (manually created VM host, no LLD parent),
+	// $vm_master_hostid is null and we fall back to a name match across every
+	// vCenter - but only when it resolves to a single node, never guessing
+	// between vCenters.
+	private function resolveVmHypervisorNode(array $hv_node_by_name, string $group_name, ?string $vm_master_hostid): ?string {
+		if ($vm_master_hostid !== null) {
+			return $hv_node_by_name[$vm_master_hostid][$group_name] ?? null;
+		}
+
+		$found = null;
+		foreach ($hv_node_by_name as $by_name) {
+			if (!isset($by_name[$group_name])) {
+				continue;
+			}
+			if ($found !== null && $found !== $by_name[$group_name]) {
+				return null;
+			}
+			$found = $by_name[$group_name];
+		}
+
+		return $found;
 	}
 
 	// Route filter classification, independent of resolveUpstreamNode()'s

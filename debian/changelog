@@ -1,3 +1,18 @@
+zabbix-widget-monitoring-topology (1.0.10) unstable; urgency=medium
+
+  * コードレビュー対応（Gitea issue #10 / #11）。
+  * #10: フィルタで祖先 Host ノード（vCenter／ESXi／k8s 集約ホスト）が非表示に
+    なると、条件一致する子孫（VM／component）がルートから分断される不具合を修正。
+    ノードは「自身が一致」または「子孫が1つでも一致」で可視とし、経路上の edge の
+    接続も維持する。k8s 集約ホストはインターフェースを持たず既定フィルタで隠れる
+    ため既定表示で顕在化していた。
+  * #11: 複数 vCenter に同名 ESXi が存在すると Hypervisor ノード索引が表示名だけの
+    フラット map で後勝ち上書きされ、一方の vCenter の VM が別 vCenter の同名 ESXi
+    配下へ誤接続され得た不具合を修正。索引を master/接続ホスト（vCenter）単位に
+    スコープし、VM は自身の discoveryRule から接続ホストを取得して解決する。
+
+ -- claude <noreply@example.com>  Sun, 30 Aug 2026 21:00:00 +0000
+
 zabbix-widget-monitoring-topology (1.0.9) unstable; urgency=medium
 
   * VMware VMノードの直上にNetworkノードを挿入し、Zabbix→…→ESXi→

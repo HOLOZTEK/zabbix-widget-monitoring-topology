@@ -772,12 +772,17 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		return false;
 	}
 
-	// A non-host node (Server/Proxy/Proxy Group/Network/Cluster) is visible iff at
-	// least one descendant host remains visible - every such node is only
-	// ever created because of an actual host in the current selection (see
-	// WidgetView::doAction()), so this cascade never spuriously hides an
-	// ancestor with no host descendants at all; it only fires because of
-	// these filters. Edges follow their endpoints.
+	// A node stays visible iff it matches the filter itself OR at least one of
+	// its descendants does - every node is only ever created because of an
+	// actual host in the current selection (see WidgetView::doAction()), so this
+	// cascade never spuriously keeps an ancestor with no host descendants at
+	// all; it only fires because of these filters. This applies to Host nodes
+	// too: since v1.0.9 a Host can be the structural ancestor of a deeper Host
+	// (vCenter/ESXi over their VMs, a k8s aggregate host - which carries no
+	// interface, so the default filter hides it - over its Cluster + component
+	// hosts), and an ancestor that fails the filter must still be drawn so the
+	// root-to-match path and its edges stay connected. Edges follow their
+	// endpoints.
 	#applyVisibility() {
 		if (!this.#nodesDS || !this.#edgesDS) return;
 
@@ -785,16 +790,13 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		const computeVisible = (id) => {
 			if (id in visible) return visible[id];
 			const meta = this.#nodesMeta[id];
-			let result;
-			if (!meta) {
-				result = false;
-			}
-			else if (meta.node_type === 'host') {
-				result = this.#hostVisible(meta);
-			}
-			else {
-				result = (this.#children[id] || []).some(childId => computeVisible(childId));
-			}
+			// Seed against re-entrancy before recursing into children.
+			visible[id] = false;
+			const selfMatch = meta
+				? (meta.node_type === 'host' ? this.#hostVisible(meta) : false)
+				: false;
+			const result = selfMatch
+				|| (this.#children[id] || []).some(childId => computeVisible(childId));
 			visible[id] = result;
 			return result;
 		};

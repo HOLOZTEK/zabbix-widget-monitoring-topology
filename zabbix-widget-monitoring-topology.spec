@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.0.9
+Version:        1.0.10
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,6 +121,19 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sun Aug 30 2026 claude <noreply> - 1.0.10-0
+- コードレビュー対応（Gitea issue #10 / #11）
+- #10: フィルタで祖先 Host ノード（vCenter／ESXi／k8s 集約ホスト）が非表示に
+  なると、条件に一致する子孫（VM／component）がルートから分断される不具合を
+  修正。ノードは「自身が一致」または「子孫が1つでも一致」で可視とし、経路上の
+  edge も接続を維持するよう `#applyVisibility()` を変更。k8s 集約ホストは
+  インターフェースを持たず既定フィルタで隠れるため、既定表示で顕在化していた
+- #11: 複数 vCenter に同名 ESXi が存在すると、Hypervisor ノード索引
+  （$hv_node_by_name）が表示名だけのフラット map だったため後勝ちで上書きされ、
+  一方の vCenter の VM が別 vCenter の同名 ESXi 配下へ誤接続され得た不具合を
+  修正。索引を master/接続ホスト（vCenter）単位にスコープし、VM 側は自身の
+  discoveryRule から接続ホストを取得して解決。discoveryRule を持たない VM は
+  一意に定まる場合のみ従来どおり名前一致で解決
 * Sun Aug 30 2026 claude <noreply> - 1.0.9-0
 - VMware VMノードの直上にNetworkノードを挿入し、Zabbix→…→ESXi→
   Datacenter→Cluster→Network→VM の階層に統一（VM群がClusterへ直結
