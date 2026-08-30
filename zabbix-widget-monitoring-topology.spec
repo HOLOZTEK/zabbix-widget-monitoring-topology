@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.0.10
+Version:        1.1.0
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,6 +121,12 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sun Aug 30 2026 claude <noreply> - 1.1.0-0
+- マイナーバージョンリリース。v1.0.9〜v1.0.10 の VMware／Kubernetes トポロジ
+  改修（VMノードの Network 経由化・vCenter／ESXi／VM／k8s ロール別アイコン・
+  Kubernetes ツリー再編）とそのコードレビュー対応（Gitea issue #10 / #11）
+  一式を、マイナーバージョンの区切りとして再リリース
+- v1.0.10 からの機能・コード変更なし（バージョン番号のみ更新）
 * Sun Aug 30 2026 claude <noreply> - 1.0.10-0
 - コードレビュー対応（Gitea issue #10 / #11）
 - #10: フィルタで祖先 Host ノード（vCenter／ESXi／k8s 集約ホスト）が非表示に

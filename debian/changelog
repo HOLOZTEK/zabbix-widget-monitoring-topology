@@ -1,3 +1,13 @@
+zabbix-widget-monitoring-topology (1.1.0) unstable; urgency=medium
+
+  * マイナーバージョンリリース。v1.0.9〜v1.0.10 の VMware／Kubernetes トポロジ
+    改修（VMノードの Network 経由化・vCenter／ESXi／VM／k8s ロール別アイコン・
+    Kubernetes ツリー再編）とそのコードレビュー対応（Gitea issue #10 / #11）
+    一式を、マイナーバージョンの区切りとして再リリース。
+  * v1.0.10 からの機能・コード変更なし（バージョン番号のみ更新）。
+
+ -- claude <noreply@example.com>  Sun, 30 Aug 2026 22:00:00 +0000
+
 zabbix-widget-monitoring-topology (1.0.10) unstable; urgency=medium
 
   * コードレビュー対応（Gitea issue #10 / #11）。
