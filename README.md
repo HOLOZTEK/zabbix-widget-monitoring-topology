@@ -93,8 +93,9 @@ This widget is receive-only and intentionally shows an empty state until a host 
 
 1. Add Tree Navigator or another widget that broadcasts `_hostid` or `_hostgroupid`.
 2. Add Monitoring Topology to the same dashboard page.
-3. In Monitoring Topology settings, connect Host and/or Host group to the source widget.
-4. Select a host to show its route, or a host group to show routes for hosts in that group.
+3. Set the Monitoring Topology refresh interval to **No refresh**.
+4. In Monitoring Topology settings, connect Host and/or Host group to the source widget.
+5. Select a host to show its route, or a host group to show routes for hosts in that group.
 
 ## Requirements
 
