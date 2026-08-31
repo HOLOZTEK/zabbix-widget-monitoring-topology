@@ -2,30 +2,31 @@ zabbix-widget-monitoring-topology (1.1.0) unstable; urgency=medium
 
   * マイナーバージョンリリース。v1.0.9〜v1.0.10 の VMware／Kubernetes トポロジ
     改修（VMノードの Network 経由化・vCenter／ESXi／VM／k8s ロール別アイコン・
-    Kubernetes ツリー再編）とそのコードレビュー対応（Gitea issue #10 / #11）
+    Kubernetes ツリー再編）と関連する不具合修正
     一式を、マイナーバージョンの区切りとして再リリース。
   * v1.0.10 からの機能・コード変更なし（バージョン番号のみ更新）。
   * パッケージメタデータ修正（機能・コードは不変、資材差し替え）: 欠落して
-    いた PHP 依存を追加（Depends: php (>= 2:8.1~)）。公開ステージング
-    （public-staging）の PHP 8.1 依存と整合。php-fpm は RPM 側限定のため
-    DEB では要求しない（190/191 は Apache mod_php 運用）。
+    いた PHP 依存を追加（Depends: php (>= 2:8.1~)）。READMEに記載した
+    PHP 8.1 要件と整合。php-fpm は RPM 側限定とし、
+    DEB では要求しない。
 
- -- claude <noreply@example.com>  Sun, 30 Aug 2026 23:00:00 +0000
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Sun, 30 Aug 2026 23:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.10) unstable; urgency=medium
 
-  * コードレビュー対応（Gitea issue #10 / #11）。
-  * #10: フィルタで祖先 Host ノード（vCenter／ESXi／k8s 集約ホスト）が非表示に
+  * フィルタによる祖先経路の分断を修正: 祖先 Host ノード（vCenter／ESXi／
+    k8s 集約ホスト）が非表示に
     なると、条件一致する子孫（VM／component）がルートから分断される不具合を修正。
     ノードは「自身が一致」または「子孫が1つでも一致」で可視とし、経路上の edge の
     接続も維持する。k8s 集約ホストはインターフェースを持たず既定フィルタで隠れる
     ため既定表示で顕在化していた。
-  * #11: 複数 vCenter に同名 ESXi が存在すると Hypervisor ノード索引が表示名だけの
+  * 同名ESXiの誤接続を修正: 複数 vCenter に同名 ESXi が存在すると
+    Hypervisor ノード索引が表示名だけの
     フラット map で後勝ち上書きされ、一方の vCenter の VM が別 vCenter の同名 ESXi
     配下へ誤接続され得た不具合を修正。索引を master/接続ホスト（vCenter）単位に
     スコープし、VM は自身の discoveryRule から接続ホストを取得して解決する。
 
- -- claude <noreply@example.com>  Sun, 30 Aug 2026 21:00:00 +0000
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Sun, 30 Aug 2026 21:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.9) unstable; urgency=medium
 
@@ -42,7 +43,7 @@ zabbix-widget-monitoring-topology (1.0.9) unstable; urgency=medium
     #326ce5 のヘプタゴン字形。API server=API／controller manager=CTL／
     scheduler=SCH／kubelet=KBL／集約ホスト=K8S のタグ）。
 
- -- claude <noreply@example.com>  Sun, 30 Aug 2026 18:00:00 +0000
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Sun, 30 Aug 2026 18:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.8) unstable; urgency=medium
 
@@ -61,7 +62,7 @@ zabbix-widget-monitoring-topology (1.0.8) unstable; urgency=medium
     ホストを解決するよう修正（従来はホストグループ指定が優先され、同時に
     指定された単一ホストが無視されていた）。
 
- -- claude <noreply@example.com>  Sun, 30 Aug 2026 12:00:00 +0000
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Sun, 30 Aug 2026 12:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.7) unstable; urgency=medium
 
@@ -75,16 +76,16 @@ zabbix-widget-monitoring-topology (1.0.7) unstable; urgency=medium
     不具合も修正（Server/Proxy/Proxy Groupノードと同様に選択範囲に関わらず
     自動取得して表示するよう変更）。
 
- -- claude <noreply@example.com>  Thu, 27 Aug 2026 15:00:00 +0000
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Thu, 27 Aug 2026 15:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.6) unstable; urgency=medium
 
-  * コードレビュー issue #7/#8 対応（v1.0.5レビュー、reviewer codex）。
-    issue #7: VM識別用ホストグループ判定を固定文字列"(vm)"との完全一致から、
+  * VMware VM識別とKubernetesクラスタ識別の不具合を修正。
+    VMware: VM識別用ホストグループ判定を固定文字列"(vm)"との完全一致から、
     公式VMwareテンプレートが実際に生成する"<cluster> (vm)"/"<dc>/<folder>
     (vm)"形式に対応する末尾一致へ修正（標準構成のVMが一切ESXi配下に
     ネストされなかった不具合を解消）。
-  * issue #8: 複数Kubernetesクラスタが同じZabbix Server/Proxy配下で単一の
+  * Kubernetes: 複数Kubernetesクラスタが同じZabbix Server/Proxy配下で単一の
     Clusterノードへ統合される不具合を修正。クラスタ集約ホストのhostidを
     識別子としてノードIDに組み込み、クラスタごとに別ノードとして表示する
     よう変更。ノードラベルも集約ホスト名を優先表示。
@@ -94,7 +95,7 @@ zabbix-widget-monitoring-topology (1.0.6) unstable; urgency=medium
 zabbix-widget-monitoring-topology (1.0.5) unstable; urgency=medium
 
   * CHost::get()の非推奨パラメータselectGroupsをselectHostGroupsに修正。
-  * VMware階層の不具合を修正（issue #5）: 接続用ホストがHypervisor固有
+  * VMware階層の不具合を修正: 接続用ホストがHypervisor固有
     アイテム(vmware.hv.*)の有無で正しく区別されず「不明なデータセンター」
     ノードとして切り離されて表示される不具合を修正。selectDiscoveryRuleで
     判明する接続用ホスト自身のノード配下にDatacenter/Clusterチェーンを
@@ -108,8 +109,8 @@ zabbix-widget-monitoring-topology (1.0.5) unstable; urgency=medium
 
 zabbix-widget-monitoring-topology (1.0.4) unstable; urgency=medium
 
-  * VMware/Kubernetesクラスタノードを追加（170のみ未リリース実装f3a5e66を
-    正式反映）: Kubernetesと判定されたホストは既存のNetworkノードではなく
+  * VMware/Kubernetesクラスタノードを追加: Kubernetesと判定されたホストは
+    既存のNetworkノードではなく
     専用のクラスタノードに常時接続するよう変更。Kubernetes公式テンプレート
     (HTTP agentアイテム, kube./kubernetes.キープレフィックス)の検出ロジック
     を追加。
@@ -118,14 +119,14 @@ zabbix-widget-monitoring-topology (1.0.4) unstable; urgency=medium
     クラスタノード運用は廃止し専用ツリーに置き換え。Datacenter/Cluster名は
     ESXiホスト自身のアイテムから取得し、クラスタ未所属の場合はCluster階層
     を省略。VMホストは公式VMwareテンプレートが自動付与する「(vm)」ホスト
-    グループ名とESXi自身のホスト名の一致でVM→ESXiの親子関係を判定。170の
-    実データで動作検証済み。
+    グループ名とESXi自身のホスト名の一致でVM→ESXiの親子関係を判定。
+    検証環境の実データで動作確認済み。
 
  -- HOLOZTEK <ttake-55@users.noreply.github.com>  Sat, 22 Aug 2026 12:00:00 +0000
 
 zabbix-widget-monitoring-topology (1.0.3) unstable; urgency=medium
 
-  * コードレビュー issue #3/#4 対応: ダッシュボードフィルタの保存キー変更
+  * 公開品質と互換性を改善: ダッシュボードフィルタの保存キー変更
     (v1.0.1)に伴う旧キーからの移行ロジックを追加し、v0.2.1以前で保存した
     フィルタ設定が失われる不具合を修正。README.mdのRPMインストール例を
     <version>プレースホルダに戻しバージョン非依存化。debian/controlの

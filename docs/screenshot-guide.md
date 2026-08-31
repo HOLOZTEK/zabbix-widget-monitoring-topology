@@ -1,6 +1,6 @@
 # Screenshot Guide
 
-Use a sanitized demo Zabbix environment. Never capture production dashboards or real infrastructure data.
+Use a sanitized, publicly shareable lab or demo Zabbix environment. Never capture production or customer environments.
 
 ## Required Images
 
@@ -18,10 +18,11 @@ Use a sanitized demo Zabbix environment. Never capture production dashboards or 
 
 ## Sanitizing Checklist
 
-- Use demo labels such as `Zabbix Server`, `Proxy A`, `10.0.10.0/24`, `web-01`, `ESXi Demo`, and `K8s Demo A`.
-- Remove browser address bars, usernames, internal URLs, public or private IPs from real environments, alerts, customer names, and production metrics.
-- Do not show credentials, macros containing secrets, inventory values, or organization-specific names.
-- Demonstrate multiple Kubernetes clusters with clearly fictional names.
+- Prefer fictional labels such as `Zabbix Server`, `Proxy A`, `10.0.10.0/24`, `web-01`, `ESXi Demo`, and `K8s Demo A`.
+- Private IP addresses and hostnames from a lab or demo environment are allowed only when that environment and every visible identifier are explicitly approved for public disclosure.
+- Remove browser address bars, usernames, internal URLs, alerts, customer names, production metrics, and every identifier from production or customer environments.
+- Do not show credentials, macros containing secrets, sensitive inventory values, or organization-specific names that are not approved for publication.
+- Demonstrate multiple Kubernetes clusters with fictional or explicitly publication-approved names.
 - Keep crops and scale consistent, and verify readability at README display width.
 - Capture both English and Japanese settings forms.
 

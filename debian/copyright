@@ -6,6 +6,12 @@ Files: *
 Copyright: 2026 ttake-55
 License: MIT
 
+Files: assets/js/vis-network.min.js
+Copyright: 2011-2017 Almende B.V.
+           2017-2019 visjs contributors
+License: MIT
+Comment: Upstream offers Apache-2.0 or MIT; this package redistributes the file under MIT.
+
 License: MIT
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal

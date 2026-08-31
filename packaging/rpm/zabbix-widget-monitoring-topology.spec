@@ -121,35 +121,36 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
-* Sun Aug 30 2026 claude <noreply> - 1.1.0-1
+* Sun Aug 30 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.0-1
 - パッケージメタデータのみの修正（ウィジェットの機能・コードは 1.1.0-0 と同一）。
-  公開ステージング（public-staging）との整合のため PHP 依存の下限を 8.3 から
+  READMEに記載した PHP 8.1 要件と整合するよう、依存の下限を 8.3 から
   8.1 へ引き下げ。RPM の Requires を
   `(php >= 8.1 or php8.1-common .. php8.5-common)` および
   `(php-fpm >= 8.1 or php8.1-fpm .. php8.5-fpm)` に変更
 - あわせて DEB 側（debian/control）に欠落していた PHP 依存
   `Depends: php (>= 2:8.1~)` を追加（php-fpm は RPM 側限定のまま）。
   リリース済み v1.1.0 の DEB 資材に PHP Depends が無かった指摘への対応
-* Sun Aug 30 2026 claude <noreply> - 1.1.0-0
+* Sun Aug 30 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.0-0
 - マイナーバージョンリリース。v1.0.9〜v1.0.10 の VMware／Kubernetes トポロジ
   改修（VMノードの Network 経由化・vCenter／ESXi／VM／k8s ロール別アイコン・
-  Kubernetes ツリー再編）とそのコードレビュー対応（Gitea issue #10 / #11）
+  Kubernetes ツリー再編）と関連する不具合修正
   一式を、マイナーバージョンの区切りとして再リリース
 - v1.0.10 からの機能・コード変更なし（バージョン番号のみ更新）
-* Sun Aug 30 2026 claude <noreply> - 1.0.10-0
-- コードレビュー対応（Gitea issue #10 / #11）
-- #10: フィルタで祖先 Host ノード（vCenter／ESXi／k8s 集約ホスト）が非表示に
+* Sun Aug 30 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.10-0
+- フィルタによる祖先経路の分断を修正: 祖先 Host ノード（vCenter／ESXi／
+  k8s 集約ホスト）が非表示に
   なると、条件に一致する子孫（VM／component）がルートから分断される不具合を
   修正。ノードは「自身が一致」または「子孫が1つでも一致」で可視とし、経路上の
   edge も接続を維持するよう `#applyVisibility()` を変更。k8s 集約ホストは
   インターフェースを持たず既定フィルタで隠れるため、既定表示で顕在化していた
-- #11: 複数 vCenter に同名 ESXi が存在すると、Hypervisor ノード索引
+- 同名ESXiの誤接続を修正: 複数 vCenter に同名 ESXi が存在すると、
+  Hypervisor ノード索引
   （$hv_node_by_name）が表示名だけのフラット map だったため後勝ちで上書きされ、
   一方の vCenter の VM が別 vCenter の同名 ESXi 配下へ誤接続され得た不具合を
   修正。索引を master/接続ホスト（vCenter）単位にスコープし、VM 側は自身の
   discoveryRule から接続ホストを取得して解決。discoveryRule を持たない VM は
   一意に定まる場合のみ従来どおり名前一致で解決
-* Sun Aug 30 2026 claude <noreply> - 1.0.9-0
+* Sun Aug 30 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.9-0
 - VMware VMノードの直上にNetworkノードを挿入し、Zabbix→…→ESXi→
   Datacenter→Cluster→Network→VM の階層に統一（VM群がClusterへ直結
   していた従来表示を、他ホストと同じくNetwork経由に揃えた）
@@ -162,7 +163,7 @@ fi
 - Kubernetes構成要素をロール別アイコンで表示（Kubernetesブランド青
   #326ce5 のヘプタゴン字形。API server=API／controller manager=CTL／
   scheduler=SCH／kubelet=KBL／集約ホスト=K8S のタグ）
-* Sun Aug 30 2026 claude <noreply> - 1.0.8-0
+* Sun Aug 30 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.8-0
 - 表示フィルタの「障害イベント」区分を「障害状態」区分に再編し、障害の
   有無による絞り込み機能を追加。未確認／確認済みに加えて「障害なし」
   （障害を1件も持たないホスト）を選択肢に追加し、3項目とも既定ON
@@ -179,7 +180,7 @@ fi
 - ホストグループとホストを同時に受信した場合に、両者のOR（和集合）で対象
   ホストを解決するよう修正（従来はホストグループ指定が優先され、同時に
   指定された単一ホストが無視されていた）
-* Thu Aug 27 2026 claude <noreply> - 1.0.7-0
+* Thu Aug 27 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.7-0
 - ユーザー報告のVMware表示不具合2件を修正:
   1. Hypervisorホストの接続用ホスト（master）がウィジェットの選択範囲外の
      場合、Datacenterノードがフォールバック時にNetworkノードを経由せず
@@ -195,21 +196,21 @@ fi
      host.get()のselectDiscoveryRuleで判明する接続用ホストを、Server/Proxy/
      Proxy Groupノードと同様にウィジェットの選択範囲に関わらず自動取得し
      表示するよう変更
-* Mon Aug 24 2026 claude <noreply> - 1.0.6-0
-- コードレビュー issue #7/#8 対応（v1.0.5レビュー、reviewer codex）:
-  issue #7: VM識別用ホストグループの判定を固定文字列"(vm)"との完全一致から、
+* Mon Aug 24 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.6-0
+- VMware VM識別とKubernetesクラスタ識別の不具合を修正:
+  VMware: VM識別用ホストグループの判定を固定文字列"(vm)"との完全一致から、
   公式VMwareテンプレートが実際に生成する"<cluster> (vm)"/"<dc>/<folder> (vm)"
   形式に対応する末尾一致（" (vm)"で終わるか）へ修正。従来の完全一致では
   標準構成のVMが一切ESXi配下にネストされなかった不具合を解消
-- issue #8: 複数Kubernetesクラスタが同じZabbix Server/Proxy配下で単一の
+- Kubernetes: 複数Kubernetesクラスタが同じZabbix Server/Proxy配下で単一の
   Clusterノードへ統合されてしまう不具合を修正。host.get()のselectDiscoveryRule
   で判明するクラスタ集約(状態取得)ホスト自身のhostidをクラスタ識別子として
   ノードIDに組み込み、クラスタごとに別ノードとして表示。ノードラベルも
   集約ホスト名（例: "K8s Cluster (163/164)"）を優先表示するよう改善
 * Mon Aug 24 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.5-0
 - CHost::get()の非推奨パラメータselectGroupsをselectHostGroupsに修正
-  （170のダッシュボード表示時に出ていたE_USER_WARNINGを解消）
-- VMware階層の不具合を修正（issue #5）: 公式VMwareテンプレートの接続用ホスト
+  （ダッシュボード表示時のE_USER_WARNINGを解消）
+- VMware階層の不具合を修正: 公式VMwareテンプレートの接続用ホスト
   （{$VMWARE.URL}等のマクロとvmware.hv.discovery等のLLDルールを持つホスト）
   が、Hypervisor固有アイテム(vmware.hv.*)を持つ発見済みHypervisorホストと
   同じ「vmware.」プレフィックスを共有していたため誤ってHypervisorとして
@@ -227,8 +228,8 @@ fi
   変更（HOLOZTEK_MM_CONNECTION_HOST_MACROSに今後同様のマクロ名を追加可能）
 
 * Sat Aug 22 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.4-0
-- VMware/Kubernetesクラスタノードを追加（gitadminによる170のみ未リリース実装
-  f3a5e66を正式反映）: 通信方式ごとに1個の固定クラスタノードを新設し、
+- VMware/Kubernetesクラスタノードを追加: 通信方式ごとに1個の固定クラスタ
+  ノードを新設し、
   Kubernetesと判定されたホストは既存のNetworkノードではなくこのクラスタ
   ノードに常時接続するよう変更。Kubernetes公式テンプレート(HTTP agentアイ
   テム, kube./kubernetes.キープレフィックス)の検出ロジックを追加
@@ -242,10 +243,10 @@ fi
   (vmware.vm.discovery)が自動付与する「(vm)」ホストグループ名と、ESXi自身の
   Zabbixホスト名が一致することを利用してVM→ESXiの親子関係を判定（該当する
   ESXiがウィジェットの選択範囲外の場合は通常のNetworkノードへフォールバック）。
-  170の実データ（esxi-dev-01配下のVM21台）で動作検証済み
+  検証環境の実データで動作確認済み
 
 * Tue Aug 11 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.3-0
-- コードレビュー issue #3/#4 対応:
+- 公開品質と互換性を改善:
   1. ダッシュボードフィルタの保存キーが v1.0.1 で
      monitoringmap-filter-<id> から holoztek-monitoringmap-filter-<id> へ
      変更された際に旧キーからの移行ロジックが無く、v0.2.1 以前で保存した
@@ -285,19 +286,19 @@ fi
   1. ライセンスをProprietaryからMITへ変更
   2. RPMをel9/el10個別ビルドから単一noarchファイルに統一（_rpmfilenameから
      %%{dist}を除去）。BuildArch: noarchでコンパイル済みバイナリを含まない
-     ため、170/171どちらでビルドしても同一内容
+     ため、複数の対応環境でビルドしても同一内容
   3. Debianパッケージング(.deb)をdebian/配下に追加
   4. パッケージ名をzabbix-widget-monitoringmapからzabbix-widget-monitoring-topology
      に変更（ウィジェット内部ID・モジュールディレクトリ名(monitoringmap)は変更なし）
 * Sat Aug 8 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 0.2.1-0
-- コードレビュー issue #2 対応: 通信方式（監視方式）フィルタで、アイテムが
+- 監視方式フィルタを修正: 通信方式（監視方式）フィルタで、アイテムが
   無い、またはHTTP agent/trapper/calculated等 mm_item_comm_method() が未分類
   とするアイテムのみのホストが、通信方式の全チェックボックスON（既定状態）
   でもマップから消えてしまう回帰不具合を修正。comm_methodsが空配列の場合は
   vmware/odbcと同様に「その他（methodOther）」区分として判定するよう変更
 * Sat Aug 8 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 0.2.0-0
 - フィルタ保存キーが実行時ID（getUniqueId）に依存しダッシュボード再読み込みの
-  たびにリセットされる不具合を修正、DB保存ID（getWidgetId）を優先使用（issue #1）
+  たびにリセットされる不具合を修正、DB保存ID（getWidgetId）を優先使用
 - フィルタのホスト状態に「有効ホスト」チェックボックスを追加（デフォルトON）。
   ホストステータス無効・メンテナンス中のホストはデフォルトで非表示に
 - フィルタのインターフェイス/監視経路/監視方式の全項目をデフォルトでON化
