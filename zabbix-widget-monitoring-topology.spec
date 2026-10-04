@@ -1,7 +1,7 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.1.0
-Release:        1
+Version:        1.1.1
+Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
 BuildArch:      noarch
@@ -121,6 +121,13 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sat Oct 03 2026 claude <noreply> - 1.1.1-0
+- Zabbix 8.0（8.0.0rc1以降）対応: ウィジェット設定画面がHTTP 500（8.0で廃止された
+  PHP定数 ZBX_STYLE_COLOR_PICKER / クラス CColor の参照）やJSエラー（jQuery colorpicker の廃止、
+  設定フォームIDの widget-dialogue-form → widget-form 変更）で動作しない不具合を修正。
+  Zabbix 7.0 では従来の処理を使い、8.0以降は <z-color-picker> / CColorPicker と
+  新しいフォームIDを使う。Zabbix 7.0 系での動作は従来と同一。
+
 * Sun Aug 30 2026 claude <noreply> - 1.1.0-1
 - パッケージメタデータのみの修正（ウィジェットの機能・コードは 1.1.0-0 と同一）。
   公開ステージング（public-staging）との整合のため PHP 依存の下限を 8.3 から
