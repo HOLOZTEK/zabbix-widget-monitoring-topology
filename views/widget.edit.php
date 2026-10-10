@@ -7,9 +7,9 @@
  * @var array  $data
  */
 
-// 'hostid'/'hostgroupid' use preventDefault() in WidgetForm.php, so these
-// render only the "receive from widget" connector control (Tree Navigator
-// etc.), not a manual host/group-selection popup.
+// 'hostid' uses preventDefault() in WidgetForm.php, so it renders only the
+// "receive from widget" connector control (Tree Navigator etc.). 'hostgroupid'
+// accepts several fixed host groups as well as a widget reference.
 
 (new CWidgetFormView($data))
 	->addField(

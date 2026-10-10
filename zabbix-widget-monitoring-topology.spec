@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.1.1
+Version:        1.1.2
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,6 +121,10 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sat Oct 10 2026 claude <noreply> - 1.1.2-0
+- 設定画面の「ホストグループ」欄で、ブロードキャスト連携（Tree Navigator 等）に加えて
+  特定のホストグループを複数固定指定できるようにした（サブグループのホストも含む）。
+  既存ダッシュボードの連携設定はそのまま維持される。
 * Sat Oct 03 2026 claude <noreply> - 1.1.1-0
 - Zabbix 8.0（8.0.0rc1以降）対応: ウィジェット設定画面がHTTP 500（8.0で廃止された
   PHP定数 ZBX_STYLE_COLOR_PICKER / クラス CColor の参照）やJSエラー（jQuery colorpicker の廃止、
