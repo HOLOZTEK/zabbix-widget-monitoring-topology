@@ -46,11 +46,9 @@ class WidgetForm extends CWidgetForm {
 
 	public function addFields(): self {
 		return $this
-			// Broadcast-receive only: preventDefault() hides the manual host/group
-			// pick controls, leaving only the "receive from widget" connector in the
-			// edit form. Selection is driven entirely by Tree Navigator etc.; with no
-			// broadcast received, WidgetView must render the empty state, never a
-			// stale manual pick.
+			// Host: broadcast-receive only. preventDefault() hides the manual
+			// pick control, leaving only the "receive from widget" connector, so
+			// selection is driven entirely by Tree Navigator etc.
 			->addField(
 				(new CWidgetFieldMultiSelectHost('hostid', _holoztek_mm('Host')))
 					->setMultiple(false)
@@ -58,11 +56,16 @@ class WidgetForm extends CWidgetForm {
 					->preventDefault()
 					->acceptWidget()
 			)
+			// Host groups: either several fixed groups picked here, or a group
+			// received from a widget (Tree Navigator etc.). The in type stays
+			// _hostgroupid (not _hostgroupids) on purpose: the edit form matches a
+			// saved reference by "<widget>.<in type>", so changing it would make
+			// existing dashboards drop their Navigator link on the next save.
+			// WidgetView expands subgroups itself, so both types yield the same hosts.
 			->addField(
-				(new CWidgetFieldMultiSelectGroup('hostgroupid', _holoztek_mm('Host group')))
-					->setMultiple(false)
+				(new CWidgetFieldMultiSelectGroup('hostgroupid', _holoztek_mm('Host groups')))
+					->setMultiple(true)
 					->setInType(CWidgetsData::DATA_TYPE_HOST_GROUP_ID)
-					->preventDefault()
 					->acceptWidget()
 			)
 			->addField(

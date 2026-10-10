@@ -21,6 +21,9 @@ msgstr "ホスト"
 msgid "Host group"
 msgstr "ホストグループ"
 
+msgid "Host groups"
+msgstr "ホストグループ"
+
 msgid "Subnet prefix length"
 msgstr "サブネットマスク長"
 
