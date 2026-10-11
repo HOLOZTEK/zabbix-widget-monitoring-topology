@@ -6,13 +6,13 @@
 
 Monitoring Topology は、Zabbix が監視しているホストへ至る監視経路をトポロジーとして可視化するダッシュボードウィジェットです。
 
-ホストまたはホストグループの単位での描画に対応し、Server・Proxy・Proxy Groupの監視経路、並びにVMware仮想化とKubernetesクラスタの階層を可視化することができます。描画対象はナビゲータ等から受信し、選択範囲に対応するトポロジーを描画します。
+固定指定した複数のホストグループ、またはナビゲータ等から受信したホスト／ホストグループを描画対象にできます。Server・Proxy・Proxy Groupの監視経路、並びにVMware仮想化とKubernetesクラスタの階層を可視化します。
 
 グラフ描画には Vis Network の Canvas2D を使用しています。（WebGL は不要）
 
 <a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator と連携した Monitoring Topology ダッシュボード" /></a>
 
-[最新リリース](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.1.0) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.0/zabbix-widget-monitoring-topology-1.1.0.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.0/zabbix-widget-monitoring-topology_1.1.0_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.0/zabbix-widget-monitoring-topology-1.1.0.tar.gz)
+[最新リリース](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.1.2) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.2/zabbix-widget-monitoring-topology-1.1.2.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.2/zabbix-widget-monitoring-topology_1.1.2_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.2/zabbix-widget-monitoring-topology-1.1.2.tar.gz)
 
 ## Monitoring Topology を使う理由
 
@@ -31,8 +31,8 @@ Monitoring Topology は、Zabbix が監視しているホストへ至る監視�
   <tr><td nowrap>インターフェイスなしホスト</td><td>インターフェースを持たない監視ホストでは、接続先マクロからネットワークまたはラベルを判定して表示します。</td></tr>
   <tr><td nowrap>機器・監視方式表示</td><td>ホスト種別アイコンに対して、監視方式のバッジ（Ping、SNMP、Agent、IPMI、VMware、ODBC、JMX、Kubernetes 等）を表示します。</td></tr>
   <tr><td nowrap>障害状態の表示</td><td>ホストで検知されている障害の深刻度の色をアイコンの背景に表示します。複数の障害が発生している場合は、深刻度が最も高い障害の色が選択されます。</td></tr>
-  <tr><td nowrap>表示フィルタ</td><td>障害状態、ホスト状態、インターフェース、監視経路、監視方式で表示内容の絞り込みを行います。ホスト、ホストグループによる絞り込みを行いたい場合はナビゲータと連携させる必要があります。</td></tr>
-  <tr><td nowrap>ウィジェット間連携</td><td>ナビゲータからホスト／ホストグループのパラメータを受信し、動的に描画内容を変更します。</td></tr>
+  <tr><td nowrap>表示フィルタ</td><td>障害状態、ホスト状態、インターフェース、監視経路、監視方式で表示内容の絞り込みを行います。</td></tr>
+  <tr><td nowrap>描画対象の指定</td><td>複数のホストグループを固定指定するほか、ナビゲータからホスト／ホストグループを受信して動的に描画内容を変更できます。</td></tr>
   <tr><td nowrap>対話操作</td><td>ノードの移動とレイアウトの調整、ホストのメニューへのアクセスに対応します。</td></tr>
 </table>
 
@@ -74,7 +74,8 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
 
 <table>
   <tr><th align="left" nowrap>項目</th><th align="left">説明</th></tr>
-  <tr><td nowrap>ホスト／ホストグループ</td><td>他ウィジェットと接続する受信専用コネクタです。</td></tr>
+  <tr><td nowrap>ホスト</td><td>ナビゲータ等と接続する受信専用コネクタです。</td></tr>
+  <tr><td nowrap>ホストグループ</td><td>サブグループを含む複数のホストグループを固定指定するか、他ウィジェットからホストグループを受信します。</td></tr>
   <tr><td nowrap>サブネットプレフィックス長</td><td>Networkノード算出用のIPv4プレフィックス。既定値は24です。</td></tr>
   <tr><td nowrap>Zabbix Serverラベル</td><td>ルートServerノードに表示する名称です。</td></tr>
   <tr><td nowrap>フォントサイズ</td><td>8〜24pxのノードラベルサイズです。</td></tr>
@@ -87,10 +88,11 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
 
 <a href="screenshots/monitoring-topology-settings-ja.png" target="_blank"><img src="screenshots/monitoring-topology-settings-ja.png" width="620" alt="Monitoring Topology ウィジェットの日本語設定画面"></a>
 
-## ダッシュボード連携
+## 描画対象の指定とダッシュボード連携
 
-本ウィジェットは受信専用です。
-ホストまたはホストグループを受信するまでは空状態を表示します。
+設定画面でホストグループを複数固定指定すると、本ウィジェットを単独で使用できます。指定したグループのサブグループに属するホストも対象です。
+
+動的に対象を変更する場合は、ホストまたはホストグループをナビゲータ等へ接続します。ホストは受信専用です。ホストグループは固定指定と他ウィジェットからの受信のどちらにも対応します。固定ホストグループと受信したホストを同時に指定した場合は、両方の和集合を表示します。固定対象も受信対象もない場合は空状態を表示します。
 
 1. `_hostid` または `_hostgroupid` を配信するナビゲーターを配置します。
 2. 同じページへ Monitoring Topology を追加します。
@@ -100,8 +102,8 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
 
 ## 動作要件
 
-- 対応バージョン: Zabbix 7.0
-- 動作確認済み: Zabbix 7.0
+- 対応バージョン: Zabbix 7.0／8.0
+- 動作確認済み: Zabbix 7.0.31／8.0.0rc1
 - PHP 8.1 以上
 - Canvas2D 対応ブラウザ
 
@@ -110,13 +112,13 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
 ### RPM
 
 ```bash
-dnf install ./zabbix-widget-monitoring-topology-1.1.0.noarch.rpm
+dnf install ./zabbix-widget-monitoring-topology-1.1.2.noarch.rpm
 ```
 
 ### DEB
 
 ```bash
-apt install ./zabbix-widget-monitoring-topology_1.1.0_all.deb
+apt install ./zabbix-widget-monitoring-topology_1.1.2_all.deb
 ```
 
 パッケージは実行ファイルを利用中のZabbixフロントエンドモジュールディレクトリへ配置します。その後、管理 → モジュールで再スキャンして有効化し、ダッシュボードへ追加してください。
@@ -126,10 +128,10 @@ apt install ./zabbix-widget-monitoring-topology_1.1.0_all.deb
 通常はRPMまたはDEBを推奨します。ソースから配置する場合:
 
 ```bash
-curl -L -o zabbix-widget-monitoring-topology-1.1.0.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.0/zabbix-widget-monitoring-topology-1.1.0.tar.gz
-tar -xzf zabbix-widget-monitoring-topology-1.1.0.tar.gz
+curl -L -o zabbix-widget-monitoring-topology-1.1.2.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.2/zabbix-widget-monitoring-topology-1.1.2.tar.gz
+tar -xzf zabbix-widget-monitoring-topology-1.1.2.tar.gz
 install -d /usr/share/zabbix/ui/modules/holoztek_monitoringmap
-cd zabbix-widget-monitoring-topology-1.1.0
+cd zabbix-widget-monitoring-topology-1.1.2
 cp -a manifest.json Module.php Widget.php actions assets includes locale views /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
 ```
 

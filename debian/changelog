@@ -1,3 +1,21 @@
+zabbix-widget-monitoring-topology (1.1.2) unstable; urgency=medium
+
+  * 設定画面の「ホストグループ」欄で、ブロードキャスト連携（Tree Navigator 等）に加えて
+    特定のホストグループを複数固定指定できるようにした（サブグループのホストも含む）。
+    既存ダッシュボードの連携設定はそのまま維持される。
+
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Sat, 10 Oct 2026 12:00:00 +0900
+
+zabbix-widget-monitoring-topology (1.1.1) unstable; urgency=medium
+
+  * Zabbix 8.0（8.0.0rc1以降）対応: ウィジェット設定画面がHTTP 500（8.0で廃止された
+    PHP定数 ZBX_STYLE_COLOR_PICKER / クラス CColor の参照）やJSエラー（jQuery colorpicker の廃止、
+    設定フォームIDの widget-dialogue-form → widget-form 変更）で動作しない不具合を修正。
+    Zabbix 7.0 では従来の処理を使い、8.0以降は <z-color-picker> / CColorPicker と
+    新しいフォームIDを使う。Zabbix 7.0 系での動作は従来と同一。
+
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Sat, 03 Oct 2026 09:00:00 +0900
+
 zabbix-widget-monitoring-topology (1.1.0) unstable; urgency=medium
 
   * マイナーバージョンリリース。v1.0.9〜v1.0.10 の VMware／Kubernetes トポロジ

@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.1.2 - 2026-10-10
+
+- Added selection of multiple fixed host groups, including hosts in their subgroups.
+- Preserved Navigator and other widget connections for dynamic host or host-group selection.
+- Displayed the union when fixed host groups and a received host are specified together.
+
+## v1.1.1 - 2026-10-03
+
+- Added compatibility with the Zabbix 8.0 widget settings form and color picker.
+- Preserved the existing Zabbix 7.0 settings behavior.
+
 ## v1.1.0 - 2026-08-30
 
 - Added the v1.0.7-v1.0.10 VMware and Kubernetes topology improvements as the v1.1 release line.

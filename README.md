@@ -6,13 +6,13 @@ English | [日本語](README.ja.md)
 
 Monitoring Topology is a dashboard widget that visualizes the monitoring paths to hosts monitored by Zabbix as a topology.
 
-It draws a selected host or host group and visualizes Zabbix Server, Zabbix Proxy, and Proxy Group monitoring routes together with VMware virtualization and Kubernetes cluster hierarchies. It receives the target from Navigator or another compatible widget and draws the topology for the selected scope.
+It draws one or more fixed host groups, or a host or host group received from Navigator or another compatible widget. The topology visualizes Zabbix Server, Zabbix Proxy, and Proxy Group monitoring routes together with VMware virtualization and Kubernetes cluster hierarchies.
 
 Vis Network renders the graph in Canvas2D; WebGL is not required.
 
 <a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator driving a Monitoring Topology dashboard" /></a>
 
-[Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.1.0) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.0/zabbix-widget-monitoring-topology-1.1.0.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.0/zabbix-widget-monitoring-topology_1.1.0_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.0/zabbix-widget-monitoring-topology-1.1.0.tar.gz)
+[Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.1.2) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.2/zabbix-widget-monitoring-topology-1.1.2.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.2/zabbix-widget-monitoring-topology_1.1.2_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.2/zabbix-widget-monitoring-topology-1.1.2.tar.gz)
 
 ## Why Monitoring Topology?
 
@@ -31,8 +31,8 @@ It is suited to environments with many monitored hosts or advanced distributed m
   <tr><td nowrap>Hosts without interfaces</td><td>For monitored hosts without interfaces, derives a network or label from the connection-target macro.</td></tr>
   <tr><td nowrap>Device and monitoring-method display</td><td>Shows monitoring-method badges such as Ping, SNMP, Agent, IPMI, VMware, ODBC, JMX, and Kubernetes on host-type icons.</td></tr>
   <tr><td nowrap>Problem status display</td><td>Colors each host icon background by the highest severity among problems detected on that host.</td></tr>
-  <tr><td nowrap>Display filters</td><td>Filters by problem status, host status, interface, monitoring route, and monitoring method. Host or host-group filtering requires integration with Navigator or another compatible widget.</td></tr>
-  <tr><td nowrap>Widget integration</td><td>Receives host or host-group parameters from Navigator and updates the topology dynamically.</td></tr>
+  <tr><td nowrap>Display filters</td><td>Filters by problem status, host status, interface, monitoring route, and monitoring method.</td></tr>
+  <tr><td nowrap>Target selection</td><td>Displays multiple fixed host groups, or receives a host or host group from Navigator and updates the topology dynamically.</td></tr>
   <tr><td nowrap>Interactive operation</td><td>Supports moving nodes, adjusting the layout, and opening host menus.</td></tr>
 </table>
 
@@ -74,7 +74,8 @@ Clearing every visibility choice in a category hides every host. Colorize by sev
 
 <table>
   <tr><th align="left" nowrap>Setting</th><th align="left">Description</th></tr>
-  <tr><td nowrap>Host / Host group</td><td>Receive-only connectors used to link another dashboard widget.</td></tr>
+  <tr><td nowrap>Host</td><td>Receive-only connector used to link Navigator or another compatible widget.</td></tr>
+  <tr><td nowrap>Host groups</td><td>Selects multiple fixed host groups, including their subgroups, or receives a host group from another widget.</td></tr>
   <tr><td nowrap>Subnet prefix length</td><td>IPv4 prefix used to derive network nodes; default is 24.</td></tr>
   <tr><td nowrap>Zabbix Server label</td><td>Label displayed for the root server node.</td></tr>
   <tr><td nowrap>Font size</td><td>Node-label size from 8 to 24 pixels.</td></tr>
@@ -87,9 +88,11 @@ Clearing every visibility choice in a category hides every host. Colorize by sev
 
 <a href="screenshots/monitoring-topology-settings.png" target="_blank"><img src="screenshots/monitoring-topology-settings.png" width="620" alt="Monitoring Topology widget settings"></a>
 
-## Dashboard Integration
+## Target Selection and Dashboard Integration
 
-This widget is receive-only and intentionally shows an empty state until a host or host group is received.
+Select one or more fixed host groups in the widget settings to use Monitoring Topology on its own. Hosts in their subgroups are included.
+
+For dynamic selection, connect Host or Host groups to Navigator or another compatible widget. Host is receive-only; the Host groups field supports either fixed selections or a widget connection. If fixed host groups and a received host are both specified, the widget displays their union. With no fixed target and no received target, it shows an empty state.
 
 1. Add Tree Navigator or another widget that broadcasts `_hostid` or `_hostgroupid`.
 2. Add Monitoring Topology to the same dashboard page.
@@ -99,8 +102,8 @@ This widget is receive-only and intentionally shows an empty state until a host 
 
 ## Requirements
 
-- Supported version: Zabbix 7.0
-- Tested version: Zabbix 7.0
+- Supported versions: Zabbix 7.0 and 8.0
+- Tested versions: Zabbix 7.0.31 and 8.0.0rc1
 - PHP 8.1 or later
 - Browser with Canvas2D support
 
@@ -109,13 +112,13 @@ This widget is receive-only and intentionally shows an empty state until a host 
 ### Install from RPM
 
 ```bash
-dnf install ./zabbix-widget-monitoring-topology-1.1.0.noarch.rpm
+dnf install ./zabbix-widget-monitoring-topology-1.1.2.noarch.rpm
 ```
 
 ### Install from DEB
 
 ```bash
-apt install ./zabbix-widget-monitoring-topology_1.1.0_all.deb
+apt install ./zabbix-widget-monitoring-topology_1.1.2_all.deb
 ```
 
 The packages install the runtime files into the active Zabbix frontend module directory. Then scan and enable the module from Administration -> Modules and add the widget to a dashboard.
@@ -125,10 +128,10 @@ The packages install the runtime files into the active Zabbix frontend module di
 RPM or DEB installation is recommended. For a source installation:
 
 ```bash
-curl -L -o zabbix-widget-monitoring-topology-1.1.0.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.0/zabbix-widget-monitoring-topology-1.1.0.tar.gz
-tar -xzf zabbix-widget-monitoring-topology-1.1.0.tar.gz
+curl -L -o zabbix-widget-monitoring-topology-1.1.2.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.2/zabbix-widget-monitoring-topology-1.1.2.tar.gz
+tar -xzf zabbix-widget-monitoring-topology-1.1.2.tar.gz
 install -d /usr/share/zabbix/ui/modules/holoztek_monitoringmap
-cd zabbix-widget-monitoring-topology-1.1.0
+cd zabbix-widget-monitoring-topology-1.1.2
 cp -a manifest.json Module.php Widget.php actions assets includes locale views /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
 ```
 

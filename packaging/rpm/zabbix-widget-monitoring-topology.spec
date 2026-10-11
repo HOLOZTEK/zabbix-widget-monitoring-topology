@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.1.0
+Version:        1.1.2
 Release:        1
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -26,8 +26,8 @@ Features:
   icon; Proxy nodes turn gray when the proxy is not currently responding
 - Only Host nodes carry problem severity coloring (Server/Proxy/Proxy Group/
   Network nodes never show an aggregated severity)
-- Receives host/host group selection via broadcast from other widgets (e.g.
-  Tree Navigator), receive only
+- Supports multiple fixed host groups and receives host/host group selection
+  via broadcast from other widgets (e.g. Tree Navigator)
 - Object/Icon display mode toggle, drag-to-reposition, hover tooltips
 - Japanese and English locale support
 - Bundled Vis Network (Apache 2.0 license, no external dependencies)
@@ -121,6 +121,10 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sat Oct 10 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.2-0
+- ホストグループの複数固定指定に対応し、既存のウィジェット連携も維持
+* Sat Oct 03 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.1-0
+- Zabbix 8.0 の設定画面に対応し、Zabbix 7.0 との互換性を維持
 * Sun Aug 30 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.0-1
 - パッケージメタデータのみの修正（ウィジェットの機能・コードは 1.1.0-0 と同一）。
   READMEに記載した PHP 8.1 要件と整合するよう、依存の下限を 8.3 から
