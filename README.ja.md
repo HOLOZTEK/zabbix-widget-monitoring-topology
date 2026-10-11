@@ -12,7 +12,7 @@ Monitoring Topology は、Zabbix が監視しているホストへ至る監視�
 
 <a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator と連携した Monitoring Topology ダッシュボード" /></a>
 
-[最新リリース](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.1.2) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.2/zabbix-widget-monitoring-topology-1.1.2.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.2/zabbix-widget-monitoring-topology_1.1.2_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.2/zabbix-widget-monitoring-topology-1.1.2.tar.gz)
+[最新リリース](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.1.3) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.3/zabbix-widget-monitoring-topology-1.1.3.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.3/zabbix-widget-monitoring-topology_1.1.3_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.3/zabbix-widget-monitoring-topology-1.1.3.tar.gz)
 
 ## Monitoring Topology を使う理由
 
@@ -112,13 +112,13 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
 ### RPM
 
 ```bash
-dnf install ./zabbix-widget-monitoring-topology-1.1.2.noarch.rpm
+dnf install ./zabbix-widget-monitoring-topology-1.1.3.noarch.rpm
 ```
 
 ### DEB
 
 ```bash
-apt install ./zabbix-widget-monitoring-topology_1.1.2_all.deb
+apt install ./zabbix-widget-monitoring-topology_1.1.3_all.deb
 ```
 
 パッケージは実行ファイルを利用中のZabbixフロントエンドモジュールディレクトリへ配置します。その後、管理 → モジュールで再スキャンして有効化し、ダッシュボードへ追加してください。
@@ -128,10 +128,10 @@ apt install ./zabbix-widget-monitoring-topology_1.1.2_all.deb
 通常はRPMまたはDEBを推奨します。ソースから配置する場合:
 
 ```bash
-curl -L -o zabbix-widget-monitoring-topology-1.1.2.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.2/zabbix-widget-monitoring-topology-1.1.2.tar.gz
-tar -xzf zabbix-widget-monitoring-topology-1.1.2.tar.gz
+curl -L -o zabbix-widget-monitoring-topology-1.1.3.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.3/zabbix-widget-monitoring-topology-1.1.3.tar.gz
+tar -xzf zabbix-widget-monitoring-topology-1.1.3.tar.gz
 install -d /usr/share/zabbix/ui/modules/holoztek_monitoringmap
-cd zabbix-widget-monitoring-topology-1.1.2
+cd zabbix-widget-monitoring-topology-1.1.3
 cp -a manifest.json Module.php Widget.php actions assets includes locale views /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
 ```
 

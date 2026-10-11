@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.3 - 2026-10-11
+
+- Standardized RPM PHP dependencies as `(php >= 8.1 or php-common >= 8.1)` and `php-fpm >= 8.1`.
+- Kept the widget runtime and DEB dependencies unchanged from v1.1.2.
+
 ## v1.1.2 - 2026-10-10
 
 - Added selection of multiple fixed host groups, including hosts in their subgroups.

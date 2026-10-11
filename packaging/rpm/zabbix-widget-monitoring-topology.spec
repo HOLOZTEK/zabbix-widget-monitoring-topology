@@ -1,12 +1,12 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.1.2
-Release:        1
+Version:        1.1.3
+Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
 BuildArch:      noarch
-Requires:       (php >= 8.1 or php8.1-common or php8.2-common or php8.3-common or php8.4-common or php8.5-common)
-Requires:       (php-fpm >= 8.1 or php8.1-fpm or php8.2-fpm or php8.3-fpm or php8.4-fpm or php8.5-fpm)
+Requires:       (php >= 8.1 or php-common >= 8.1)
+Requires:       php-fpm >= 8.1
 
 %description
 Zabbix dashboard widget that visualizes the monitoring path (Zabbix Server -
@@ -121,6 +121,9 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sun Oct 11 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.3-0
+- RPM の PHP 依存を (php >= 8.1 or php-common >= 8.1) および
+  php-fpm >= 8.1 に統一。ウィジェット本体と DEB の依存関係は変更なし
 * Sat Oct 10 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.2-0
 - ホストグループの複数固定指定に対応し、既存のウィジェット連携も維持
 * Sat Oct 03 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.1-0
