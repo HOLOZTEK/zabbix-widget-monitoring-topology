@@ -1,12 +1,12 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.1.2
+Version:        1.1.3
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
 BuildArch:      noarch
-Requires:       (php >= 8.1 or php8.1-common or php8.2-common or php8.3-common or php8.4-common or php8.5-common)
-Requires:       (php-fpm >= 8.1 or php8.1-fpm or php8.2-fpm or php8.3-fpm or php8.4-fpm or php8.5-fpm)
+Requires:       (php >= 8.1 or php-common >= 8.1)
+Requires:       php-fpm >= 8.1
 
 %description
 Zabbix dashboard widget that visualizes the monitoring path (Zabbix Server -
@@ -121,6 +121,11 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sun Oct 11 2026 claude <noreply> - 1.1.3-0
+- RPM の PHP 依存を他ウィジェットと同じ (php >= 8.1 or php-common >= 8.1) /
+  php-fpm >= 8.1 に統一。従来の (php >= 8.1 or php8.x-common ...) は php-common を
+  名前で受け付けず、php メタパッケージを入れない環境でインストールできない、
+  または php を外せない問題があった。ウィジェット本体の変更はなし。
 * Sat Oct 10 2026 claude <noreply> - 1.1.2-0
 - 設定画面の「ホストグループ」欄で、ブロードキャスト連携（Tree Navigator 等）に加えて
   特定のホストグループを複数固定指定できるようにした（サブグループのホストも含む）。
