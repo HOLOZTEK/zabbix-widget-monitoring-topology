@@ -200,3 +200,48 @@ msgstr "Bottom left"
 
 msgid "Bottom right"
 msgstr "Bottom right"
+
+msgid "Zabbix DB"
+msgstr "Zabbix DB"
+
+msgid "Proxy DB"
+msgstr "Proxy DB"
+
+msgid "APM Data Store"
+msgstr "APM Data Store"
+
+msgid "APM Collector"
+msgstr "APM Collector"
+
+msgid "Enabled"
+msgstr "Enabled"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Source"
+msgstr "Source"
+
+msgid "Database"
+msgstr "Database"
+
+msgid "Server runtime"
+msgstr "Server runtime"
+
+msgid "Frontend configuration"
+msgstr "Frontend configuration"
+
+msgid "Global APM Data Source"
+msgstr "Global APM Data Source"
+
+msgid "Database details are not available from the Zabbix API."
+msgstr "Database details are not available from the Zabbix API."
+
+msgid "Backend components"
+msgstr "Backend components"
+
+msgid "APM"
+msgstr "APM"
+
+msgid "APM (available on Zabbix 8.0 or later)"
+msgstr "APM (available on Zabbix 8.0 or later)"

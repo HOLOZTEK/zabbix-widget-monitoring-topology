@@ -4,7 +4,10 @@ namespace Modules\HoloztekMonitoringMap\Actions;
 
 use API,
 	CControllerDashboardWidgetView,
-	CControllerResponseData;
+	CControllerResponseData,
+	CMessageHelper,
+	CSettingsHelper,
+	CWebUser;
 
 use Modules\HoloztekMonitoringMap\Includes\WidgetForm;
 
@@ -335,6 +338,22 @@ class WidgetView extends CControllerDashboardWidgetView {
 			])
 			: [];
 
+		$backend_components = array_map('intval', (array) ($fv['backend_components'] ?? []));
+		$show_database = in_array(WidgetForm::BACKEND_DATABASE, $backend_components, true);
+		$show_apm = in_array(WidgetForm::BACKEND_APM, $backend_components, true) && holoztek_mm_apm_supported();
+
+		// An APM-enabled Proxy need not monitor any selected Host, so it is added
+		// to the same list: one Proxy always stays one node, and its Proxy Group
+		// is resolved along with those of the Hosts.
+		$apm_proxies = $show_apm ? $this->fetchApmProxies() : [];
+		if ($apm_proxies) {
+			$proxies = (array) $proxies + $apm_proxies;
+			$proxy_groupids = array_values(array_unique(array_filter(
+				array_merge($proxy_groupids, array_column($apm_proxies, 'proxy_groupid')),
+				$is_id
+			)));
+		}
+
 		$proxy_groups = $proxy_groupids
 			? API::ProxyGroup()->get([
 				'output'         => ['proxy_groupid', 'name'],
@@ -368,7 +387,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$proxy_unresponsive = ((int) ($proxy['state'] ?? ZBX_PROXY_STATE_UNKNOWN)) !== ZBX_PROXY_STATE_ONLINE;
 			$this->addNode($proxy_node, (string) $proxy['name'], HOLOZTEK_MM_NODE_PROXY, [
 				'proxy_unresponsive' => $proxy_unresponsive
-			]);
+			] + (isset($apm_proxies[$proxyid]) ? ['apm_collector' => true] : []));
 
 			$proxy_parent = $proxy_group_upstream_node[$proxy['proxy_groupid']] ?? holoztek_mm_node_id_server();
 			$this->addEdge($proxy_parent, $proxy_node);
@@ -606,6 +625,14 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$this->addEdge($cluster_node, $host_node);
 		}
 
+		if ($show_database) {
+			$this->addDatabaseComponents($proxies);
+		}
+
+		if ($show_apm) {
+			$this->addApmComponents($apm_proxies);
+		}
+
 		$this->applyClusterMemberIps();
 		$this->applyProblems($hosts);
 
@@ -719,6 +746,170 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$this->elements[] = [
 			'data' => ['id' => $id, 'label' => $label, 'type' => $type] + $extra
 		];
+	}
+
+	// A backend relation (database, apm_storage), as opposed to the monitoring
+	// tree that addEdge() builds. The relation_type is what keeps the client from
+	// walking it as a parent-child link - see #initGraph() in class.widget.js.
+	private function addRelationEdge(string $source, string $target, string $relation_type): void {
+		$key = $source . '->' . $target;
+		if (isset($this->edge_keys[$key])) {
+			return;
+		}
+		$this->edge_keys[$key] = true;
+
+		$this->elements[] = [
+			'data' => ['source' => $source, 'target' => $target, 'relation_type' => $relation_type]
+		];
+	}
+
+	// Backend components are optional enrichment: a failure here must leave the
+	// topology intact. CFrontendApiWrapper reports a failed call by queueing an
+	// error message, which the widget would then show, so the queue is put back
+	// as it was. Returns null on failure.
+	private function optionalApiCall(callable $call): ?array {
+		$messages = CMessageHelper::getMessages();
+
+		try {
+			$result = $call();
+		}
+		catch (\Throwable $e) {
+			$result = false;
+		}
+
+		if (!is_array($result)) {
+			CMessageHelper::clear();
+			foreach ($messages as $message) {
+				CMessageHelper::addMessage($message);
+			}
+
+			return null;
+		}
+
+		return $result;
+	}
+
+	// data_collection_status = 1 means the Proxy's APM Collector is enabled. It
+	// says nothing about telemetry actually arriving.
+	private function fetchApmProxies(): array {
+		$proxies = $this->optionalApiCall(static fn() => API::Proxy()->get([
+			'output'       => ['proxyid', 'name', 'proxy_groupid', 'state'],
+			'selectApm'    => ['data_collection_status'],
+			'preservekeys' => true
+		]));
+
+		$apm_proxies = [];
+		foreach ($proxies ?? [] as $proxyid => $proxy) {
+			if ((int) ($proxy['apm']['data_collection_status'] ?? 0) === 1) {
+				unset($proxy['apm']);
+				$apm_proxies[$proxyid] = $proxy;
+			}
+		}
+
+		return $apm_proxies;
+	}
+
+	// Only ever keeps status and db: the rest of apm_global_db (url, username,
+	// TLS options) is dropped here and never reaches the client. settings.get
+	// rejects this field for anyone but a Super admin, so that case is skipped
+	// outright and reported as null (unknown), not as "not configured".
+	private function fetchApmGlobalDataSource(): ?array {
+		if (CWebUser::getType() != USER_TYPE_SUPER_ADMIN) {
+			return null;
+		}
+
+		$settings = $this->optionalApiCall(static fn() => API::Settings()->get(['output' => ['apm_global_db']]));
+
+		if ($settings === null || !is_array($settings['apm_global_db'] ?? null)) {
+			return null;
+		}
+
+		return [
+			'status' => (int) ($settings['apm_global_db']['status'] ?? 0),
+			'db'     => (string) ($settings['apm_global_db']['db'] ?? '')
+		];
+	}
+
+	// The type the Server itself reported is preferred. The Frontend's own
+	// connection type is only a hint, as the two can be configured apart, so it
+	// is marked inferred. Of $DB, only TYPE is read.
+	private function detectServerDatabase(): array {
+		global $DB;
+
+		$status = [];
+		try {
+			if (class_exists('CSettingsHelper') && method_exists('CSettingsHelper', 'getDbVersionStatus')) {
+				$status = CSettingsHelper::getDbVersionStatus();
+			}
+		}
+		catch (\Throwable $e) {
+			$status = [];
+		}
+
+		$db_type = holoztek_mm_db_type_from_version_status($status);
+		if ($db_type !== null) {
+			return ['db_type' => $db_type, 'db_source' => 'server_runtime', 'db_confidence' => 'confirmed'];
+		}
+
+		$db_type = holoztek_mm_db_type_from_frontend_config((string) ($DB['TYPE'] ?? ''));
+
+		return $db_type !== null
+			? ['db_type' => $db_type, 'db_source' => 'frontend_config', 'db_confidence' => 'inferred']
+			: ['db_type' => null, 'db_source' => null, 'db_confidence' => null];
+	}
+
+	private function addDatabaseComponents(array $proxies): void {
+		$server_db = $this->detectServerDatabase();
+		$label = _holoztek_mm('Zabbix DB');
+		if ($server_db['db_type'] !== null) {
+			$label .= "\n" . $server_db['db_type'];
+		}
+
+		$this->addNode(holoztek_mm_node_id_zabbix_db(), $label, HOLOZTEK_MM_NODE_ZABBIX_DB, $server_db);
+		$this->addRelationEdge(holoztek_mm_node_id_server(), holoztek_mm_node_id_zabbix_db(),
+			HOLOZTEK_MM_RELATION_DATABASE
+		);
+
+		// The API exposes nothing about a Proxy's database, so db_type stays null
+		// rather than being guessed; a later source can fill it in.
+		foreach (array_keys($proxies) as $proxyid) {
+			$proxy_node = holoztek_mm_node_id_proxy((string) $proxyid);
+			$proxy_db_node = holoztek_mm_node_id_proxy_db((string) $proxyid);
+
+			$this->addNode($proxy_db_node, _holoztek_mm('Proxy DB'), HOLOZTEK_MM_NODE_PROXY_DB, [
+				'db_type'       => null,
+				'backend_owner' => $proxy_node
+			]);
+			$this->addRelationEdge($proxy_node, $proxy_db_node, HOLOZTEK_MM_RELATION_DATABASE);
+		}
+	}
+
+	// A Proxy can override the Global Data Source in the Server's configuration,
+	// which the API doesn't expose, so an edge here means "APM-enabled Proxy and
+	// the Global Data Source", not a confirmed write path. With no readable
+	// Global Data Source, the node stays abstract instead of naming ClickHouse.
+	private function addApmComponents(array $apm_proxies): void {
+		$global = $this->fetchApmGlobalDataSource();
+		$is_configured = $global !== null && $global['status'] === 1;
+
+		if (!$is_configured && !$apm_proxies) {
+			return;
+		}
+
+		$datastore_node = holoztek_mm_node_id_apm_datastore();
+
+		$this->addNode($datastore_node,
+			$is_configured ? 'ClickHouse' : _holoztek_mm('APM Data Store'),
+			HOLOZTEK_MM_NODE_APM_DATASTORE,
+			$is_configured ? ['db_type' => 'ClickHouse', 'apm_db' => $global['db']] : ['db_type' => null]
+		);
+		$this->addRelationEdge(holoztek_mm_node_id_server(), $datastore_node, HOLOZTEK_MM_RELATION_APM_STORAGE);
+
+		foreach (array_keys($apm_proxies) as $proxyid) {
+			$this->addRelationEdge($datastore_node, holoztek_mm_node_id_proxy((string) $proxyid),
+				HOLOZTEK_MM_RELATION_APM_STORAGE
+			);
+		}
 	}
 
 	// Scoped by $upstream (the Server or Proxy node the network sits under) so

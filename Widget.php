@@ -58,6 +58,18 @@ class Widget extends CWidget {
                 'JMX'                               => _holoztek_mm('JMX'),
                 'Other'                             => _holoztek_mm('Other'),
                 'No hosts match the current filter.' => _holoztek_mm('No hosts match the current filter.'),
+                'Zabbix DB' => _holoztek_mm('Zabbix DB'),
+                'Proxy DB' => _holoztek_mm('Proxy DB'),
+                'APM Data Store' => _holoztek_mm('APM Data Store'),
+                'APM Collector' => _holoztek_mm('APM Collector'),
+                'Enabled' => _holoztek_mm('Enabled'),
+                'Type' => _holoztek_mm('Type'),
+                'Source' => _holoztek_mm('Source'),
+                'Database' => _holoztek_mm('Database'),
+                'Server runtime' => _holoztek_mm('Server runtime'),
+                'Frontend configuration' => _holoztek_mm('Frontend configuration'),
+                'Global APM Data Source' => _holoztek_mm('Global APM Data Source'),
+                'Database details are not available from the Zabbix API.' => _holoztek_mm('Database details are not available from the Zabbix API.'),
             ]
         ];
     }

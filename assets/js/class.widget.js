@@ -45,6 +45,11 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	// for Server/Proxy/Network nodes now that the icon background no longer
 	// encodes node type (it encodes problem severity instead - see #buildIcon).
 	static #TYPE_ICON = {
+		// Zabbix DB / Proxy DB: plain database cylinder, shared by both.
+		zabbix_db: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHBhdGggZD0nTTUgOHYxNmMwIDIuOCA0LjkgNSAxMSA1czExLTIuMiAxMS01Vjh6JyBmaWxsPScjM2Y3ZmI1Jy8+PGVsbGlwc2UgY3g9JzE2JyBjeT0nOCcgcng9JzExJyByeT0nNScgZmlsbD0nIzZlYTZkMycvPjxwYXRoIGQ9J001IDE0YzAgMi44IDQuOSA1IDExIDVzMTEtMi4yIDExLTVNNSAyMGMwIDIuOCA0LjkgNSAxMSA1czExLTIuMiAxMS01JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMS40Jy8+PC9zdmc+",
+		proxy_db: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHBhdGggZD0nTTUgOHYxNmMwIDIuOCA0LjkgNSAxMSA1czExLTIuMiAxMS01Vjh6JyBmaWxsPScjM2Y3ZmI1Jy8+PGVsbGlwc2UgY3g9JzE2JyBjeT0nOCcgcng9JzExJyByeT0nNScgZmlsbD0nIzZlYTZkMycvPjxwYXRoIGQ9J001IDE0YzAgMi44IDQuOSA1IDExIDVzMTEtMi4yIDExLTVNNSAyMGMwIDIuOCA0LjkgNSAxMSA1czExLTIuMiAxMS01JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMS40Jy8+PC9zdmc+",
+		// APM Data Store / ClickHouse: generic storage stack, no product logo.
+		apm_datastore: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3QgeD0nNCcgeT0nNCcgd2lkdGg9JzI0JyBoZWlnaHQ9JzcnIHJ4PScyJyBmaWxsPScjN2E1ZmIwJy8+PHJlY3QgeD0nNCcgeT0nMTIuNScgd2lkdGg9JzI0JyBoZWlnaHQ9JzcnIHJ4PScyJyBmaWxsPScjN2E1ZmIwJy8+PHJlY3QgeD0nNCcgeT0nMjEnIHdpZHRoPScyNCcgaGVpZ2h0PSc3JyByeD0nMicgZmlsbD0nIzdhNWZiMCcvPjxjaXJjbGUgY3g9JzknIGN5PSc3LjUnIHI9JzEuNScgZmlsbD0nI2ZmZicvPjxjaXJjbGUgY3g9JzknIGN5PScxNicgcj0nMS41JyBmaWxsPScjZmZmJy8+PGNpcmNsZSBjeD0nOScgY3k9JzI0LjUnIHI9JzEuNScgZmlsbD0nI2ZmZicvPjwvc3ZnPg==",
 		// Root Zabbix Server node: badge with "Z", filled with the Zabbix
 		// brand red so this node reads as "Zabbix itself" at a glance.
 		zbxserver: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzE2JyBoZWlnaHQ9JzE2JyByeD0nMycgZmlsbD0nI2Q0MDAwMCcgc3Ryb2tlPScjYTMwMDAwJyBzdHJva2Utd2lkdGg9JzEuNCcvPjx0ZXh0IHg9JzEwJyB5PScxNC44JyBmb250LXNpemU9JzEyJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC13ZWlnaHQ9J2JvbGQnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyNmZmYnPlo8L3RleHQ+PC9zdmc+",
@@ -92,6 +97,18 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		cluster:     'Cluster',
 		datacenter:  'Datacenter',
 		host:        'Host',
+		zabbix_db:     'Zabbix DB',
+		proxy_db:      'Proxy DB',
+		apm_datastore: 'APM Data Store',
+	};
+
+	// Not part of the monitoring tree - see #applyVisibility().
+	static #BACKEND_NODE_TYPES = new Set(['zabbix_db', 'proxy_db', 'apm_datastore']);
+
+	// Two different patterns, so the relations differ by more than color.
+	static #RELATION_DASHES = {
+		database:    [8, 5],
+		apm_storage: [2, 5],
 	};
 
 	static #COMM_METHOD_LABEL = {
@@ -299,7 +316,14 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		elements.forEach(el => {
 			if (el.data.source) {
-				(this.#children[el.data.source] ??= []).push(el.data.target);
+				const relation = el.data.relation_type;
+
+				// #children is the monitoring tree only: filter visibility and
+				// Proxy highlighting both walk it. A backend relation stays out.
+				if (!relation) {
+					(this.#children[el.data.source] ??= []).push(el.data.target);
+				}
+
 				visEdges.push({
 					id:    el.data.source + '__' + el.data.target,
 					from:  el.data.source,
@@ -310,6 +334,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 					color: { color: this.#s.edgeColor, highlight: this.#s.edgeColor, inherit: false },
 					width: this.#s.edgeWidth,
 					smooth: { type: 'continuous' },
+					...(relation ? { dashes: CWidgetHoloztekMonitoringMap.#RELATION_DASHES[relation] || true } : {}),
 				});
 				return;
 			}
@@ -327,6 +352,11 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				availability:        isHost ? (el.data.availability || 'unknown') : null,
 				route:               isHost ? (el.data.route || 'server') : null,
 				member_ips:          el.data.member_ips || null,
+				apm_collector:       el.data.apm_collector === true,
+				backend_owner:       el.data.backend_owner || null,
+				db_type:             el.data.db_type || null,
+				db_source:           el.data.db_source || null,
+				apm_db:              el.data.apm_db || null,
 				severity_ack:       isHost && el.data.severity_ack !== undefined && el.data.severity_ack !== null
 					? Number(el.data.severity_ack) : null,
 				severity_unack:     isHost && el.data.severity_unack !== undefined && el.data.severity_unack !== null
@@ -786,14 +816,31 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	#applyVisibility() {
 		if (!this.#nodesDS || !this.#edgesDS) return;
 
+		const metas = Object.values(this.#nodesMeta);
+		const serverAnchored = metas.some(meta => !meta.backend_owner
+			&& CWidgetHoloztekMonitoringMap.#BACKEND_NODE_TYPES.has(meta.node_type)
+		);
+
 		const visible = {};
 		const computeVisible = (id) => {
 			if (id in visible) return visible[id];
 			const meta = this.#nodesMeta[id];
 			// Seed against re-entrancy before recursing into children.
 			visible[id] = false;
+
+			// Backend components ignore the Host filter: a Proxy DB follows its
+			// Proxy, the Server-level ones always stay.
+			if (meta && CWidgetHoloztekMonitoringMap.#BACKEND_NODE_TYPES.has(meta.node_type)) {
+				visible[id] = meta.backend_owner ? computeVisible(meta.backend_owner) : true;
+				return visible[id];
+			}
+
+			// An APM-enabled Proxy may monitor no Host at all, and the Server has
+			// to stay as the anchor of its Zabbix DB / APM Data Store.
 			const selfMatch = meta
-				? (meta.node_type === 'host' ? this.#hostVisible(meta) : false)
+				? (meta.node_type === 'host'
+					? this.#hostVisible(meta)
+					: meta.apm_collector || (meta.node_type === 'server' && serverAnchored))
 				: false;
 			const result = selfMatch
 				|| (this.#children[id] || []).some(childId => computeVisible(childId));
@@ -950,7 +997,13 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		}
 
 		const typeLabel = t(CWidgetHoloztekMonitoringMap.#NODE_TYPE_LABEL[meta.node_type] || meta.node_type);
-		let html = `<strong>${this.#escape(label)}</strong><br><span style="opacity:.7">${typeLabel}</span>`;
+		const isBackend = CWidgetHoloztekMonitoringMap.#BACKEND_NODE_TYPES.has(meta.node_type);
+		// A backend label's second line is its type, shown as its own row below.
+		const title = isBackend ? String(label).split('\n')[0] : label;
+		let html = `<strong>${this.#escape(title)}</strong>`;
+		if (title !== typeLabel) {
+			html += `<br><span style="opacity:.7">${typeLabel}</span>`;
+		}
 
 		if (meta.severity_label) {
 			html += `<br><span style="opacity:.7">${t('Severity')}: ${this.#escape(meta.severity_label)}</span>`;
@@ -969,6 +1022,14 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			html += `<br><span style="opacity:.7">${t('Known addresses')}: ${this.#escape(meta.member_ips.join(', '))}</span>`;
 		}
 
+		if (meta.node_type === 'proxy' && meta.apm_collector) {
+			html += `<br><span style="opacity:.7">${t('APM Collector')}: ${t('Enabled')}</span>`;
+		}
+
+		if (isBackend) {
+			html += this.#backendTooltipRows(meta);
+		}
+
 		box.innerHTML = html;
 		box.style.display = 'block';
 
@@ -978,6 +1039,35 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		};
 		document.addEventListener('mousemove', updatePos);
 		box._cleanup = () => document.removeEventListener('mousemove', updatePos);
+	}
+
+	#backendTooltipRows(meta) {
+		const row = (text) => `<br><span style="opacity:.7">${text}</span>`;
+		let html = '';
+
+		if (meta.db_type) {
+			html += row(`${t('Type')}: ${this.#escape(meta.db_type)}`);
+		}
+
+		if (meta.db_source) {
+			const source = meta.db_source === 'server_runtime' ? 'Server runtime' : 'Frontend configuration';
+			html += row(`${t('Source')}: ${t(source)}`);
+		}
+
+		if (meta.node_type === 'apm_datastore') {
+			if (meta.db_type) {
+				html += row(`${t('Source')}: ${t('Global APM Data Source')}`);
+			}
+			if (meta.apm_db) {
+				html += row(`${t('Database')}: ${this.#escape(meta.apm_db)}`);
+			}
+		}
+
+		if (meta.node_type === 'proxy_db') {
+			html += row(t('Database details are not available from the Zabbix API.'));
+		}
+
+		return html;
 	}
 
 	#hideTooltip() {
