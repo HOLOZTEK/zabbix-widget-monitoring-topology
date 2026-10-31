@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.2.0
+Version:        1.2.1
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,56 +121,62 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
-* Sat Oct 31 2026 claude <noreply> - 1.2.0-0
+* Sat Oct 31 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.1-0
+- APM 有効時に、Proxy を経由して観測された OpenTelemetry システムを表示。
+  関連付けには Proxy の additional_resource_attributes に設定した
+  holoztek.zabbix.proxyid のみを使用（traces、値は自身の proxyid）。
+- 対象は直近 15 分の Span、表示は最大 100 システム（Zabbix 8.0 以上）。
+- パッケージのメタデータと変更履歴を整理。
+* Sat Oct 31 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.0-0
 - バックエンド構成の可視化を追加（設定「バックエンド構成」、既定はいずれも OFF）。
 - Zabbix Server / Proxy のデータベースノードを追加。
 - Zabbix 8.0 の APM Global Data Source と APM 有効 Proxy の表示を追加。
 - 監視ツリーとバックエンド関係を分離（Host フィルターと Proxy ハイライトは監視ツリーのみ対象）。
-* Sun Oct 11 2026 claude <noreply> - 1.1.3-0
+* Sun Oct 11 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.3-0
 - RPM の PHP 依存を他ウィジェットと同じ (php >= 8.1 or php-common >= 8.1) /
   php-fpm >= 8.1 に統一。従来の (php >= 8.1 or php8.x-common ...) は php-common を
   名前で受け付けず、php メタパッケージを入れない環境でインストールできない、
   または php を外せない問題があった。ウィジェット本体の変更はなし。
-* Sat Oct 10 2026 claude <noreply> - 1.1.2-0
+* Sat Oct 10 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.2-0
 - 設定画面の「ホストグループ」欄で、ブロードキャスト連携（Tree Navigator 等）に加えて
   特定のホストグループを複数固定指定できるようにした（サブグループのホストも含む）。
   既存ダッシュボードの連携設定はそのまま維持される。
-* Sat Oct 03 2026 claude <noreply> - 1.1.1-0
+* Sat Oct 03 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.1-0
 - Zabbix 8.0（8.0.0rc1以降）対応: ウィジェット設定画面がHTTP 500（8.0で廃止された
   PHP定数 ZBX_STYLE_COLOR_PICKER / クラス CColor の参照）やJSエラー（jQuery colorpicker の廃止、
   設定フォームIDの widget-dialogue-form → widget-form 変更）で動作しない不具合を修正。
   Zabbix 7.0 では従来の処理を使い、8.0以降は <z-color-picker> / CColorPicker と
   新しいフォームIDを使う。Zabbix 7.0 系での動作は従来と同一。
 
-* Sun Aug 30 2026 claude <noreply> - 1.1.0-1
+* Sun Aug 30 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.0-1
 - パッケージメタデータのみの修正（ウィジェットの機能・コードは 1.1.0-0 と同一）。
-  公開ステージング（public-staging）との整合のため PHP 依存の下限を 8.3 から
+  PHP 依存の下限を 8.3 から
   8.1 へ引き下げ。RPM の Requires を
   `(php >= 8.1 or php8.1-common .. php8.5-common)` および
   `(php-fpm >= 8.1 or php8.1-fpm .. php8.5-fpm)` に変更
 - あわせて DEB 側（debian/control）に欠落していた PHP 依存
   `Depends: php (>= 2:8.1~)` を追加（php-fpm は RPM 側限定のまま）。
   リリース済み v1.1.0 の DEB 資材に PHP Depends が無かった指摘への対応
-* Sun Aug 30 2026 claude <noreply> - 1.1.0-0
+* Sun Aug 30 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.0-0
 - マイナーバージョンリリース。v1.0.9〜v1.0.10 の VMware／Kubernetes トポロジ
   改修（VMノードの Network 経由化・vCenter／ESXi／VM／k8s ロール別アイコン・
-  Kubernetes ツリー再編）とそのコードレビュー対応（Gitea issue #10 / #11）
+  Kubernetes ツリー再編）とそのコードレビュー対応
   一式を、マイナーバージョンの区切りとして再リリース
 - v1.0.10 からの機能・コード変更なし（バージョン番号のみ更新）
-* Sun Aug 30 2026 claude <noreply> - 1.0.10-0
-- コードレビュー対応（Gitea issue #10 / #11）
-- #10: フィルタで祖先 Host ノード（vCenter／ESXi／k8s 集約ホスト）が非表示に
+* Sun Aug 30 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.10-0
+- コードレビュー対応
+- フィルタで祖先 Host ノード（vCenter／ESXi／k8s 集約ホスト）が非表示に
   なると、条件に一致する子孫（VM／component）がルートから分断される不具合を
   修正。ノードは「自身が一致」または「子孫が1つでも一致」で可視とし、経路上の
   edge も接続を維持するよう `#applyVisibility()` を変更。k8s 集約ホストは
   インターフェースを持たず既定フィルタで隠れるため、既定表示で顕在化していた
-- #11: 複数 vCenter に同名 ESXi が存在すると、Hypervisor ノード索引
+- 複数 vCenter に同名 ESXi が存在すると、Hypervisor ノード索引
   （$hv_node_by_name）が表示名だけのフラット map だったため後勝ちで上書きされ、
   一方の vCenter の VM が別 vCenter の同名 ESXi 配下へ誤接続され得た不具合を
   修正。索引を master/接続ホスト（vCenter）単位にスコープし、VM 側は自身の
   discoveryRule から接続ホストを取得して解決。discoveryRule を持たない VM は
   一意に定まる場合のみ従来どおり名前一致で解決
-* Sun Aug 30 2026 claude <noreply> - 1.0.9-0
+* Sun Aug 30 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.9-0
 - VMware VMノードの直上にNetworkノードを挿入し、Zabbix→…→ESXi→
   Datacenter→Cluster→Network→VM の階層に統一（VM群がClusterへ直結
   していた従来表示を、他ホストと同じくNetwork経由に揃えた）
@@ -183,7 +189,7 @@ fi
 - Kubernetes構成要素をロール別アイコンで表示（Kubernetesブランド青
   #326ce5 のヘプタゴン字形。API server=API／controller manager=CTL／
   scheduler=SCH／kubelet=KBL／集約ホスト=K8S のタグ）
-* Sun Aug 30 2026 claude <noreply> - 1.0.8-0
+* Sun Aug 30 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.8-0
 - 表示フィルタの「障害イベント」区分を「障害状態」区分に再編し、障害の
   有無による絞り込み機能を追加。未確認／確認済みに加えて「障害なし」
   （障害を1件も持たないホスト）を選択肢に追加し、3項目とも既定ON
@@ -200,7 +206,7 @@ fi
 - ホストグループとホストを同時に受信した場合に、両者のOR（和集合）で対象
   ホストを解決するよう修正（従来はホストグループ指定が優先され、同時に
   指定された単一ホストが無視されていた）
-* Thu Aug 27 2026 claude <noreply> - 1.0.7-0
+* Thu Aug 27 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.7-0
 - ユーザー報告のVMware表示不具合2件を修正:
   1. Hypervisorホストの接続用ホスト（master）がウィジェットの選択範囲外の
      場合、Datacenterノードがフォールバック時にNetworkノードを経由せず
@@ -216,21 +222,21 @@ fi
      host.get()のselectDiscoveryRuleで判明する接続用ホストを、Server/Proxy/
      Proxy Groupノードと同様にウィジェットの選択範囲に関わらず自動取得し
      表示するよう変更
-* Mon Aug 24 2026 claude <noreply> - 1.0.6-0
-- コードレビュー issue #7/#8 対応（v1.0.5レビュー、reviewer codex）:
-  issue #7: VM識別用ホストグループの判定を固定文字列"(vm)"との完全一致から、
+* Mon Aug 24 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.6-0
+- コードレビュー対応（v1.0.5）:
+  VM識別用ホストグループの判定を固定文字列"(vm)"との完全一致から、
   公式VMwareテンプレートが実際に生成する"<cluster> (vm)"/"<dc>/<folder> (vm)"
   形式に対応する末尾一致（" (vm)"で終わるか）へ修正。従来の完全一致では
   標準構成のVMが一切ESXi配下にネストされなかった不具合を解消
-- issue #8: 複数Kubernetesクラスタが同じZabbix Server/Proxy配下で単一の
+- 複数Kubernetesクラスタが同じZabbix Server/Proxy配下で単一の
   Clusterノードへ統合されてしまう不具合を修正。host.get()のselectDiscoveryRule
   で判明するクラスタ集約(状態取得)ホスト自身のhostidをクラスタ識別子として
   ノードIDに組み込み、クラスタごとに別ノードとして表示。ノードラベルも
   集約ホスト名（例: "K8s Cluster (163/164)"）を優先表示するよう改善
-* Mon Aug 24 2026 claude <noreply> - 1.0.5-0
+* Mon Aug 24 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.5-0
 - CHost::get()の非推奨パラメータselectGroupsをselectHostGroupsに修正
-  （170のダッシュボード表示時に出ていたE_USER_WARNINGを解消）
-- VMware階層の不具合を修正（issue #5）: 公式VMwareテンプレートの接続用ホスト
+  （ダッシュボード表示時に出ていたE_USER_WARNINGを解消）
+- VMware階層の不具合を修正: 公式VMwareテンプレートの接続用ホスト
   （{$VMWARE.URL}等のマクロとvmware.hv.discovery等のLLDルールを持つホスト）
   が、Hypervisor固有アイテム(vmware.hv.*)を持つ発見済みHypervisorホストと
   同じ「vmware.」プレフィックスを共有していたため誤ってHypervisorとして
@@ -247,9 +253,8 @@ fi
   ノードへ、解釈できない場合はマクロ値をそのままラベルとして表示するよう
   変更（HOLOZTEK_MM_CONNECTION_HOST_MACROSに今後同様のマクロ名を追加可能）
 
-* Sat Aug 22 2026 claude <noreply> - 1.0.4-0
-- VMware/Kubernetesクラスタノードを追加（gitadminによる170のみ未リリース実装
-  f3a5e66を正式反映）: 通信方式ごとに1個の固定クラスタノードを新設し、
+* Sat Aug 22 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.4-0
+- VMware/Kubernetesクラスタノードを追加: 通信方式ごとに1個の固定クラスタノードを新設し、
   Kubernetesと判定されたホストは既存のNetworkノードではなくこのクラスタ
   ノードに常時接続するよう変更。Kubernetes公式テンプレート(HTTP agentアイ
   テム, kube./kubernetes.キープレフィックス)の検出ロジックを追加
@@ -263,10 +268,9 @@ fi
   (vmware.vm.discovery)が自動付与する「(vm)」ホストグループ名と、ESXi自身の
   Zabbixホスト名が一致することを利用してVM→ESXiの親子関係を判定（該当する
   ESXiがウィジェットの選択範囲外の場合は通常のNetworkノードへフォールバック）。
-  170の実データ（esxi-dev-01配下のVM21台）で動作検証済み
 
-* Tue Aug 11 2026 claude <noreply> - 1.0.3-0
-- コードレビュー issue #3/#4 対応:
+* Tue Aug 11 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.3-0
+- コードレビュー対応:
   1. ダッシュボードフィルタの保存キーが v1.0.1 で
      monitoringmap-filter-<id> から holoztek-monitoringmap-filter-<id> へ
      変更された際に旧キーからの移行ロジックが無く、v0.2.1 以前で保存した
@@ -279,13 +283,13 @@ fi
   3. debian/control の短いDescriptionが旧名称"Monitoring Map widget"の
      ままだったのを"Monitoring Topology widget"へ修正
 
-* Tue Aug 11 2026 claude <noreply> - 1.0.2-0
+* Tue Aug 11 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.2-0
 - ウィジェット表示名（manifest.json name / getDefaultName()）を
   "Monitoring Map" から "Monitoring Topology" へ変更（パッケージ名・
   リポジトリ名との整合性を確保）。gettextの msgid/msgstr（ja_JP/en_US）も
   追随して更新。機能・内部ID・モジュールディレクトリ名の変更なし。
 
-* Tue Aug 11 2026 claude <noreply> - 1.0.1-0
+* Tue Aug 11 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.1-0
 - モジュール識別子（manifest.id/namespace/action/js_class）にHOLOZTEKプレフィックス
   を付与し他モジュールとの衝突リスクを回避（id: monitoringmap →
   holoztek_monitoringmap）。helpers.phpの全識別子（gettextラッパー_mm()、
@@ -301,24 +305,24 @@ fi
   場合のみ自動削除する安全確認ロジックをpostinst/prermに実装（tree-navigator
   v1.4.10・radar-chart v1.0.3で判明した「author欄空欄を削除根拠にしない」
   教訓を最初から反映）
-* Mon Aug 10 2026 claude <noreply> - 1.0.0-0
+* Mon Aug 10 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.0.0-0
 - 無償公開に向けたリリース。機能変更なし。反映内容:
   1. ライセンスをProprietaryからMITへ変更
   2. RPMをel9/el10個別ビルドから単一noarchファイルに統一（_rpmfilenameから
      %%{dist}を除去）。BuildArch: noarchでコンパイル済みバイナリを含まない
-     ため、170/171どちらでビルドしても同一内容
+     ため、どのビルド環境でも同一内容
   3. Debianパッケージング(.deb)をdebian/配下に追加
   4. パッケージ名をzabbix-widget-monitoringmapからzabbix-widget-monitoring-topology
      に変更（ウィジェット内部ID・モジュールディレクトリ名(monitoringmap)は変更なし）
-* Sat Aug 8 2026 claude <noreply> - 0.2.1-0
-- コードレビュー issue #2 対応: 通信方式（監視方式）フィルタで、アイテムが
+* Sat Aug 8 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 0.2.1-0
+- コードレビュー対応: 通信方式（監視方式）フィルタで、アイテムが
   無い、またはHTTP agent/trapper/calculated等 mm_item_comm_method() が未分類
   とするアイテムのみのホストが、通信方式の全チェックボックスON（既定状態）
   でもマップから消えてしまう回帰不具合を修正。comm_methodsが空配列の場合は
   vmware/odbcと同様に「その他（methodOther）」区分として判定するよう変更
-* Sat Aug 8 2026 claude <noreply> - 0.2.0-0
+* Sat Aug 8 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 0.2.0-0
 - フィルタ保存キーが実行時ID（getUniqueId）に依存しダッシュボード再読み込みの
-  たびにリセットされる不具合を修正、DB保存ID（getWidgetId）を優先使用（issue #1）
+  たびにリセットされる不具合を修正、DB保存ID（getWidgetId）を優先使用
 - フィルタのホスト状態に「有効ホスト」チェックボックスを追加（デフォルトON）。
   ホストステータス無効・メンテナンス中のホストはデフォルトで非表示に
 - フィルタのインターフェイス/監視経路/監視方式の全項目をデフォルトでON化
@@ -326,7 +330,7 @@ fi
   としていた例外動作を廃止し、未チェック項目は常に表示から除外されるよう統一
   （動作の予見性向上）。これに伴いホスト設定区分に「通常ホスト」チェックボックス
   を新設（インターフェイスあり・ローカル監視でない通常ホストの基準タグ）
-* Sat Aug 8 2026 claude <noreply> - 0.1.2-0
+* Sat Aug 8 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 0.1.2-0
 - 表示フィルタ機能を追加: 障害イベント/ホスト状態/ホスト設定/インターフェイス/
   監視経路/監視方式の6区分（区分内OR・区分間AND）で表示ホストを絞り込み可能に。
   フィルタ状態はブラウザのlocalStorageに保存
@@ -336,11 +340,11 @@ fi
 - フィルタアイコンの表示位置（左上/右上/左下/右下）を設定画面から選択可能に
 - ノードラベルの文字色を設定可能に（未設定時はダッシュボードのテーマに応じて
   自動判定、ダークモードで文字が見えなくなる問題を解消）
-* Sat Aug 8 2026 claude <noreply> - 0.1.1-0
+* Sat Aug 8 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 0.1.1-0
 - パッケージ依存関係を修正: PHPパッケージ名がバージョン埋め込み形式
   （例: php8.4-common / php8.4-fpm）の環境でも、無印php/php-fpm形式の
   環境と同様にインストールできるよう、Requiresをブール条件（OR）に変更
-* Sat Aug 8 2026 claude <noreply> - 0.1.0-0
+* Sat Aug 8 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 0.1.0-0
 - 初回リリース
 - Zabbix Server - Proxy(Group) - Network(サブネット) - Host の4階層トポロジー
   グラフ表示
