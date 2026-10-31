@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.1.3
+Version:        1.2.0
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,6 +121,11 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sat Oct 31 2026 claude <noreply> - 1.2.0-0
+- バックエンド構成の可視化を追加（設定「バックエンド構成」、既定はいずれも OFF）。
+- Zabbix Server / Proxy のデータベースノードを追加。
+- Zabbix 8.0 の APM Global Data Source と APM 有効 Proxy の表示を追加。
+- 監視ツリーとバックエンド関係を分離（Host フィルターと Proxy ハイライトは監視ツリーのみ対象）。
 * Sun Oct 11 2026 claude <noreply> - 1.1.3-0
 - RPM の PHP 依存を他ウィジェットと同じ (php >= 8.1 or php-common >= 8.1) /
   php-fpm >= 8.1 に統一。従来の (php >= 8.1 or php8.x-common ...) は php-common を
