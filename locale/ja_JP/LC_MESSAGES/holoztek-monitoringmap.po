@@ -200,3 +200,48 @@ msgstr "左下"
 
 msgid "Bottom right"
 msgstr "右下"
+
+msgid "Zabbix DB"
+msgstr "Zabbix DB"
+
+msgid "Proxy DB"
+msgstr "Proxy DB"
+
+msgid "APM Data Store"
+msgstr "APM データストア"
+
+msgid "APM Collector"
+msgstr "APM コレクター"
+
+msgid "Enabled"
+msgstr "有効"
+
+msgid "Type"
+msgstr "種別"
+
+msgid "Source"
+msgstr "取得元"
+
+msgid "Database"
+msgstr "データベース"
+
+msgid "Server runtime"
+msgstr "Server 実行時情報"
+
+msgid "Frontend configuration"
+msgstr "フロントエンド設定"
+
+msgid "Global APM Data Source"
+msgstr "グローバル APM データソース"
+
+msgid "Database details are not available from the Zabbix API."
+msgstr "データベースの詳細は Zabbix API から取得できません。"
+
+msgid "Backend components"
+msgstr "バックエンド構成"
+
+msgid "APM"
+msgstr "APM"
+
+msgid "APM (available on Zabbix 8.0 or later)"
+msgstr "APM（Zabbix 8.0 以降で利用可能）"

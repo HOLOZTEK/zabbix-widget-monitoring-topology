@@ -7,6 +7,7 @@ use CWidgetsData;
 use Zabbix\Widgets\CWidgetForm;
 
 use Zabbix\Widgets\Fields\{
+	CWidgetFieldCheckBoxList,
 	CWidgetFieldColor,
 	CWidgetFieldIntegerBox,
 	CWidgetFieldMultiSelectGroup,
@@ -27,6 +28,9 @@ class WidgetForm extends CWidgetForm {
 	public const FILTER_POSITION_BOTTOM_LEFT  = 2;
 	public const FILTER_POSITION_BOTTOM_RIGHT = 3;
 
+	public const BACKEND_DATABASE = 1;
+	public const BACKEND_APM      = 2;
+
 	private static function fontStyleValues(): array {
 		return [
 			self::FONT_STYLE_NORMAL => _holoztek_mm('Normal'),
@@ -41,6 +45,17 @@ class WidgetForm extends CWidgetForm {
 			self::FILTER_POSITION_TOP_RIGHT    => _holoztek_mm('Top right'),
 			self::FILTER_POSITION_BOTTOM_LEFT  => _holoztek_mm('Bottom left'),
 			self::FILTER_POSITION_BOTTOM_RIGHT => _holoztek_mm('Bottom right'),
+		];
+	}
+
+	// APM stays listed on Zabbix 7.0 so the setting survives a move between
+	// versions; WidgetView ignores it there (see holoztek_mm_apm_supported()).
+	private static function backendComponentValues(): array {
+		return [
+			self::BACKEND_DATABASE => _holoztek_mm('Database'),
+			self::BACKEND_APM      => holoztek_mm_apm_supported()
+				? _holoztek_mm('APM')
+				: _holoztek_mm('APM (available on Zabbix 8.0 or later)'),
 		];
 	}
 
@@ -104,6 +119,11 @@ class WidgetForm extends CWidgetForm {
 					self::filterPositionValues()
 				))
 					->setDefault(self::FILTER_POSITION_TOP_RIGHT)
+			)
+			->addField(
+				new CWidgetFieldCheckBoxList('backend_components', _holoztek_mm('Backend components'),
+					self::backendComponentValues()
+				)
 			);
 	}
 }
