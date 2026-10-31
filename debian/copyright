@@ -1,10 +1,16 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: zabbix-widget-monitoring-topology
-Source: http://172.16.4.190:3000/zabbix-widgets/zabbix-widget-monitoring-topology
+Source: https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology
 
 Files: *
 Copyright: 2026 ttake-55 (HOLOZTEK)
 License: MIT
+
+Files: assets/js/vis-network.min.js
+Copyright: 2011-2017 Almende B.V.
+           2017-2019 visjs contributors
+License: MIT
+Comment: Upstream offers Apache-2.0 or MIT; this package redistributes the file under MIT.
 
 License: MIT
  Permission is hereby granted, free of charge, to any person obtaining a copy

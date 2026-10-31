@@ -50,6 +50,8 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		proxy_db: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHBhdGggZD0nTTUgOHYxNmMwIDIuOCA0LjkgNSAxMSA1czExLTIuMiAxMS01Vjh6JyBmaWxsPScjM2Y3ZmI1Jy8+PGVsbGlwc2UgY3g9JzE2JyBjeT0nOCcgcng9JzExJyByeT0nNScgZmlsbD0nIzZlYTZkMycvPjxwYXRoIGQ9J001IDE0YzAgMi44IDQuOSA1IDExIDVzMTEtMi4yIDExLTVNNSAyMGMwIDIuOCA0LjkgNSAxMSA1czExLTIuMiAxMS01JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMS40Jy8+PC9zdmc+",
 		// APM Data Store / ClickHouse: generic storage stack, no product logo.
 		apm_datastore: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3QgeD0nNCcgeT0nNCcgd2lkdGg9JzI0JyBoZWlnaHQ9JzcnIHJ4PScyJyBmaWxsPScjN2E1ZmIwJy8+PHJlY3QgeD0nNCcgeT0nMTIuNScgd2lkdGg9JzI0JyBoZWlnaHQ9JzcnIHJ4PScyJyBmaWxsPScjN2E1ZmIwJy8+PHJlY3QgeD0nNCcgeT0nMjEnIHdpZHRoPScyNCcgaGVpZ2h0PSc3JyByeD0nMicgZmlsbD0nIzdhNWZiMCcvPjxjaXJjbGUgY3g9JzknIGN5PSc3LjUnIHI9JzEuNScgZmlsbD0nI2ZmZicvPjxjaXJjbGUgY3g9JzknIGN5PScxNicgcj0nMS41JyBmaWxsPScjZmZmJy8+PGNpcmNsZSBjeD0nOScgY3k9JzI0LjUnIHI9JzEuNScgZmlsbD0nI2ZmZicvPjwvc3ZnPg==",
+		// OTel System: hexagon with a small fan-out, no product logo.
+		otel_system: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHBhdGggZD0nTTE2IDIuNWwxMS43IDYuNzV2MTMuNUwxNiAyOS41IDQuMyAyMi43NVY5LjI1eicgZmlsbD0nIzJmOWU4ZicvPjxjaXJjbGUgY3g9JzE2JyBjeT0nMTYnIHI9JzMuNCcgZmlsbD0nI2ZmZicvPjxjaXJjbGUgY3g9JzE2JyBjeT0nOC42JyByPScyJyBmaWxsPScjZmZmJy8+PGNpcmNsZSBjeD0nOS42JyBjeT0nMTkuNycgcj0nMicgZmlsbD0nI2ZmZicvPjxjaXJjbGUgY3g9JzIyLjQnIGN5PScxOS43JyByPScyJyBmaWxsPScjZmZmJy8+PHBhdGggZD0nTTE2IDE2VjguNk0xNiAxNmwtNi40IDMuN00xNiAxNmw2LjQgMy43JyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMS40Jy8+PC9zdmc+",
 		// Root Zabbix Server node: badge with "Z", filled with the Zabbix
 		// brand red so this node reads as "Zabbix itself" at a glance.
 		zbxserver: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzE2JyBoZWlnaHQ9JzE2JyByeD0nMycgZmlsbD0nI2Q0MDAwMCcgc3Ryb2tlPScjYTMwMDAwJyBzdHJva2Utd2lkdGg9JzEuNCcvPjx0ZXh0IHg9JzEwJyB5PScxNC44JyBmb250LXNpemU9JzEyJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC13ZWlnaHQ9J2JvbGQnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyNmZmYnPlo8L3RleHQ+PC9zdmc+",
@@ -100,15 +102,17 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		zabbix_db:     'Zabbix DB',
 		proxy_db:      'Proxy DB',
 		apm_datastore: 'APM Data Store',
+		otel_system:   'OpenTelemetry system',
 	};
 
 	// Not part of the monitoring tree - see #applyVisibility().
-	static #BACKEND_NODE_TYPES = new Set(['zabbix_db', 'proxy_db', 'apm_datastore']);
+	static #BACKEND_NODE_TYPES = new Set(['zabbix_db', 'proxy_db', 'apm_datastore', 'otel_system']);
 
-	// Two different patterns, so the relations differ by more than color.
+	// Different patterns, so the relations differ by more than color.
 	static #RELATION_DASHES = {
 		database:    [8, 5],
 		apm_storage: [2, 5],
+		telemetry:   [10, 4, 2, 4],
 	};
 
 	static #COMM_METHOD_LABEL = {
@@ -357,6 +361,12 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				db_type:             el.data.db_type || null,
 				db_source:           el.data.db_source || null,
 				apm_db:              el.data.apm_db || null,
+				otel_truncated:      el.data.otel_truncated === true,
+				otel_service:        el.data.otel_service || null,
+				otel_namespace:      el.data.otel_namespace || null,
+				otel_environments:   el.data.otel_environments || [],
+				otel_hosts:          el.data.otel_hosts || [],
+				otel_system_count:   el.data.otel_system_count || 0,
 				severity_ack:       isHost && el.data.severity_ack !== undefined && el.data.severity_ack !== null
 					? Number(el.data.severity_ack) : null,
 				severity_unack:     isHost && el.data.severity_unack !== undefined && el.data.severity_unack !== null
@@ -1001,7 +1011,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		// A backend label's second line is its type, shown as its own row below.
 		const title = isBackend ? String(label).split('\n')[0] : label;
 		let html = `<strong>${this.#escape(title)}</strong>`;
-		if (title !== typeLabel) {
+		if (title !== typeLabel && meta.node_type !== 'otel_system') {
 			html += `<br><span style="opacity:.7">${typeLabel}</span>`;
 		}
 
@@ -1024,6 +1034,9 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		if (meta.node_type === 'proxy' && meta.apm_collector) {
 			html += `<br><span style="opacity:.7">${t('APM Collector')}: ${t('Enabled')}</span>`;
+			if (meta.otel_system_count > 0) {
+				html += `<br><span style="opacity:.7">${t('Observed telemetry systems')}: ${meta.otel_system_count}</span>`;
+			}
 		}
 
 		if (isBackend) {
@@ -1060,6 +1073,23 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			}
 			if (meta.apm_db) {
 				html += row(`${t('Database')}: ${this.#escape(meta.apm_db)}`);
+			}
+			if (meta.otel_truncated) {
+				html += row(t('Too many APM systems to display.'));
+			}
+		}
+
+		if (meta.node_type === 'otel_system') {
+			html += row(`${t('Type')}: ${t('OpenTelemetry system')}`);
+			html += row(`${t('Service')}: ${this.#escape(meta.otel_service)}`);
+			if (meta.otel_namespace) {
+				html += row(`${t('Namespace')}: ${this.#escape(meta.otel_namespace)}`);
+			}
+			if (meta.otel_environments.length > 0) {
+				html += row(`${t('Environment')}: ${this.#escape(meta.otel_environments.join(', '))}`);
+			}
+			if (meta.otel_hosts.length > 0) {
+				html += row(`${t('Host')}: ${this.#escape(meta.otel_hosts.join(', '))}`);
 			}
 		}
 
