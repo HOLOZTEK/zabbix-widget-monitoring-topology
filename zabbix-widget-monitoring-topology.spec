@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.2.0
+Version:        1.2.1
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,6 +121,12 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sat Oct 31 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.1-0
+- APM 有効時に、Proxy を経由して観測された OpenTelemetry システムを表示。
+  関連付けには Proxy の additional_resource_attributes に設定した
+  holoztek.zabbix.proxyid のみを使用（traces、値は自身の proxyid）。
+- 対象は直近 15 分の Span、表示は最大 100 システム（Zabbix 8.0 以上）。
+- パッケージのメタデータと変更履歴を整理。
 * Sat Oct 31 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.0-0
 - バックエンド構成の可視化を追加（設定「バックエンド構成」、既定はいずれも OFF）。
 - Zabbix Server / Proxy のデータベースノードを追加。

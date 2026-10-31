@@ -68,6 +68,7 @@ Zabbix 管理画面 → 管理 → モジュール からウィジェットを�
 | 監視 | Server — Proxy — Network — Host | 実線 |
 | データベース | Server — Zabbix DB、Proxy — Proxy DB | 破線 |
 | APM ストレージ | Server — ClickHouse — APM 有効 Proxy | 点線 |
+| テレメトリ | APM 有効 Proxy — OTel System | 一点鎖線 |
 
 - **Zabbix DB**: Server が報告したデータベース種別を表示します。取得できないときはフロントエンドの接続設定を参考情報として使い、ツールチップに取得元を示します。どちらも取得できなければ「Zabbix DB」のみを表示します。接続先アドレスは表示しません。
 - **Proxy DB**: Zabbix API は Proxy のデータベース詳細を提供しないため、「Proxy DB」とだけ表示します。
@@ -77,12 +78,17 @@ Zabbix 管理画面 → 管理 → モジュール からウィジェットを�
 - **Override**: Proxy ごとの Override は API から取得できません。線は Global Data Source との関係を示すもので、その Proxy が実際にこの ClickHouse へ書き込むことを保証しません。
 - **フィルター**: バックエンド構成のノードは Host フィルターの対象外です。Proxy DB は対応する Proxy に従います。Proxy クリック時のハイライトは監視経路のみを対象とします。
 
+- **OTel System**: APM を ON にすると、Proxy を経由して観測された OpenTelemetry の送信元を表示します。単位は `service.namespace` + `service.name`（namespace がなければ `service.name`）で、同じ System は Proxy が複数でも 1 ノードです。Zabbix 8.0 以上が対象です。
+- **Proxy との関連付け**: 関連付けの根拠は、Proxy の `additional_resource_attributes` に設定した属性だけです。signal type `traces` に、キー `holoztek.zabbix.proxyid`、値はその Proxy 自身の proxyid を設定してください。設定がない Proxy のテレメトリは表示しません。`host.name` や IP からの推測は行いません。
+- **観測範囲**: 直近 15 分の Span が対象で、最大 100 System まで表示します。表示は観測の事実であり、現在受信中であることを示すものではありません。送信元が同じキーを自分で設定した場合は区別できません。
+
 Backend components (Database / APM) are optional and off by default; while off, the widget behaves as before.
 
 - **Database** (Zabbix 7.0+) adds a Zabbix DB node and one Proxy DB node per displayed Proxy. The database type comes from the Server, or from the Frontend configuration as a hint. Proxy database details are not available from the Zabbix API, so none are shown.
 - **APM** (Zabbix 8.0+ only, ignored on 7.0) adds the Global Data Source as a ClickHouse node and shows APM-enabled Proxies, including those with no monitored Hosts. An enabled collector is a configuration state, not proof that telemetry is arriving.
 - Only Super admins can read the Global Data Source. Other users see an abstract "APM Data Store" node when an APM-enabled Proxy exists. Credentials are never passed to the browser.
 - The Global Data Source does not guarantee where a given Proxy actually writes: per-Proxy overrides are not available from the API.
+- With APM on, OTel Systems observed through a Proxy are shown (Zabbix 8.0+; last 15 minutes, up to 100 systems). The link relies only on the Proxy's `additional_resource_attributes`: on signal type `traces`, set the key `holoztek.zabbix.proxyid` to that Proxy's own proxyid. Telemetry without it is not shown, and a Proxy is never inferred from `host.name` or an IP address.
 - Backend nodes are not affected by the Host filter, and Proxy highlighting follows monitoring edges only.
 
 ## 旧ID（monitoringmap）からのアップグレード手順

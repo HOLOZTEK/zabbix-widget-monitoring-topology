@@ -14,9 +14,23 @@ const HOLOZTEK_MM_NODE_PROXY = 'proxy';
 const HOLOZTEK_MM_NODE_ZABBIX_DB = 'zabbix_db';
 const HOLOZTEK_MM_NODE_PROXY_DB = 'proxy_db';
 const HOLOZTEK_MM_NODE_APM_DATASTORE = 'apm_datastore';
+const HOLOZTEK_MM_NODE_OTEL_SYSTEM = 'otel_system';
 
 const HOLOZTEK_MM_RELATION_DATABASE = 'database';
 const HOLOZTEK_MM_RELATION_APM_STORAGE = 'apm_storage';
+const HOLOZTEK_MM_RELATION_TELEMETRY = 'telemetry';
+
+// Resource Attribute a Proxy adds to received traces through its
+// additional_resource_attributes, with its own proxyid as the value. It is the
+// only basis for linking telemetry to a Proxy.
+const HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE = 'holoztek.zabbix.proxyid';
+const HOLOZTEK_MM_OTEL_SIGNAL_TRACES = 0;
+const HOLOZTEK_MM_OTEL_TIME_RANGE = 900;
+const HOLOZTEK_MM_OTEL_MAX_SYSTEMS = 100;
+const HOLOZTEK_MM_OTEL_MAX_QUERIES = 3;
+const HOLOZTEK_MM_OTEL_SPANS_PER_QUERY = 500;
+const HOLOZTEK_MM_OTEL_MAX_VALUES = 5;
+const HOLOZTEK_MM_OTEL_MAX_VALUE_LENGTH = 128;
 const HOLOZTEK_MM_NODE_NETWORK = 'network';
 const HOLOZTEK_MM_NODE_CLUSTER = 'cluster';
 const HOLOZTEK_MM_NODE_DATACENTER = 'datacenter';
@@ -370,6 +384,12 @@ function holoztek_mm_node_id_proxy_db(string $proxyid): string {
 
 function holoztek_mm_node_id_apm_datastore(): string {
 	return 'apmds';
+}
+
+// The namespace is part of the identity: the same service.name in two
+// namespaces is two systems.
+function holoztek_mm_node_id_otel_system(string $namespace, string $service): string {
+	return 'otel_' . md5($namespace . "\0" . $service);
 }
 
 function holoztek_mm_node_id_proxy_group(string $proxy_groupid): string {

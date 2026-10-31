@@ -1,3 +1,13 @@
+zabbix-widget-monitoring-topology (1.2.1) unstable; urgency=medium
+
+  * APM 有効時に、Proxy を経由して観測された OpenTelemetry システムを表示。
+    関連付けには Proxy の additional_resource_attributes に設定した
+    holoztek.zabbix.proxyid のみを使用（traces、値は自身の proxyid）。
+  * 対象は直近 15 分の Span、表示は最大 100 システム（Zabbix 8.0 以上）。
+  * パッケージのメタデータと変更履歴を整理。
+
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Sat, 31 Oct 2026 18:00:00 +0900
+
 zabbix-widget-monitoring-topology (1.2.0) unstable; urgency=medium
 
   * バックエンド構成の可視化を追加（設定「バックエンド構成」、既定はいずれも OFF）。

@@ -245,3 +245,21 @@ msgstr "APM"
 
 msgid "APM (available on Zabbix 8.0 or later)"
 msgstr "APM (available on Zabbix 8.0 or later)"
+
+msgid "OpenTelemetry system"
+msgstr "OpenTelemetry system"
+
+msgid "Service"
+msgstr "Service"
+
+msgid "Namespace"
+msgstr "Namespace"
+
+msgid "Environment"
+msgstr "Environment"
+
+msgid "Observed telemetry systems"
+msgstr "Observed telemetry systems"
+
+msgid "Too many APM systems to display."
+msgstr "Too many APM systems to display."

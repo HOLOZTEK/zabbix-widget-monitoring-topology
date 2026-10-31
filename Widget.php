@@ -69,6 +69,13 @@ class Widget extends CWidget {
                 'Server runtime' => _holoztek_mm('Server runtime'),
                 'Frontend configuration' => _holoztek_mm('Frontend configuration'),
                 'Global APM Data Source' => _holoztek_mm('Global APM Data Source'),
+                'OpenTelemetry system' => _holoztek_mm('OpenTelemetry system'),
+                'Service' => _holoztek_mm('Service'),
+                'Namespace' => _holoztek_mm('Namespace'),
+                'Environment' => _holoztek_mm('Environment'),
+                'Host' => _holoztek_mm('Host'),
+                'Observed telemetry systems' => _holoztek_mm('Observed telemetry systems'),
+                'Too many APM systems to display.' => _holoztek_mm('Too many APM systems to display.'),
                 'Database details are not available from the Zabbix API.' => _holoztek_mm('Database details are not available from the Zabbix API.'),
             ]
         ];
