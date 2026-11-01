@@ -263,3 +263,24 @@ msgstr "Observed telemetry systems"
 
 msgid "Too many APM systems to display."
 msgstr "Too many APM systems to display."
+
+msgid "Relations"
+msgstr "Relations"
+
+msgid "Monitoring"
+msgstr "Monitoring"
+
+msgid "APM storage"
+msgstr "APM storage"
+
+msgid "Telemetry"
+msgstr "Telemetry"
+
+msgid "OTel Systems"
+msgstr "OTel Systems"
+
+msgid "Click to expand"
+msgstr "Click to expand"
+
+msgid "Click to collapse"
+msgstr "Click to collapse"

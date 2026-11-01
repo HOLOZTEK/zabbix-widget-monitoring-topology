@@ -52,6 +52,8 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		apm_datastore: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3QgeD0nNCcgeT0nNCcgd2lkdGg9JzI0JyBoZWlnaHQ9JzcnIHJ4PScyJyBmaWxsPScjN2E1ZmIwJy8+PHJlY3QgeD0nNCcgeT0nMTIuNScgd2lkdGg9JzI0JyBoZWlnaHQ9JzcnIHJ4PScyJyBmaWxsPScjN2E1ZmIwJy8+PHJlY3QgeD0nNCcgeT0nMjEnIHdpZHRoPScyNCcgaGVpZ2h0PSc3JyByeD0nMicgZmlsbD0nIzdhNWZiMCcvPjxjaXJjbGUgY3g9JzknIGN5PSc3LjUnIHI9JzEuNScgZmlsbD0nI2ZmZicvPjxjaXJjbGUgY3g9JzknIGN5PScxNicgcj0nMS41JyBmaWxsPScjZmZmJy8+PGNpcmNsZSBjeD0nOScgY3k9JzI0LjUnIHI9JzEuNScgZmlsbD0nI2ZmZicvPjwvc3ZnPg==",
 		// OTel System: hexagon with a small fan-out, no product logo.
 		otel_system: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHBhdGggZD0nTTE2IDIuNWwxMS43IDYuNzV2MTMuNUwxNiAyOS41IDQuMyAyMi43NVY5LjI1eicgZmlsbD0nIzJmOWU4ZicvPjxjaXJjbGUgY3g9JzE2JyBjeT0nMTYnIHI9JzMuNCcgZmlsbD0nI2ZmZicvPjxjaXJjbGUgY3g9JzE2JyBjeT0nOC42JyByPScyJyBmaWxsPScjZmZmJy8+PGNpcmNsZSBjeD0nOS42JyBjeT0nMTkuNycgcj0nMicgZmlsbD0nI2ZmZicvPjxjaXJjbGUgY3g9JzIyLjQnIGN5PScxOS43JyByPScyJyBmaWxsPScjZmZmJy8+PHBhdGggZD0nTTE2IDE2VjguNk0xNiAxNmwtNi40IDMuN00xNiAxNmw2LjQgMy43JyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMS40Jy8+PC9zdmc+",
+		// OTel Systems group: stacked hexagons of the OTel System glyph.
+		otel_group: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHBhdGggZD0nTTIwIDNsOCA0LjZ2OS4yTDIwIDIxLjRsLTgtNC42VjcuNnonIGZpbGw9JyM4ZmNmYzQnLz48cGF0aCBkPSdNMTUgN2w4IDQuNnY5LjJMMTUgMjUuNGwtOC00LjZ2LTkuMnonIGZpbGw9JyM1Y2I1YTcnLz48cGF0aCBkPSdNMTEgMTFsOC43IDV2MTBMMTEgMzFsLTguNy01VjE2eicgZmlsbD0nIzJmOWU4ZicvPjxjaXJjbGUgY3g9JzExJyBjeT0nMjEnIHI9JzMnIGZpbGw9JyNmZmYnLz48L3N2Zz4=",
 		// Root Zabbix Server node: badge with "Z", filled with the Zabbix
 		// brand red so this node reads as "Zabbix itself" at a glance.
 		zbxserver: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzE2JyBoZWlnaHQ9JzE2JyByeD0nMycgZmlsbD0nI2Q0MDAwMCcgc3Ryb2tlPScjYTMwMDAwJyBzdHJva2Utd2lkdGg9JzEuNCcvPjx0ZXh0IHg9JzEwJyB5PScxNC44JyBmb250LXNpemU9JzEyJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC13ZWlnaHQ9J2JvbGQnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyNmZmYnPlo8L3RleHQ+PC9zdmc+",
@@ -103,10 +105,35 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		proxy_db:      'Proxy DB',
 		apm_datastore: 'APM Data Store',
 		otel_system:   'OpenTelemetry system',
+		otel_group:    'OTel Systems',
 	};
 
 	// Not part of the monitoring tree - see #applyVisibility().
-	static #BACKEND_NODE_TYPES = new Set(['zabbix_db', 'proxy_db', 'apm_datastore', 'otel_system']);
+	static #BACKEND_NODE_TYPES = new Set(['zabbix_db', 'proxy_db', 'apm_datastore', 'otel_system', 'otel_group']);
+
+	// relation_type -> Relations filter key; an edge without one is monitoring.
+	static #RELATION_KEYS = {
+		monitoring:  'relMonitoring',
+		database:    'relDatabase',
+		apm_storage: 'relApmStorage',
+		telemetry:   'relTelemetry',
+	};
+
+	// A Proxy with more OTel Systems than this shows them as one group node.
+	static #OTEL_GROUP_THRESHOLD = 10;
+
+	// Below this share of the new graph already being on screen, an update is
+	// a different Topology and gets a fresh layout and fit (see #syncGraph()).
+	static #MAJOR_CHANGE_RATIO = 0.2;
+
+	// Stabilization budget: enough to settle the largest graphs before anything
+	// is shown, since the layout is frozen as soon as it ends.
+	static #STABILIZATION_MIN = 150;
+	static #STABILIZATION_MAX = 1000;
+	static #STABILIZATION_PER_NODE = 5;
+
+	// Upper bound for new nodes to settle around the frozen ones.
+	static #SETTLE_TIMEOUT_MS = 5000;
 
 	// Different patterns, so the relations differ by more than color.
 	static #RELATION_DASHES = {
@@ -183,6 +210,12 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		methodIpmi:        true,
 		methodJmx:         true,
 		methodOther:       true,
+		// 関係 - what is drawn out of the fetched data, unlike the Widget's
+		// backend_components setting, which decides what is fetched at all.
+		relMonitoring:     true,
+		relDatabase:       true,
+		relApmStorage:     true,
+		relTelemetry:      true,
 	};
 
 	// value -> filter-key maps for the "single value per host, select-to-
@@ -232,15 +265,37 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	#filter       = {};
 	#panelEl      = null;
 	#btnEl        = null;
+	// Everything the server sent, before OTel aggregation.
+	#model        = { nodes: new Map(), edges: new Map() };
+	// Settings the rendered graph was built with - a change needs a rebuild.
+	#settingsKey  = null;
+	// Node positions outliving a node's stay in the DataSet: an OTel System
+	// inside a collapsed group, or the whole graph across a rebuild.
+	#positions    = new Map();
+	#savedView    = null;
+	#userInteracted = false;
+	// 'idle', or what the running physics is for: 'initial' / 'settling'.
+	#layoutPhase  = 'idle';
+	#settleTimer  = null;
+	// Proxies whose OTel group the user expanded.
+	#otelExpanded = new Set();
 
 	onInitialize() {
 		this._dom_id_suffix = '';
-		document.addEventListener('click', (e) => {
+		// onInitialize() runs from the base constructor, before private fields exist.
+		this._onDocumentClick = (e) => {
 			if (this.#panelEl && this.#panelEl.style.display !== 'none'
 					&& !this.#panelEl.contains(e.target) && e.target !== this.#btnEl) {
 				this.#panelEl.style.display = 'none';
 			}
-		});
+		};
+		document.addEventListener('click', this._onDocumentClick);
+	}
+
+	onDestroy() {
+		document.removeEventListener('click', this._onDocumentClick);
+		this.#destroyNetwork();
+		this.#hideTooltip();
 	}
 
 	hasPadding() {
@@ -253,51 +308,79 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		return data;
 	}
 
+	// The update response is only read here, not put into the body: replacing
+	// the body would take the canvas with it, and with it the viewport, the
+	// node positions and everything else the user is looking at.
 	setContents(response) {
-		super.setContents(response);
-
 		if (response.dom_id_suffix !== undefined) this._dom_id_suffix = response.dom_id_suffix;
+
+		const template = document.createElement('template');
+		template.innerHTML = response.body ?? '';
+
+		const next = template.content.querySelector('.js-mm-container');
+		const elements = next ? this.#parseJson(next.dataset.elements, []) : [];
+
+		if (this.#network !== null && elements.length > 0 && this.#settingsKeyOf(next) === this.#settingsKey) {
+			this.#readModel(elements);
+			this.#syncGraph();
+			return;
+		}
+
+		this.#saveLayout();
+		this.#destroyNetwork();
+
+		super.setContents(response);
 
 		this.#initGraph();
 	}
 
 	onClearContents() {
+		this.#saveLayout();
+		this.#destroyNetwork();
+	}
+
+	// ── graph ─────────────────────────────────────────────────────────────────
+
+	#destroyNetwork() {
+		clearTimeout(this.#settleTimer);
+		this.#settleTimer = null;
+		this.#layoutPhase = 'idle';
+
 		if (this.#network !== null) {
 			this.#network.destroy();
 			this.#network = null;
 			this.#nodesDS = null;
 			this.#edgesDS = null;
 		}
-		this.#children = {};
-		this.#highlightedProxy = null;
 		this.#panelEl = null;
 		this.#btnEl = null;
 	}
 
-	// ── graph ─────────────────────────────────────────────────────────────────
+	#saveLayout() {
+		if (this.#network === null || this.#layoutPhase === 'initial') return;
+
+		this.#rememberPositions();
+		this.#savedView = { position: this.#network.getViewPosition(), scale: this.#network.getScale() };
+	}
+
+	#rememberPositions() {
+		const positions = this.#network.getPositions();
+		for (const id in positions) this.#positions.set(id, positions[id]);
+	}
+
+	#settingsKeyOf(container) {
+		const { elements, ...settings } = container.dataset;
+		return JSON.stringify(settings);
+	}
 
 	#initGraph() {
 		const container = this._body.querySelector('.js-mm-container');
 		if (!container) return;
 
-		if (this.#network !== null) {
-			this.#network.destroy();
-			this.#network = null;
-			this.#nodesDS = null;
-			this.#edgesDS = null;
-		}
-
-		this.#children = {};
-		this.#highlightedProxy = null;
-
-		let elements;
-		try {
-			elements = JSON.parse(container.dataset.elements || '[]');
-		} catch (_) {
-			elements = [];
-		}
-
+		const elements = this.#parseJson(container.dataset.elements, []);
 		if (elements.length === 0) return;
+
+		this.#settingsKey = this.#settingsKeyOf(container);
 
 		this.#s = {
 			fontSize:       parseInt(container.dataset.nodeFontSize  || '12', 10),
@@ -312,34 +395,172 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		};
 
 		this.#loadFilterState();
-
-		const visNodes = [];
-		const visEdges = [];
-		this.#nodesMeta = {};
 		this.#iconCache = {};
+		this.#readModel(elements);
+
+		const { nodes, edges } = this.#renderedGraph();
+
+		// A rebuild of a graph already laid out (settings changed, contents
+		// cleared in between) resumes that layout instead of starting over.
+		const resume = this.#savedView !== null && nodes.every(node => this.#positions.has(node.id));
+		if (resume) {
+			nodes.forEach(node => Object.assign(node, this.#positions.get(node.id)));
+		}
+		else {
+			this.#positions.clear();
+			this.#userInteracted = false;
+		}
+
+		const nodeCount = nodes.length;
+
+		this.#nodesDS = new vis.DataSet(nodes);
+		this.#edgesDS = new vis.DataSet(edges);
+
+		this.#network = new vis.Network(container, {
+			nodes: this.#nodesDS,
+			edges: this.#edgesDS,
+		}, {
+			physics: {
+				enabled: !resume,
+				solver: 'barnesHut',
+				barnesHut: {
+					gravitationalConstant: -8000,
+					centralGravity:        0.3,
+					springLength:          130,
+					springConstant:        0.04,
+					damping:               0.09,
+				},
+				stabilization: { iterations: this.#stabilizationBudget(nodeCount), fit: false },
+			},
+			interaction: {
+				hover:        true,
+				tooltipDelay: 200,
+				hideEdgesOnDrag: true,
+			},
+			layout: { improvedLayout: true, randomSeed: 1 },
+		});
+
+		this.#wireNetworkEvents();
+		this.#buildFilterUI(container);
+		this.#applyVisibility();
+		this.#paintHighlight();
+
+		if (resume) {
+			this.#network.moveTo({ ...this.#savedView, animation: false });
+		}
+		else {
+			this.#layoutPhase = 'initial';
+		}
+		this.#savedView = null;
+	}
+
+	// Registered once per Network - updates only ever touch the DataSets.
+	#wireNetworkEvents() {
+		this.#network.on('click', (params) => {
+			if (params.nodes.length === 0) {
+				this.#resetEdgeHighlight();
+				return;
+			}
+
+			const nodeId = params.nodes[0];
+			const meta   = this.#nodesMeta[nodeId];
+			if (!meta) return;
+
+			if (meta.node_type === 'host') {
+				this.#hideTooltip();
+				const hostid = nodeId.replace(/^h_/, '');
+				this.#showHostMenu(hostid, this.#makePopupEvent(params));
+				return;
+			}
+
+			if (meta.node_type === 'proxy') {
+				this.#toggleProxyHighlight(nodeId);
+				return;
+			}
+
+			if (meta.node_type === 'otel_group') {
+				this.#hideTooltip();
+				this.#toggleOtelGroup(meta.backend_owner);
+				return;
+			}
+
+			this.#resetEdgeHighlight();
+		});
+
+		this.#network.on('hoverNode', (params) => {
+			const meta = this.#nodesMeta[params.node];
+			if (!meta) return;
+			const node = this.#nodesDS.get(params.node);
+			this.#showTooltip(node ? node.label : params.node, meta);
+		});
+
+		this.#network.on('blurNode', () => this.#hideTooltip());
+
+		const onUserInteraction = () => { this.#userInteracted = true; };
+		this.#network.on('zoom', onUserInteraction);
+		this.#network.on('dragStart', onUserInteraction);
+
+		this.#network.on('dragEnd', (params) => {
+			const positions = this.#network.getPositions(params.nodes);
+			for (const id in positions) this.#positions.set(id, positions[id]);
+		});
+
+		this.#network.on('stabilizationIterationsDone', () => this.#finishLayout());
+		this.#network.on('stabilized', () => this.#finishLayout());
+	}
+
+	#stabilizationBudget(nodeCount) {
+		return Math.min(
+			CWidgetHoloztekMonitoringMap.#STABILIZATION_MAX,
+			Math.max(
+				CWidgetHoloztekMonitoringMap.#STABILIZATION_MIN,
+				nodeCount * CWidgetHoloztekMonitoringMap.#STABILIZATION_PER_NODE
+			)
+		);
+	}
+
+	// Physics only ever runs to produce a layout: once that is done, it is
+	// switched off so that the graph stays exactly where the user sees it.
+	#finishLayout() {
+		if (this.#layoutPhase === 'idle') return;
+
+		const initial = this.#layoutPhase === 'initial';
+
+		this.#layoutPhase = 'idle';
+		clearTimeout(this.#settleTimer);
+		this.#settleTimer = null;
+
+		this.#network.setOptions({ physics: { enabled: false } });
+
+		const pinned = this.#nodesDS.get({ filter: node => node.fixed === true, fields: ['id'] });
+		if (pinned.length > 0) {
+			this.#nodesDS.update(pinned.map(({ id }) => ({ id, fixed: false })));
+		}
+
+		this.#rememberPositions();
+
+		if (initial && !this.#userInteracted) {
+			this.#network.fit({ animation: false });
+		}
+	}
+
+	// Parses the response into the full model. Hosts, Proxies and the like are
+	// the server's; which of them get drawn is #renderedGraph()'s business.
+	#readModel(elements) {
+		const nodes = new Map();
+		const edges = new Map();
 
 		elements.forEach(el => {
 			if (el.data.source) {
 				const relation = el.data.relation_type;
 
-				// #children is the monitoring tree only: filter visibility and
-				// Proxy highlighting both walk it. A backend relation stays out.
-				if (!relation) {
-					(this.#children[el.data.source] ??= []).push(el.data.target);
-				}
+				// Deterministic, so the same edge is recognized across updates.
+				// Monitoring edges keep the plain form the highlight walk uses.
+				const id = relation
+					? `${el.data.source}__${el.data.target}__${relation}`
+					: `${el.data.source}__${el.data.target}`;
 
-				visEdges.push({
-					id:    el.data.source + '__' + el.data.target,
-					from:  el.data.source,
-					to:    el.data.target,
-					// vis-network defaults edges.color.inherit to 'from', which makes
-					// an edge take its connected node's color instead of this
-					// explicit one unless disabled here.
-					color: { color: this.#s.edgeColor, highlight: this.#s.edgeColor, inherit: false },
-					width: this.#s.edgeWidth,
-					smooth: { type: 'continuous' },
-					...(relation ? { dashes: CWidgetHoloztekMonitoringMap.#RELATION_DASHES[relation] || true } : {}),
-				});
+				edges.set(id, { id, from: el.data.source, to: el.data.target, relation: relation || 'monitoring' });
 				return;
 			}
 
@@ -378,85 +599,299 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			if (isHost) {
 				this.#recomputeSeverity(meta);
 			}
-			this.#nodesMeta[el.data.id] = meta;
 
-			visNodes.push({
-				id:    el.data.id,
-				label: el.data.label,
-				shape: 'image',
-				image: this.#buildIcon(meta),
-				color: { background: 'rgba(0,0,0,0)', border: 'rgba(0,0,0,0)' },
-				font: {
-					color: this.#s.fontColor,
-					size:  this.#s.fontSize,
-					bold:  this.#s.fontWeight === 'bold' ? { size: this.#s.fontSize, vadjust: 0 } : false,
-					ital:  this.#s.fontStyle === 'italic',
-				},
-			});
+			nodes.set(el.data.id, { id: el.data.id, label: el.data.label, meta });
 		});
 
-		this.#nodesDS = new vis.DataSet(visNodes);
-		this.#edgesDS = new vis.DataSet(visEdges);
+		this.#model = { nodes, edges };
+	}
 
-		this.#network = new vis.Network(container, {
-			nodes: this.#nodesDS,
-			edges: this.#edgesDS,
-		}, {
-			physics: {
-				solver: 'barnesHut',
-				barnesHut: {
-					gravitationalConstant: -8000,
-					centralGravity:        0.3,
-					springLength:          130,
-					springConstant:        0.04,
-					damping:               0.09,
-				},
-				stabilization: { iterations: 150, fit: true },
+	// Folds the model into what is actually drawn, and refreshes #nodesMeta and
+	// #children to match. The count is per Proxy, so a system seen by a Proxy
+	// with a group and by one without stays drawn, attached to the latter only.
+	#renderedGraph() {
+		const threshold = CWidgetHoloztekMonitoringMap.#OTEL_GROUP_THRESHOLD;
+		const { nodes: modelNodes, edges: modelEdges } = this.#model;
+
+		const systemsByProxy = new Map();
+		for (const edge of modelEdges.values()) {
+			if (edge.relation === 'telemetry') {
+				if (!systemsByProxy.has(edge.from)) systemsByProxy.set(edge.from, []);
+				systemsByProxy.get(edge.from).push(edge.to);
+			}
+		}
+
+		// Expanding is a choice about one group: it does not survive the group.
+		for (const proxyId of this.#otelExpanded) {
+			if ((systemsByProxy.get(proxyId)?.length ?? 0) <= threshold) this.#otelExpanded.delete(proxyId);
+		}
+
+		const collapsed = proxyId => (systemsByProxy.get(proxyId)?.length ?? 0) > threshold
+			&& !this.#otelExpanded.has(proxyId);
+
+		const drawnSystems = new Set();
+		for (const [proxyId, systems] of systemsByProxy) {
+			if (!collapsed(proxyId)) systems.forEach(id => drawnSystems.add(id));
+		}
+
+		this.#nodesMeta = {};
+		const nodes = [];
+		const edges = [];
+
+		for (const { id, label, meta } of modelNodes.values()) {
+			if (meta.node_type === 'otel_system' && !drawnSystems.has(id)) continue;
+
+			this.#nodesMeta[id] = meta;
+			nodes.push(this.#visNode(id, label, meta));
+		}
+
+		this.#children = {};
+
+		for (const edge of modelEdges.values()) {
+			if (edge.relation === 'telemetry' && collapsed(edge.from)) continue;
+
+			// #children is the monitoring tree only: filter visibility and
+			// Proxy highlighting both walk it. A backend relation stays out.
+			if (edge.relation === 'monitoring') {
+				(this.#children[edge.from] ??= []).push(edge.to);
+			}
+
+			edges.push(this.#visEdge(edge));
+		}
+
+		// A group stays while expanded, as the way back to collapsing it.
+		for (const [proxyId, systems] of systemsByProxy) {
+			if (systems.length <= threshold) continue;
+
+			const groupId = `otelg_${proxyId}`;
+			const meta = {
+				node_type:     'otel_group',
+				backend_owner: proxyId,
+				otel_expanded: this.#otelExpanded.has(proxyId),
+				otel_system_count: systems.length,
+			};
+
+			this.#nodesMeta[groupId] = meta;
+			nodes.push(this.#visNode(groupId, `${t('OTel Systems')} (${systems.length})`, meta));
+			edges.push(this.#visEdge({
+				id:       `${proxyId}__${groupId}__telemetry`,
+				from:     proxyId,
+				to:       groupId,
+				relation: 'telemetry',
+			}));
+		}
+
+		return { nodes, edges };
+	}
+
+	#visNode(id, label, meta) {
+		return {
+			id,
+			label,
+			shape: 'image',
+			image: this.#buildIcon(meta),
+			color: { background: 'rgba(0,0,0,0)', border: 'rgba(0,0,0,0)' },
+			font: {
+				color: this.#s.fontColor,
+				size:  this.#s.fontSize,
+				bold:  this.#s.fontWeight === 'bold' ? { size: this.#s.fontSize, vadjust: 0 } : false,
+				ital:  this.#s.fontStyle === 'italic',
 			},
-			interaction: {
-				hover:        true,
-				tooltipDelay: 200,
-				hideEdgesOnDrag: true,
-			},
-			layout: { improvedLayout: true },
-		});
+		};
+	}
 
-		this.#network.on('click', (params) => {
-			if (params.nodes.length === 0) {
-				this.#resetEdgeHighlight();
-				return;
+	#visEdge({ id, from, to, relation }) {
+		return {
+			id,
+			from,
+			to,
+			relation,
+			// vis-network defaults edges.color.inherit to 'from', which makes
+			// an edge take its connected node's color instead of this
+			// explicit one unless disabled here.
+			color: { color: this.#s.edgeColor, highlight: this.#s.edgeColor, inherit: false },
+			width: this.#s.edgeWidth,
+			smooth: { type: 'continuous' },
+			...(relation !== 'monitoring'
+				? { dashes: CWidgetHoloztekMonitoringMap.#RELATION_DASHES[relation] || true }
+				: {}),
+		};
+	}
+
+	// Brings the DataSets in line with the model, touching only what differs.
+	// Same data: at most an icon or a label changes, physics stays off and the
+	// view stays put. New or removed nodes: only the new ones get laid out.
+	// A different Topology altogether: fresh layout and fit.
+	#syncGraph() {
+		const { nodes, edges } = this.#renderedGraph();
+
+		const nextNodeIds = new Set(nodes.map(node => node.id));
+		const removedNodes = this.#nodesDS.getIds().filter(id => !nextNodeIds.has(id));
+		const addedNodes = nodes.filter(node => this.#nodesDS.get(node.id) === null);
+		const keptCount = nodes.length - addedNodes.length;
+		const smallerCount = Math.min(nodes.length, this.#nodesDS.length);
+
+		if (keptCount / smallerCount < CWidgetHoloztekMonitoringMap.#MAJOR_CHANGE_RATIO) {
+			this.#replaceGraph(nodes, edges);
+			return;
+		}
+
+		const nextEdgeIds = new Set(edges.map(edge => edge.id));
+		const removedEdges = this.#edgesDS.getIds().filter(id => !nextEdgeIds.has(id));
+		if (removedEdges.length > 0) this.#edgesDS.remove(removedEdges);
+
+		if (removedNodes.length > 0) {
+			// A system folded into a group comes back where it was.
+			const folded = this.#network.getPositions(removedNodes.filter(id => this.#model.nodes.has(id)));
+			for (const id in folded) this.#positions.set(id, folded[id]);
+
+			this.#nodesDS.remove(removedNodes);
+		}
+
+		for (const id of this.#positions.keys()) {
+			if (!this.#model.nodes.has(id) && !nextNodeIds.has(id)) this.#positions.delete(id);
+		}
+
+		const changedNodes = [];
+		for (const node of nodes) {
+			const current = this.#nodesDS.get(node.id);
+			if (current !== null && (current.label !== node.label || current.image !== node.image)) {
+				changedNodes.push({ id: node.id, label: node.label, image: node.image });
 			}
+		}
+		if (changedNodes.length > 0) this.#nodesDS.update(changedNodes);
 
-			const nodeId = params.nodes[0];
-			const meta   = this.#nodesMeta[nodeId];
-			if (!meta) return;
+		const addedEdges = edges.filter(edge => this.#edgesDS.get(edge.id) === null);
 
-			if (meta.node_type === 'host') {
-				this.#hideTooltip();
-				const hostid = nodeId.replace(/^h_/, '');
-				this.#showHostMenu(hostid, this.#makePopupEvent(params));
-				return;
-			}
+		if (addedNodes.length > 0) this.#placeNewNodes(addedNodes, edges);
+		if (addedEdges.length > 0) this.#edgesDS.add(addedEdges);
 
-			if (meta.node_type === 'proxy') {
-				this.#toggleProxyHighlight(nodeId);
-				return;
-			}
-
-			this.#resetEdgeHighlight();
-		});
-
-		this.#network.on('hoverNode', (params) => {
-			const meta = this.#nodesMeta[params.node];
-			if (!meta) return;
-			const node = this.#nodesDS.get(params.node);
-			this.#showTooltip(node ? node.label : params.node, meta);
-		});
-
-		this.#network.on('blurNode', () => this.#hideTooltip());
-
-		this.#buildFilterUI(container);
 		this.#applyVisibility();
+		this.#paintHighlight();
+
+		if (removedNodes.length > 0 || addedNodes.length > 0) this.#fitIfNothingInView();
+	}
+
+	#replaceGraph(nodes, edges) {
+		clearTimeout(this.#settleTimer);
+		this.#settleTimer = null;
+
+		this.#positions.clear();
+		this.#userInteracted = false;
+
+		this.#edgesDS.clear();
+		this.#nodesDS.clear();
+		this.#nodesDS.add(nodes);
+		this.#edgesDS.add(edges);
+
+		this.#applyVisibility();
+		this.#paintHighlight();
+
+		this.#layoutPhase = 'initial';
+		this.#network.setOptions({ physics: { enabled: true } });
+		this.#network.stabilize(this.#stabilizationBudget(nodes.length));
+	}
+
+	// Starts new nodes next to what they connect to and lets physics sort out
+	// the rest, with every node already on screen pinned: it repels the new
+	// ones, but does not move.
+	#placeNewNodes(addedNodes, edges) {
+		const placed = new Map();
+		const known = id => placed.get(id) ?? this.#positions.get(id)
+			?? (this.#nodesDS.get(id) !== null ? this.#network.getPositions([id])[id] : undefined);
+
+		const neighbors = new Map(addedNodes.map(node => [node.id, []]));
+		for (const { from, to } of edges) {
+			neighbors.get(from)?.push(to);
+			neighbors.get(to)?.push(from);
+		}
+
+		// New nodes may hang off each other, so work outwards from the known ones.
+		const pending = new Set(addedNodes.map(node => node.id));
+		let spiral = 0;
+
+		const place = (id, requireAnchor) => {
+			const saved = this.#positions.get(id);
+			if (saved !== undefined) {
+				placed.set(id, saved);
+				return true;
+			}
+
+			const anchors = neighbors.get(id).map(known).filter(position => position !== undefined);
+			if (anchors.length === 0 && requireAnchor) return false;
+
+			const center = anchors.length > 0
+				? {
+					x: anchors.reduce((sum, position) => sum + position.x, 0) / anchors.length,
+					y: anchors.reduce((sum, position) => sum + position.y, 0) / anchors.length,
+				}
+				: this.#network.getViewPosition();
+
+			// Golden-angle spiral: siblings start apart, in a stable order.
+			const radius = 80 + 18 * Math.sqrt(spiral);
+			const angle  = spiral * 2.399963;
+			spiral++;
+
+			placed.set(id, { x: center.x + radius * Math.cos(angle), y: center.y + radius * Math.sin(angle) });
+			return true;
+		};
+
+		for (let progress = true; progress && pending.size > 0;) {
+			progress = false;
+			for (const id of pending) {
+				if (place(id, true)) {
+					pending.delete(id);
+					progress = true;
+				}
+			}
+		}
+		pending.forEach(id => place(id, false));
+
+		const placedNodes = addedNodes.map(node => ({ ...node, ...placed.get(node.id) }));
+
+		// The running stabilization takes them along.
+		if (this.#layoutPhase === 'initial') {
+			this.#nodesDS.add(placedNodes);
+			return;
+		}
+
+		const pinned = this.#nodesDS.getIds().map(id => ({ id, fixed: true }));
+		if (pinned.length > 0) this.#nodesDS.update(pinned);
+
+		this.#nodesDS.add(placedNodes);
+
+		this.#layoutPhase = 'settling';
+		this.#network.setOptions({ physics: { enabled: true, stabilization: { enabled: false } } });
+		this.#network.startSimulation();
+
+		clearTimeout(this.#settleTimer);
+		this.#settleTimer = setTimeout(() => this.#finishLayout(), CWidgetHoloztekMonitoringMap.#SETTLE_TIMEOUT_MS);
+	}
+
+	#fitIfNothingInView() {
+		const visibleIds = this.#nodesDS.get({ filter: node => !node.hidden, fields: ['id'] }).map(({ id }) => id);
+		if (visibleIds.length === 0) return;
+
+		const { clientWidth, clientHeight } = this.#network.canvas.frame;
+		const positions = this.#network.getPositions(visibleIds);
+
+		const anyInView = visibleIds.some(id => {
+			const { x, y } = this.#network.canvasToDOM(positions[id]);
+			return x >= 0 && y >= 0 && x <= clientWidth && y <= clientHeight;
+		});
+
+		if (!anyInView) this.#network.fit({ animation: false });
+	}
+
+	#toggleOtelGroup(proxyId) {
+		if (this.#otelExpanded.has(proxyId)) {
+			this.#otelExpanded.delete(proxyId);
+		}
+		else {
+			this.#otelExpanded.add(proxyId);
+		}
+
+		this.#syncGraph();
 	}
 
 	// No node_font_color set in the widget's settings (the field is left blank
@@ -495,8 +930,29 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			return;
 		}
 
+		this.#highlightedProxy = proxyId;
+		this.#paintHighlight();
+	}
+
+	#resetEdgeHighlight() {
+		if (this.#highlightedProxy === null) return;
+
+		this.#highlightedProxy = null;
+		this.#paintHighlight();
+	}
+
+	// Applies #highlightedProxy to the edges as they are now, so it also carries
+	// an active highlight over to an updated tree. Only a Proxy gone from the
+	// data ends it.
+	#paintHighlight() {
+		if (!this.#edgesDS) return;
+
+		if (this.#highlightedProxy !== null && !(this.#highlightedProxy in this.#nodesMeta)) {
+			this.#highlightedProxy = null;
+		}
+
 		const highlighted = new Set();
-		const stack = [proxyId];
+		const stack = this.#highlightedProxy !== null ? [this.#highlightedProxy] : [];
 		while (stack.length > 0) {
 			const id = stack.pop();
 			for (const child of this.#children[id] || []) {
@@ -508,20 +964,12 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		const baseWidth = this.#s.edgeWidth;
 		const highlightWidth = baseWidth * 3 + 2;
 
-		this.#edgesDS.update(this.#edgesDS.get().map(edge => ({
-			id:    edge.id,
-			width: highlighted.has(edge.id) ? highlightWidth : baseWidth,
-		})));
-
-		this.#highlightedProxy = proxyId;
-	}
-
-	#resetEdgeHighlight() {
-		if (!this.#edgesDS || this.#highlightedProxy === null) return;
-
-		const baseWidth = this.#s.edgeWidth;
-		this.#edgesDS.update(this.#edgesDS.get().map(edge => ({ id: edge.id, width: baseWidth })));
-		this.#highlightedProxy = null;
+		const updates = [];
+		for (const edge of this.#edgesDS.get()) {
+			const width = highlighted.has(edge.id) ? highlightWidth : baseWidth;
+			if (edge.width !== width) updates.push({ id: edge.id, width });
+		}
+		if (updates.length > 0) this.#edgesDS.update(updates);
 	}
 
 	/**
@@ -858,16 +1306,58 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			return result;
 		};
 
-		const nodeUpdates = Object.keys(this.#nodesMeta).map(id => ({ id, hidden: !computeVisible(id) }));
-		this.#nodesDS.update(nodeUpdates);
+		Object.keys(this.#nodesMeta).forEach(computeVisible);
 
-		const edgeUpdates = this.#edgesDS.get().map(edge => ({
-			id:     edge.id,
-			hidden: !(visible[edge.from] && visible[edge.to]),
-		}));
-		this.#edgesDS.update(edgeUpdates);
+		// Relations filter, on top: an edge is drawn iff its relation is on and
+		// both ends passed the above, and a node needs a drawn edge to stay. A
+		// node with no edge at all has only the monitoring tree to belong to.
+		const relationKeys = CWidgetHoloztekMonitoringMap.#RELATION_KEYS;
+		const drawnEdges = new Set();
+		const connected = new Set();
+		const hasEdge = new Set();
 
-		this.#toggleEmptyOverlay(!Object.values(visible).some(v => v));
+		for (const edge of this.#edgesDS.get()) {
+			hasEdge.add(edge.from);
+			hasEdge.add(edge.to);
+
+			if (this.#filter[relationKeys[edge.relation]] && visible[edge.from] && visible[edge.to]) {
+				drawnEdges.add(edge.id);
+				connected.add(edge.from);
+				connected.add(edge.to);
+			}
+		}
+
+		const shown = id => visible[id] && (hasEdge.has(id) ? connected.has(id) : this.#filter.relMonitoring);
+
+		const nodeUpdates = [];
+		for (const node of this.#nodesDS.get()) {
+			const hidden = !shown(node.id);
+			if (!!node.hidden !== hidden) nodeUpdates.push({ id: node.id, hidden });
+		}
+		if (nodeUpdates.length > 0) this.#nodesDS.update(nodeUpdates);
+
+		const edgeUpdates = [];
+		for (const edge of this.#edgesDS.get()) {
+			const hidden = !drawnEdges.has(edge.id);
+			if (!!edge.hidden !== hidden) edgeUpdates.push({ id: edge.id, hidden });
+		}
+		if (edgeUpdates.length > 0) this.#edgesDS.update(edgeUpdates);
+
+		this.#toggleEmptyOverlay(!Object.keys(this.#nodesMeta).some(shown));
+		this.#syncRelationRows();
+	}
+
+	// Relations the current data has none of cannot be switched: they are off
+	// in the Widget's settings, not in this filter.
+	#syncRelationRows() {
+		if (!this.#panelEl) return;
+
+		const present = new Set(this.#edgesDS.get().map(edge => edge.relation));
+
+		for (const [relation, key] of Object.entries(CWidgetHoloztekMonitoringMap.#RELATION_KEYS)) {
+			const input = this.#panelEl.querySelector(`input[data-filter="${key}"]`);
+			if (input) input.disabled = !present.has(relation);
+		}
 	}
 
 	#onFilterChanged(key) {
@@ -943,6 +1433,13 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				${row('methodJmx', t('JMX'))}
 				${row('methodOther', t('Other'))}
 			</details>
+			<details class="mm-filter-category">
+				<summary>${this.#escape(t('Relations'))}</summary>
+				${row('relMonitoring', t('Monitoring'))}
+				${row('relDatabase', t('Database'))}
+				${row('relApmStorage', t('APM storage'))}
+				${row('relTelemetry', t('Telemetry'))}
+			</details>
 		`;
 	}
 
@@ -1011,7 +1508,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		// A backend label's second line is its type, shown as its own row below.
 		const title = isBackend ? String(label).split('\n')[0] : label;
 		let html = `<strong>${this.#escape(title)}</strong>`;
-		if (title !== typeLabel && meta.node_type !== 'otel_system') {
+		if (title !== typeLabel && meta.node_type !== 'otel_system' && meta.node_type !== 'otel_group') {
 			html += `<br><span style="opacity:.7">${typeLabel}</span>`;
 		}
 
@@ -1091,6 +1588,10 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			if (meta.otel_hosts.length > 0) {
 				html += row(`${t('Host')}: ${this.#escape(meta.otel_hosts.join(', '))}`);
 			}
+		}
+
+		if (meta.node_type === 'otel_group') {
+			html += row(t(meta.otel_expanded ? 'Click to collapse' : 'Click to expand'));
 		}
 
 		if (meta.node_type === 'proxy_db') {

@@ -263,3 +263,24 @@ msgstr "観測されたテレメトリシステム数"
 
 msgid "Too many APM systems to display."
 msgstr "APM システムが多すぎるため、一部を表示していません。"
+
+msgid "Relations"
+msgstr "関係"
+
+msgid "Monitoring"
+msgstr "監視経路"
+
+msgid "APM storage"
+msgstr "APMデータストア"
+
+msgid "Telemetry"
+msgstr "Telemetry"
+
+msgid "OTel Systems"
+msgstr "OTelシステム"
+
+msgid "Click to expand"
+msgstr "クリックで展開"
+
+msgid "Click to collapse"
+msgstr "クリックで集約"

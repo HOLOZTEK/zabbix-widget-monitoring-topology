@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.2.1
+Version:        1.3.0
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -121,6 +121,12 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Sun Nov 01 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.3.0-0
+- 更新時に画面の状態を維持（拡大位置、ノード位置、Proxy ハイライト、OTel 集約の展開状態）。
+- 更新は差分で反映し、ネットワーク図の再生成と不要な再配置を抑制。
+- 初回の配置完了後に全体表示し、以後の更新では自動で全体表示しない。
+- 1 Proxy あたり 11 件以上の OTel System を「OTel Systems (N)」に集約（クリックで展開／集約）。
+- フィルターに「関係」カテゴリを追加（監視経路 / データベース / APM データストア / Telemetry）。
 * Sat Oct 31 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.1-0
 - APM 有効時に、Proxy を経由して観測された OpenTelemetry システムを表示。
   関連付けには Proxy の additional_resource_attributes に設定した

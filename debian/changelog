@@ -1,3 +1,13 @@
+zabbix-widget-monitoring-topology (1.3.0) unstable; urgency=medium
+
+  * 更新時に画面の状態を維持（拡大位置、ノード位置、Proxy ハイライト、OTel 集約の展開状態）。
+  * 更新は差分で反映し、ネットワーク図の再生成と不要な再配置を抑制。
+  * 初回の配置完了後に全体表示し、以後の更新では自動で全体表示しない。
+  * 1 Proxy あたり 11 件以上の OTel System を「OTel Systems (N)」に集約（クリックで展開／集約）。
+  * フィルターに「関係」カテゴリを追加（監視経路 / データベース / APM データストア / Telemetry）。
+
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Sun, 01 Nov 2026 18:00:00 +0900
+
 zabbix-widget-monitoring-topology (1.2.1) unstable; urgency=medium
 
   * APM 有効時に、Proxy を経由して観測された OpenTelemetry システムを表示。
