@@ -284,3 +284,6 @@ msgstr "クリックで展開"
 
 msgid "Click to collapse"
 msgstr "クリックで集約"
+
+msgid "Drag follow hops"
+msgstr "ドラッグ時の追従ホップ数"

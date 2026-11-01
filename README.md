@@ -54,9 +54,9 @@ Zabbix 管理画面 → 管理 → モジュール からウィジェットを�
 
 ### 表示状態の維持 / Keeping the view
 
-ウィジェットの更新やブロードキャストによる切替では、拡大位置、ノード位置（ドラッグした位置を含む）、Proxy ハイライト、OTel 集約の展開状態を維持します。増えたノードだけを配置し、消えたノードは取り除きます。ノードをドラッグすると、つながりの近いノードだけが追従し、離れたノードと手動で置いたノードは動きません。全体表示に戻るのは初回表示時、構成が大きく変わったとき、画面内に表示対象がなくなったときです。
+ウィジェットの更新やブロードキャストによる切替では、拡大位置、ノード位置（ドラッグした位置を含む）、Proxy ハイライト、OTel 集約の展開状態を維持します。増えたノードだけを配置し、消えたノードは取り除きます。ノードをドラッグすると、設定「ドラッグ時の追従ホップ数」（0〜10、既定は 3）以内のノードだけが追従し、それより離れたノードと手動で置いたノードは動きません。0 ならドラッグしたノードだけが動きます。全体表示に戻るのは初回表示時、構成が大きく変わったとき、画面内に表示対象がなくなったときです。
 
-Refreshes and broadcast changes keep the zoom, pan, node positions (including dragged nodes), Proxy highlight and the expanded state of OTel groups. Only added nodes are placed; removed nodes are dropped. Dragging a node moves only the nodes close to it; distant nodes and nodes placed by hand stay put. The view fits again only on first display, on a substantially different topology, or when nothing remains in view.
+Refreshes and broadcast changes keep the zoom, pan, node positions (including dragged nodes), Proxy highlight and the expanded state of OTel groups. Only added nodes are placed; removed nodes are dropped. Dragging a node also moves the nodes within the "Drag follow hops" setting (0-10, default 3); nodes further away and nodes placed by hand stay put. With 0, only the dragged node moves. The view fits again only on first display, on a substantially different topology, or when nothing remains in view.
 
 ## バックエンド構成 / Backend components
 

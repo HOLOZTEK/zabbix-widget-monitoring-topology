@@ -284,3 +284,6 @@ msgstr "Click to expand"
 
 msgid "Click to collapse"
 msgstr "Click to collapse"
+
+msgid "Drag follow hops"
+msgstr "Drag follow hops"

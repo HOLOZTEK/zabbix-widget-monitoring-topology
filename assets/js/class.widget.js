@@ -134,7 +134,6 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 	// Upper bound for new nodes to settle around the frozen ones.
 	static #SETTLE_TIMEOUT_MS = 5000;
-	static #DRAG_FOLLOW_HOPS = 2;
 
 	// Different patterns, so the relations differ by more than color.
 	static #RELATION_DASHES = {
@@ -392,6 +391,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			fontStyle:      parseInt(container.dataset.nodeFontStyle || '0', 10) === 2 ? 'italic' : 'normal',
 			fontColor:      container.dataset.nodeFontColor || this.#detectThemeFontColor(container),
 			edgeWidth:      parseFloat(container.dataset.edgeWidth || '1'),
+			dragFollowHops: parseInt(container.dataset.dragFollowHops ?? '3', 10),
 			edgeColor:      container.dataset.edgeColor     || '#aac4d8',
 			filterPosition: parseInt(container.dataset.filterPosition || '1', 10),
 			severityColors: this.#parseJson(container.dataset.severityColors, {}),
@@ -540,9 +540,9 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		clearTimeout(this.#settleTimer);
 		this.#settleTimer = null;
 
-		if (this.#layoutPhase === 'initial') return;
+		if (this.#layoutPhase === 'initial' || this.#s.dragFollowHops === 0) return;
 
-		const free = this.#nodesWithinHops(nodeIds, CWidgetHoloztekMonitoringMap.#DRAG_FOLLOW_HOPS);
+		const free = this.#nodesWithinHops(nodeIds, this.#s.dragFollowHops);
 		nodeIds.forEach(id => free.add(id));
 
 		this.#nodesDS.update(this.#nodesDS.getIds().map(id => ({ id, fixed: !free.has(id) })));
@@ -578,6 +578,8 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		this.#dragging = false;
 
 		nodeIds.forEach(id => this.#userPlaced.add(id));
+
+		if (this.#layoutPhase === 'idle') return;
 
 		this.#nodesDS.update(nodeIds.map(id => ({ id, fixed: true })));
 		this.#settleTimer = setTimeout(() => this.#finishLayout(), CWidgetHoloztekMonitoringMap.#SETTLE_TIMEOUT_MS);

@@ -5,6 +5,7 @@ zabbix-widget-monitoring-topology (1.3.0) unstable; urgency=medium
   * 初回の配置完了後に全体表示し、以後の更新では自動で全体表示しない。
   * 1 Proxy あたり 11 件以上の OTel System を「OTel Systems (N)」に集約（クリックで展開／集約）。
   * フィルターに「関係」カテゴリを追加（監視経路 / データベース / APM データストア / Telemetry）。
+  * ドラッグ時に追従するノードの範囲を指定する設定「ドラッグ時の追従ホップ数」を追加（既定 3、0 はドラッグしたノードのみ）。
 
  -- HOLOZTEK <ttake-55@users.noreply.github.com>  Sun, 01 Nov 2026 18:00:00 +0900
 
