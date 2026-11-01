@@ -134,6 +134,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 	// Upper bound for new nodes to settle around the frozen ones.
 	static #SETTLE_TIMEOUT_MS = 5000;
+	static #DRAG_FOLLOW_HOPS = 2;
 
 	// Different patterns, so the relations differ by more than color.
 	static #RELATION_DASHES = {
@@ -277,6 +278,8 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	// 'idle', or what the running physics is for: 'initial' / 'settling'.
 	#layoutPhase  = 'idle';
 	#settleTimer  = null;
+	#dragging     = false;
+	#userPlaced   = new Set();
 	// Proxies whose OTel group the user expanded.
 	#otelExpanded = new Set();
 
@@ -345,6 +348,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		clearTimeout(this.#settleTimer);
 		this.#settleTimer = null;
 		this.#layoutPhase = 'idle';
+		this.#dragging = false;
 
 		if (this.#network !== null) {
 			this.#network.destroy();
@@ -408,6 +412,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		}
 		else {
 			this.#positions.clear();
+			this.#userPlaced.clear();
 			this.#userInteracted = false;
 		}
 
@@ -498,11 +503,18 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		const onUserInteraction = () => { this.#userInteracted = true; };
 		this.#network.on('zoom', onUserInteraction);
-		this.#network.on('dragStart', onUserInteraction);
+		this.#network.on('dragStart', (params) => {
+			onUserInteraction();
+
+			// params.nodes also lists a selected node while the canvas is panned.
+			if (this.#network.getNodeAt(params.pointer.DOM) !== undefined) this.#startNodeDrag(params.nodes);
+		});
 
 		this.#network.on('dragEnd', (params) => {
 			const positions = this.#network.getPositions(params.nodes);
 			for (const id in positions) this.#positions.set(id, positions[id]);
+
+			if (this.#dragging) this.#endNodeDrag(params.nodes);
 		});
 
 		this.#network.on('stabilizationIterationsDone', () => this.#finishLayout());
@@ -521,8 +533,58 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 	// Physics only ever runs to produce a layout: once that is done, it is
 	// switched off so that the graph stays exactly where the user sees it.
+	// Physics runs only while the user moves a node, and only for the nodes close
+	// to it: the layout is not fully converged, so anything else would drift too.
+	#startNodeDrag(nodeIds) {
+		this.#dragging = true;
+		clearTimeout(this.#settleTimer);
+		this.#settleTimer = null;
+
+		if (this.#layoutPhase === 'initial') return;
+
+		const free = this.#nodesWithinHops(nodeIds, CWidgetHoloztekMonitoringMap.#DRAG_FOLLOW_HOPS);
+		nodeIds.forEach(id => free.add(id));
+
+		this.#nodesDS.update(this.#nodesDS.getIds().map(id => ({ id, fixed: !free.has(id) })));
+
+		this.#layoutPhase = 'settling';
+		this.#network.setOptions({ physics: { enabled: true, stabilization: { enabled: false } } });
+	}
+
+	// Excludes what the user placed by hand: those stay where they were dropped.
+	#nodesWithinHops(nodeIds, hops) {
+		const neighbors = new Map();
+		const link = (a, b) => neighbors.has(a) ? neighbors.get(a).push(b) : neighbors.set(a, [b]);
+
+		this.#edgesDS.forEach(({ from, to }) => {
+			link(from, to);
+			link(to, from);
+		});
+
+		const seen = new Set(nodeIds);
+		let frontier = nodeIds;
+		for (let hop = 0; hop < hops; hop++) {
+			frontier = frontier.flatMap(id => neighbors.get(id) ?? []).filter(id => !seen.has(id));
+			frontier.forEach(id => seen.add(id));
+		}
+
+		nodeIds.forEach(id => seen.delete(id));
+		this.#userPlaced.forEach(id => seen.delete(id));
+
+		return seen;
+	}
+
+	#endNodeDrag(nodeIds) {
+		this.#dragging = false;
+
+		nodeIds.forEach(id => this.#userPlaced.add(id));
+
+		this.#nodesDS.update(nodeIds.map(id => ({ id, fixed: true })));
+		this.#settleTimer = setTimeout(() => this.#finishLayout(), CWidgetHoloztekMonitoringMap.#SETTLE_TIMEOUT_MS);
+	}
+
 	#finishLayout() {
-		if (this.#layoutPhase === 'idle') return;
+		if (this.#layoutPhase === 'idle' || this.#dragging) return;
 
 		const initial = this.#layoutPhase === 'initial';
 
@@ -749,7 +811,10 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		}
 
 		for (const id of this.#positions.keys()) {
-			if (!this.#model.nodes.has(id) && !nextNodeIds.has(id)) this.#positions.delete(id);
+			if (this.#model.nodes.has(id) || nextNodeIds.has(id)) continue;
+
+			this.#positions.delete(id);
+			this.#userPlaced.delete(id);
 		}
 
 		const changedNodes = [];
@@ -777,6 +842,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		this.#settleTimer = null;
 
 		this.#positions.clear();
+		this.#userPlaced.clear();
 		this.#userInteracted = false;
 
 		this.#edgesDS.clear();
