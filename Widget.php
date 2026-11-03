@@ -70,7 +70,7 @@ class Widget extends CWidget {
                 'Frontend configuration' => _holoztek_mm('Frontend configuration'),
                 'Global APM Data Source' => _holoztek_mm('Global APM Data Source'),
                 'OpenTelemetry system' => _holoztek_mm('OpenTelemetry system'),
-                'Service' => _holoztek_mm('Service'),
+                'Services' => _holoztek_mm('Services'),
                 'Namespace' => _holoztek_mm('Namespace'),
                 'Environment' => _holoztek_mm('Environment'),
                 'Host' => _holoztek_mm('Host'),

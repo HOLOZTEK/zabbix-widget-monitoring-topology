@@ -249,8 +249,8 @@ msgstr "APM (available on Zabbix 8.0 or later)"
 msgid "OpenTelemetry system"
 msgstr "OpenTelemetry system"
 
-msgid "Service"
-msgstr "Service"
+msgid "Services"
+msgstr "Services"
 
 msgid "Namespace"
 msgstr "Namespace"

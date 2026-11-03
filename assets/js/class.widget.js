@@ -759,10 +759,11 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				db_source:           el.data.db_source || null,
 				apm_db:              el.data.apm_db || null,
 				otel_truncated:      el.data.otel_truncated === true,
-				otel_service:        el.data.otel_service || null,
-				otel_namespace:      el.data.otel_namespace || null,
+				otel_host:           el.data.otel_host || null,
+				otel_services:       el.data.otel_services || [],
+				otel_services_more:  Number(el.data.otel_services_more) || 0,
+				otel_namespaces:     el.data.otel_namespaces || [],
 				otel_environments:   el.data.otel_environments || [],
-				otel_hosts:          el.data.otel_hosts || [],
 				otel_system_count:   el.data.otel_system_count || 0,
 				severity_ack:       isHost && el.data.severity_ack !== undefined && el.data.severity_ack !== null
 					? Number(el.data.severity_ack) : null,
@@ -1883,7 +1884,8 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				name,
 				meta,
 				nameKey:  name.toLocaleLowerCase(),
-				textKey:  [text, meta.otel_service, meta.otel_namespace, ...(meta.otel_hosts ?? []), ...(meta.member_ips ?? [])]
+				textKey:  [text, ...(meta.otel_services ?? []), ...(meta.otel_namespaces ?? []),
+					...(meta.otel_environments ?? []), ...(meta.member_ips ?? [])]
 					.filter(Boolean).join('\n').toLocaleLowerCase(),
 				proxies:  proxiesOf.get(id) ?? [],
 			});
@@ -2242,15 +2244,16 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		if (meta.node_type === 'otel_system') {
 			html += row(`${t('Type')}: ${t('OpenTelemetry system')}`);
-			html += row(`${t('Service')}: ${this.#escape(meta.otel_service)}`);
-			if (meta.otel_namespace) {
-				html += row(`${t('Namespace')}: ${this.#escape(meta.otel_namespace)}`);
+			html += row(`${t('Host')}: ${this.#escape(meta.otel_host)}`);
+			if (meta.otel_services.length > 0) {
+				const more = meta.otel_services_more > 0 ? ` (+${meta.otel_services_more})` : '';
+				html += row(`${t('Services')}: ${this.#escape(meta.otel_services.join(', '))}${more}`);
+			}
+			if (meta.otel_namespaces.length > 0) {
+				html += row(`${t('Namespace')}: ${this.#escape(meta.otel_namespaces.join(', '))}`);
 			}
 			if (meta.otel_environments.length > 0) {
 				html += row(`${t('Environment')}: ${this.#escape(meta.otel_environments.join(', '))}`);
-			}
-			if (meta.otel_hosts.length > 0) {
-				html += row(`${t('Host')}: ${this.#escape(meta.otel_hosts.join(', '))}`);
 			}
 		}
 

@@ -4,6 +4,7 @@ zabbix-widget-monitoring-topology (1.2.3) unstable; urgency=medium
   * ツールバーに「全体を表示」ボタンを追加（フィルターで表示中のノードを全体表示）。
   * 凡例を追加（関係の線種とノード種別）。フィルターの「関係」にも線種の見本を表示。
   * 縮小表示で主要ノード（Zabbix サーバー、Proxy、Proxy グループ、APM データストア、Zabbix DB、OTel 集約）と関係の線種を判別しやすく描画。
+  * OTel System の識別を Resource Attribute の host.name に変更（ノード名も host.name。host.name のないテレメトリは表示しない。service.name・service.namespace・deployment.environment はツールチップの補足情報）。
 
  -- HOLOZTEK <ttake-55@users.noreply.github.com>  Tue, 03 Nov 2026 13:43:54 +0900
 

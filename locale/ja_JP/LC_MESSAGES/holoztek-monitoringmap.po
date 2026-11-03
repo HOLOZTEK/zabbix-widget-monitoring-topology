@@ -249,7 +249,7 @@ msgstr "APM（Zabbix 8.0 以降で利用可能）"
 msgid "OpenTelemetry system"
 msgstr "OpenTelemetry システム"
 
-msgid "Service"
+msgid "Services"
 msgstr "サービス"
 
 msgid "Namespace"

@@ -24,6 +24,9 @@ const HOLOZTEK_MM_RELATION_TELEMETRY = 'telemetry';
 // additional_resource_attributes, with its own proxyid as the value. It is the
 // only basis for linking telemetry to a Proxy.
 const HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE = 'holoztek.zabbix.proxyid';
+// Resource Attribute that identifies an OTel System. Telemetry without it is
+// not shown.
+const HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE = 'host.name';
 const HOLOZTEK_MM_OTEL_SIGNAL_TRACES = 0;
 const HOLOZTEK_MM_OTEL_TIME_RANGE = 900;
 const HOLOZTEK_MM_OTEL_MAX_SYSTEMS = 100;
@@ -386,10 +389,10 @@ function holoztek_mm_node_id_apm_datastore(): string {
 	return 'apmds';
 }
 
-// The namespace is part of the identity: the same service.name in two
-// namespaces is two systems.
-function holoztek_mm_node_id_otel_system(string $namespace, string $service): string {
-	return 'otel_' . md5($namespace . "\0" . $service);
+// A system is the host the telemetry comes from, as host.name reports it:
+// case-sensitive, so HOST01 and host01 are two systems.
+function holoztek_mm_node_id_otel_system(string $host): string {
+	return 'otel_' . md5($host);
 }
 
 function holoztek_mm_node_id_proxy_group(string $proxy_groupid): string {

@@ -126,6 +126,7 @@ fi
 - ツールバーに「全体を表示」ボタンを追加（フィルターで表示中のノードを全体表示）。
 - 凡例を追加（関係の線種とノード種別）。フィルターの「関係」にも線種の見本を表示。
 - 縮小表示で主要ノード（Zabbix サーバー、Proxy、Proxy グループ、APM データストア、Zabbix DB、OTel 集約）と関係の線種を判別しやすく描画。
+- OTel System の識別を Resource Attribute の host.name に変更（ノード名も host.name。host.name のないテレメトリは表示しない。service.name・service.namespace・deployment.environment はツールチップの補足情報）。
 * Tue Nov 03 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.2-0
 - 更新時に画面の状態を維持（拡大位置、ノード位置、Proxy ハイライト、OTel 集約の展開状態）。
 - 更新は差分で反映し、ネットワーク図の再生成と不要な再配置を抑制。

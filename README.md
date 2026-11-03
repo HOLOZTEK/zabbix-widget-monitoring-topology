@@ -62,7 +62,7 @@ Refreshes and broadcast changes keep the zoom, pan, node positions (including dr
 
 設定「フィルタアイコンの位置」の隅（既定は右上）のツールバーに [検索] [全体を表示] [凡例] [フィルター] が並びます。
 
-- **検索**: 表示中のノードを名前で検索します（大文字・小文字を区別しない部分一致、最大 20 件）。OTel System はサービス名・名前空間・ホスト名、クラスターはメンバーのアドレスでも検索できます。候補を選ぶとそのノードへ移動して枠で強調します。「OTel Systems (N)」に集約されたノードは選択時に集約を展開します。フィルターで非表示のノードは候補になりません。Enter で選択、Esc で検索をクリアします。検索語と選択は更新後も維持されます。
+- **検索**: 表示中のノードを名前で検索します（大文字・小文字を区別しない部分一致、最大 20 件）。OTel System は `host.name` で表示・検索され、サービス名・名前空間・環境でも見つかります。クラスターはメンバーのアドレスでも検索できます。候補を選ぶとそのノードへ移動して枠で強調します。「OTel Systems (N)」に集約されたノードは選択時に集約を展開します。フィルターで非表示のノードは候補になりません。Enter で選択、Esc で検索をクリアします。検索語と選択は更新後も維持されます。
 - **全体を表示**: フィルターで表示中のノードがすべて収まるように表示します。
 - **凡例**: 現在の図にある関係（線種）とノード種別を表示します。
 
@@ -70,7 +70,7 @@ Refreshes and broadcast changes keep the zoom, pan, node positions (including dr
 
 The toolbar in the corner set by "Filter icon position" (top right by default) holds Search, Fit, Legend and Filter.
 
-- **Search** finds shown nodes by name (case-insensitive substring, up to 20 results); OTel systems also match their service, namespace and host names, clusters their member addresses. Picking a result moves the view to the node and marks it with a frame; a node folded into "OTel Systems (N)" expands its group. Nodes hidden by the filters are not offered. Enter picks, Esc clears. The query and the pick survive refreshes.
+- **Search** finds shown nodes by name (case-insensitive substring, up to 20 results); OTel systems are listed by `host.name` and also match their service names, namespaces and environments; clusters match their member addresses. Picking a result moves the view to the node and marks it with a frame; a node folded into "OTel Systems (N)" expands its group. Nodes hidden by the filters are not offered. Enter picks, Esc clears. The query and the pick survive refreshes.
 - **Fit** shows every node the filters leave visible.
 - **Legend** lists the relations (line styles) and node types in the current graph.
 
@@ -102,11 +102,11 @@ When zoomed out, the Zabbix server, Proxies, Proxy groups, APM datastores, Zabbi
 - **Override**: Proxy ごとの Override は API から取得できません。線は Global Data Source との関係を示すもので、その Proxy が実際にこの ClickHouse へ書き込むことを保証しません。
 - **フィルター**: バックエンド構成のノードは Host フィルターの対象外です。Proxy DB は対応する Proxy に従います。Proxy クリック時のハイライトは監視経路のみを対象とします。
 
-- **OTel System**: APM を ON にすると、Proxy を経由して観測された OpenTelemetry の送信元を表示します。単位は `service.namespace` + `service.name`（namespace がなければ `service.name`）で、同じ System は Proxy が複数でも 1 ノードです。Zabbix 8.0 以上が対象です。
-- **OTel 集約**: 1 Proxy の OTel System が 11 件以上のときは `OTel Systems (N)` にまとめます。クリックで展開／集約できます。表示上のまとまりで、監視対象ではありません。
+- **OTel System**: APM を ON にすると、Proxy を経由して観測された OpenTelemetry の送信元を表示します。OTel System は OpenTelemetry Resource Attribute の `host.name` を使用して識別し、ノード名も `host.name` です（大文字・小文字は区別します）。`host.name` がないテレメトリは表示しません。同じ `host.name` は Proxy が複数でも 1 ノードです。`service.name`・`service.namespace`・`deployment.environment` は識別には使わない補足情報で、ツールチップに表示し（サービスは最大 5 件と残りの件数）、検索でも使います。Zabbix 8.0 以上が対象です。
+- **OTel 集約**: 1 Proxy の OTel System（`host.name` の数。サービス数ではありません）が 11 件以上のときは `OTel Systems (N)` にまとめます。クリックで展開／集約できます。表示上のまとまりで、監視対象ではありません。
 - **関係フィルター**: フィルターの「関係」で、取得済みの監視経路 / データベース / APM データストア / Telemetry を表示／非表示にできます。表示中の関係につながるノードは残ります。取得の有無は設定「バックエンド構成」が決め、ホストのフィルターとは独立です。
 - **Proxy との関連付け**: 関連付けの根拠は、Proxy の `additional_resource_attributes` に設定した属性だけです。signal type `traces` に、キー `holoztek.zabbix.proxyid`、値はその Proxy 自身の proxyid を設定してください。設定がない Proxy のテレメトリは表示しません。`host.name` や IP からの推測は行いません。
-- **観測範囲**: 直近 15 分の Span が対象で、最大 100 System まで表示します。表示は観測の事実であり、現在受信中であることを示すものではありません。送信元が同じキーを自分で設定した場合は区別できません。
+- **観測範囲**: 直近 15 分の Span が対象で、最大 100 System（`host.name` の数）まで表示します。表示は観測の事実であり、現在受信中であることを示すものではありません。送信元が同じキーを自分で設定した場合は区別できません。
 
 Backend components (Database / APM) are optional and off by default; while off, the widget behaves as before.
 
@@ -114,9 +114,9 @@ Backend components (Database / APM) are optional and off by default; while off, 
 - **APM** (Zabbix 8.0+ only, ignored on 7.0) adds the Global Data Source as a ClickHouse node and shows APM-enabled Proxies, including those with no monitored Hosts. An enabled collector is a configuration state, not proof that telemetry is arriving.
 - Only Super admins can read the Global Data Source. Other users see an abstract "APM Data Store" node when an APM-enabled Proxy exists. Credentials are never passed to the browser.
 - The Global Data Source does not guarantee where a given Proxy actually writes: per-Proxy overrides are not available from the API.
-- With APM on, OTel Systems observed through a Proxy are shown (Zabbix 8.0+; last 15 minutes, up to 100 systems). The link relies only on the Proxy's `additional_resource_attributes`: on signal type `traces`, set the key `holoztek.zabbix.proxyid` to that Proxy's own proxyid. Telemetry without it is not shown, and a Proxy is never inferred from `host.name` or an IP address.
+- With APM on, OTel Systems observed through a Proxy are shown (Zabbix 8.0+; last 15 minutes, up to 100 systems). OTel System is identified by the OpenTelemetry resource attribute `host.name`, which is also its label (case-sensitive); telemetry without `host.name` is not shown, and `service.name` is never used in its place. A `host.name` seen through several Proxies is one node. `service.name`, `service.namespace` and `deployment.environment` are supplementary: shown in the tooltip (up to 5 services plus a count of the rest) and matched by search, never used to identify a system. The link relies only on the Proxy's `additional_resource_attributes`: on signal type `traces`, set the key `holoztek.zabbix.proxyid` to that Proxy's own proxyid. Telemetry without it is not shown, and a Proxy is never inferred from `host.name` or an IP address.
 - Backend nodes are not affected by the Host filter, and Proxy highlighting follows monitoring edges only.
-- A Proxy with more than 10 OTel Systems shows them as one `OTel Systems (N)` node. Click it to expand or collapse. This is a display grouping, not a monitored object.
+- A Proxy with more than 10 OTel Systems (distinct `host.name` values, not services) shows them as one `OTel Systems (N)` node. Click it to expand or collapse. This is a display grouping, not a monitored object.
 - The filter panel's Relations category shows or hides the Monitoring, Database, APM storage and Telemetry relations already loaded. A node stays visible while any shown relation connects it. The widget's Backend components setting decides what is loaded, and the Host filter works independently.
 
 ## 旧ID（monitoringmap）からのアップグレード手順
