@@ -288,6 +288,15 @@ msgstr "Service member"
 msgid "Drag follow hops"
 msgstr "Drag follow hops"
 
+msgid "OTel observation window (minutes)"
+msgstr "OTel observation window (minutes)"
+
+msgid "Displays OpenTelemetry services and systems observed within this period."
+msgstr "Displays OpenTelemetry services and systems observed within this period."
+
+msgid "A longer period keeps low-frequency telemetry sources visible."
+msgstr "A longer period keeps low-frequency telemetry sources visible."
+
 msgid "Search nodes"
 msgstr "Search nodes"
 

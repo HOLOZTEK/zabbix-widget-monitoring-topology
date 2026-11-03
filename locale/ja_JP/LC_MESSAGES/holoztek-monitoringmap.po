@@ -288,6 +288,15 @@ msgstr "サービス所属"
 msgid "Drag follow hops"
 msgstr "ドラッグ時の追従ホップ数"
 
+msgid "OTel observation window (minutes)"
+msgstr "OTel観測期間（分）"
+
+msgid "Displays OpenTelemetry services and systems observed within this period."
+msgstr "指定期間内にTelemetryが確認されたOpenTelemetryサービス／システムを表示します。"
+
+msgid "A longer period keeps low-frequency telemetry sources visible."
+msgstr "期間を長くすると、送信頻度の低いシステムも表示されます。"
+
 msgid "Search nodes"
 msgstr "ノードを検索"
 

@@ -631,7 +631,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		}
 
 		if ($show_apm) {
-			$this->addApmComponents($apm_proxies);
+			$this->addApmComponents($apm_proxies, self::otelWindowSeconds($fv));
 		}
 
 		$this->applyClusterMemberIps();
@@ -834,7 +834,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 	// The number of queries does not depend on the number of Proxies. Spans
 	// without service.name are excluded by the query itself, so they never use up
 	// the limit.
-	private function fetchOtelTelemetry(array $proxyids): array {
+	private function fetchOtelTelemetry(array $proxyids, int $window): array {
 		$time_till = time();
 		$services = [];
 		$systems = [];
@@ -859,7 +859,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 		$options = [
 			'output'    => ['resource_attributes'],
-			'time_from' => $time_till - HOLOZTEK_MM_OTEL_TIME_RANGE,
+			'time_from' => $time_till - $window,
 			'time_till' => $time_till,
 			'sortfield' => ['timestamp'],
 			'sortorder' => ZBX_SORT_DOWN,
@@ -1063,7 +1063,14 @@ class WidgetView extends CControllerDashboardWidgetView {
 	// which the API doesn't expose, so an edge here means "APM-enabled Proxy and
 	// the Global Data Source", not a confirmed write path. With no readable
 	// Global Data Source, the node stays abstract instead of naming ClickHouse.
-	private function addApmComponents(array $apm_proxies): void {
+	// Dashboards saved before the setting existed have no value: 15 minutes.
+	private static function otelWindowSeconds(array $fv): int {
+		$minutes = (int) ($fv['otel_observation_window'] ?? HOLOZTEK_MM_OTEL_WINDOW_DEFAULT);
+
+		return 60 * max(HOLOZTEK_MM_OTEL_WINDOW_MIN, min(HOLOZTEK_MM_OTEL_WINDOW_MAX, $minutes));
+	}
+
+	private function addApmComponents(array $apm_proxies, int $otel_window): void {
 		$global = $this->fetchApmGlobalDataSource();
 		$is_configured = $global !== null && $global['status'] === 1;
 
@@ -1073,7 +1080,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 		$tagged_proxyids = array_map('strval', array_keys(array_filter(array_column($apm_proxies, 'otel_tagged', 'proxyid'))));
 		$otel = $tagged_proxyids
-			? $this->fetchOtelTelemetry($tagged_proxyids)
+			? $this->fetchOtelTelemetry($tagged_proxyids, $otel_window)
 			: ['services' => [], 'systems' => [], 'truncated' => false];
 
 		$datastore_node = holoztek_mm_node_id_apm_datastore();

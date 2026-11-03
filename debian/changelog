@@ -5,6 +5,7 @@ zabbix-widget-monitoring-topology (1.2.3) unstable; urgency=medium
   * 凡例を追加（関係の線種とノード種別）。フィルターの「関係」にも線種の見本を表示。
   * 縮小表示で主要ノード（Zabbix サーバー、Proxy、Proxy グループ、APM データストア、Zabbix DB、OTel Service）と関係の線種を判別しやすく描画。
   * OpenTelemetry の表示を Proxy → OTel Service（service.name）→ OTel System（host.name）の固定階層に変更（service.name のないテレメトリは表示せず、host.name がない場合は Service のみ表示。Zabbix の Host とは統合・接続しない。OTel System の自動集約を廃止）。
+  * OTel観測期間（分）設定を追加（既定 15、5〜1440。指定期間内に Span が確認された OTel Service・OTel System を表示）。
 
  -- HOLOZTEK <ttake-55@users.noreply.github.com>  Wed, 04 Nov 2026 00:21:42 +0900
 

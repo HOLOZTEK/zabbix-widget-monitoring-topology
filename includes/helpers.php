@@ -32,7 +32,11 @@ const HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE = 'holoztek.zabbix.proxyid';
 const HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE = 'service.name';
 const HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE = 'host.name';
 const HOLOZTEK_MM_OTEL_SIGNAL_TRACES = 0;
-const HOLOZTEK_MM_OTEL_TIME_RANGE = 900;
+// OTel observation window in minutes: a Service or System is shown while it
+// has a span this recent. Widget setting, independent of the refresh interval.
+const HOLOZTEK_MM_OTEL_WINDOW_DEFAULT = 15;
+const HOLOZTEK_MM_OTEL_WINDOW_MIN = 5;
+const HOLOZTEK_MM_OTEL_WINDOW_MAX = 1440;
 const HOLOZTEK_MM_OTEL_MAX_SYSTEMS = 100;
 const HOLOZTEK_MM_OTEL_MAX_QUERIES = 3;
 const HOLOZTEK_MM_OTEL_SPANS_PER_QUERY = 500;
