@@ -287,3 +287,24 @@ msgstr "クリックで集約"
 
 msgid "Drag follow hops"
 msgstr "ドラッグ時の追従ホップ数"
+
+msgid "Search nodes"
+msgstr "ノードを検索"
+
+msgid "No matching nodes"
+msgstr "一致するノードはありません"
+
+msgid "More results available..."
+msgstr "ほかにも候補があります（条件を絞り込んでください）"
+
+msgid "Fit topology to view"
+msgstr "全体を表示"
+
+msgid "Legend"
+msgstr "凡例"
+
+msgid "Node types"
+msgstr "ノード種別"
+
+msgid "Virtualization / Cluster"
+msgstr "仮想化 / クラスター"

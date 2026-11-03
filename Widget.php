@@ -84,6 +84,13 @@ class Widget extends CWidget {
                 'OTel Systems' => _holoztek_mm('OTel Systems'),
                 'Click to expand' => _holoztek_mm('Click to expand'),
                 'Click to collapse' => _holoztek_mm('Click to collapse'),
+                'Search nodes' => _holoztek_mm('Search nodes'),
+                'No matching nodes' => _holoztek_mm('No matching nodes'),
+                'More results available...' => _holoztek_mm('More results available...'),
+                'Fit topology to view' => _holoztek_mm('Fit topology to view'),
+                'Legend' => _holoztek_mm('Legend'),
+                'Node types' => _holoztek_mm('Node types'),
+                'Virtualization / Cluster' => _holoztek_mm('Virtualization / Cluster'),
             ]
         ];
     }

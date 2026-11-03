@@ -287,3 +287,24 @@ msgstr "Click to collapse"
 
 msgid "Drag follow hops"
 msgstr "Drag follow hops"
+
+msgid "Search nodes"
+msgstr "Search nodes"
+
+msgid "No matching nodes"
+msgstr "No matching nodes"
+
+msgid "More results available..."
+msgstr "More results available..."
+
+msgid "Fit topology to view"
+msgstr "Fit topology to view"
+
+msgid "Legend"
+msgstr "Legend"
+
+msgid "Node types"
+msgstr "Node types"
+
+msgid "Virtualization / Cluster"
+msgstr "Virtualization / Cluster"

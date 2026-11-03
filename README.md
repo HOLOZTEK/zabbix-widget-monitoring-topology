@@ -58,6 +58,24 @@ Zabbix 管理画面 → 管理 → モジュール からウィジェットを�
 
 Refreshes and broadcast changes keep the zoom, pan, node positions (including dragged nodes), Proxy highlight and the expanded state of OTel groups. Only added nodes are placed; removed nodes are dropped. Dragging a node also moves the nodes within the "Drag follow hops" setting (0-10, default 3); nodes further away and nodes placed by hand stay put. With 0, only the dragged node moves. The view fits again only on first display, on a substantially different topology, or when nothing remains in view.
 
+### 検索・全体表示・凡例 / Search, fit and legend
+
+設定「フィルタアイコンの位置」の隅（既定は右上）のツールバーに [検索] [全体を表示] [凡例] [フィルター] が並びます。
+
+- **検索**: 表示中のノードを名前で検索します（大文字・小文字を区別しない部分一致、最大 20 件）。OTel System はサービス名・名前空間・ホスト名、クラスターはメンバーのアドレスでも検索できます。候補を選ぶとそのノードへ移動して枠で強調します。「OTel Systems (N)」に集約されたノードは選択時に集約を展開します。フィルターで非表示のノードは候補になりません。Enter で選択、Esc で検索をクリアします。検索語と選択は更新後も維持されます。
+- **全体を表示**: フィルターで表示中のノードがすべて収まるように表示します。
+- **凡例**: 現在の図にある関係（線種）とノード種別を表示します。
+
+縮小表示では Zabbix サーバー、Proxy、Proxy グループ、APM データストア、Zabbix DB、OTel 集約を大きく描き、関係の線種も見分けられる太さに保ちます。
+
+The toolbar in the corner set by "Filter icon position" (top right by default) holds Search, Fit, Legend and Filter.
+
+- **Search** finds shown nodes by name (case-insensitive substring, up to 20 results); OTel systems also match their service, namespace and host names, clusters their member addresses. Picking a result moves the view to the node and marks it with a frame; a node folded into "OTel Systems (N)" expands its group. Nodes hidden by the filters are not offered. Enter picks, Esc clears. The query and the pick survive refreshes.
+- **Fit** shows every node the filters leave visible.
+- **Legend** lists the relations (line styles) and node types in the current graph.
+
+When zoomed out, the Zabbix server, Proxies, Proxy groups, APM datastores, Zabbix DB and OTel groups are drawn larger, and relation line styles stay distinguishable.
+
 ## バックエンド構成 / Backend components
 
 設定画面の「バックエンド構成」で、監視経路とは別に Zabbix のバックエンドを図へ追加できます。既定ではどちらも OFF で、OFF の間は従来と同じ表示です。

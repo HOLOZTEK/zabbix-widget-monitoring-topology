@@ -142,6 +142,49 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		telemetry:   [10, 4, 2, 4],
 	};
 
+	// Kept identifiable when zoomed out: their icon and label grow with the
+	// zoom step below, while Host and OTel System labels are left to fade.
+	static #MAJOR_NODE_TYPES = new Set(['server', 'proxy', 'proxy_group', 'apm_datastore', 'zabbix_db', 'otel_group']);
+
+	// [minimum scale, step]: the step multiplies major nodes' icon and label
+	// size and every edge's width and dash pattern. Coarse, so that zooming
+	// only rarely touches the DataSets.
+	static #ZOOM_STEPS = [[0.5, 1], [0.3, 2], [0.18, 3], [0.12, 4], [0, 6]];
+
+	static #NODE_SIZE = 25;
+
+	static #SEARCH_LIMIT = 20;
+	static #SEARCH_DEBOUNCE_MS = 150;
+
+	// A search result is never shown smaller than this.
+	static #FOCUS_MIN_SCALE = 0.8;
+
+	// Search result marker: a framed, glowing box rather than a color alone,
+	// and unrelated to the Proxy highlight, which only thickens edges.
+	static #SEARCH_MARK = { background: 'rgba(240,164,0,0.18)', border: '#f0a400' };
+
+	// Legend rows, in display order. VMware and Kubernetes share one row.
+	static #LEGEND_NODE_ROWS = [
+		['server',        'Zabbix Server'],
+		['proxy_group',   'Proxy Group'],
+		['proxy',         'Zabbix Proxy'],
+		['network',       'Network'],
+		['virtual',       'Virtualization / Cluster'],
+		['host',          'Host'],
+		['zabbix_db',     'Zabbix DB'],
+		['proxy_db',      'Proxy DB'],
+		['apm_datastore', 'APM Data Store'],
+		['otel_system',   'OpenTelemetry system'],
+		['otel_group',    'OTel Systems'],
+	];
+
+	static #RELATION_LABEL = {
+		monitoring:  'Monitoring',
+		database:    'Database',
+		apm_storage: 'APM storage',
+		telemetry:   'Telemetry',
+	};
+
 	static #COMM_METHOD_LABEL = {
 		ping:   'Ping',
 		snmp:   'SNMP',
@@ -281,6 +324,22 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	#userPlaced   = new Set();
 	// Proxies whose OTel group the user expanded.
 	#otelExpanded = new Set();
+	#zoomStep     = 1;
+	// Search, legend: the state outlives a rebuild, the elements do not.
+	#searchQuery    = '';
+	#searchSelected = null;
+	#searchPainted  = null;
+	#searchIndex    = null;
+	#searchResults  = [];
+	#searchActive   = -1;
+	#searchTimer    = null;
+	#pendingFocus   = null;
+	#legendOpen     = false;
+	#searchWrapEl   = null;
+	#searchInputEl  = null;
+	#searchListEl   = null;
+	#legendBtnEl    = null;
+	#legendEl       = null;
 
 	onInitialize() {
 		this._dom_id_suffix = '';
@@ -290,12 +349,16 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 					&& !this.#panelEl.contains(e.target) && e.target !== this.#btnEl) {
 				this.#panelEl.style.display = 'none';
 			}
+			if (this.#searchWrapEl && !this.#searchWrapEl.contains(e.target)) {
+				this.#closeSearchList();
+			}
 		};
 		document.addEventListener('click', this._onDocumentClick);
 	}
 
 	onDestroy() {
 		document.removeEventListener('click', this._onDocumentClick);
+		clearTimeout(this.#searchTimer);
 		this.#destroyNetwork();
 		this.#hideTooltip();
 	}
@@ -357,6 +420,18 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		}
 		this.#panelEl = null;
 		this.#btnEl = null;
+
+		clearTimeout(this.#searchTimer);
+		this.#searchTimer = null;
+		this.#searchPainted = null;
+		this.#searchIndex = null;
+		this.#searchResults = [];
+		this.#pendingFocus = null;
+		this.#searchWrapEl = null;
+		this.#searchInputEl = null;
+		this.#searchListEl = null;
+		this.#legendBtnEl = null;
+		this.#legendEl = null;
 	}
 
 	#saveLayout() {
@@ -449,6 +524,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		this.#buildFilterUI(container);
 		this.#applyVisibility();
 		this.#paintHighlight();
+		this.#paintSearchHighlight();
 
 		if (resume) {
 			this.#network.moveTo({ ...this.#savedView, animation: false });
@@ -501,7 +577,10 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		this.#network.on('blurNode', () => this.#hideTooltip());
 
-		const onUserInteraction = () => { this.#userInteracted = true; };
+		const onUserInteraction = () => {
+			this.#userInteracted = true;
+			this.#pendingFocus = null;
+		};
 		this.#network.on('zoom', onUserInteraction);
 		this.#network.on('dragStart', (params) => {
 			onUserInteraction();
@@ -519,6 +598,32 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		this.#network.on('stabilizationIterationsDone', () => this.#finishLayout());
 		this.#network.on('stabilized', () => this.#finishLayout());
+
+		// Wheel, fit and animated moves alike end up drawn.
+		this.#network.on('afterDrawing', () => this.#applyZoomStep());
+	}
+
+	#applyZoomStep() {
+		const scale = this.#network.getScale();
+		const [, step] = CWidgetHoloztekMonitoringMap.#ZOOM_STEPS.find(([min]) => scale >= min);
+		if (step === this.#zoomStep) return;
+
+		this.#zoomStep = step;
+
+		const nodeUpdates = [];
+		for (const id of this.#nodesDS.getIds()) {
+			const meta = this.#nodesMeta[id];
+			if (meta && CWidgetHoloztekMonitoringMap.#MAJOR_NODE_TYPES.has(meta.node_type)) {
+				nodeUpdates.push({ id, ...this.#nodeStyle(id, meta) });
+			}
+		}
+		if (nodeUpdates.length > 0) this.#nodesDS.update(nodeUpdates);
+
+		const edgeUpdates = this.#edgesDS.get({ filter: edge => edge.relation !== 'monitoring' })
+			.map(edge => ({ id: edge.id, dashes: this.#edgeDashes(edge.relation) }));
+		if (edgeUpdates.length > 0) this.#edgesDS.update(edgeUpdates);
+
+		this.#paintHighlight();
 	}
 
 	#stabilizationBudget(nodeCount) {
@@ -605,6 +710,13 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		if (initial && !this.#userInteracted) {
 			this.#network.fit({ animation: false });
+		}
+
+		// A search result picked while a layout was still running.
+		if (this.#pendingFocus !== null) {
+			const id = this.#pendingFocus;
+			this.#pendingFocus = null;
+			this.#focusNode(id);
 		}
 	}
 
@@ -754,14 +866,42 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			label,
 			shape: 'image',
 			image: this.#buildIcon(meta),
-			color: { background: 'rgba(0,0,0,0)', border: 'rgba(0,0,0,0)' },
+			...this.#nodeStyle(id, meta),
+		};
+	}
+
+	// Everything about a node that depends on the zoom step or on the search
+	// selection. Sub-objects are always complete: a DataSet update replaces them.
+	#nodeStyle(id, meta) {
+		const step = CWidgetHoloztekMonitoringMap.#MAJOR_NODE_TYPES.has(meta.node_type) ? this.#zoomStep : 1;
+		const fontSize = this.#s.fontSize * step;
+		const marked = id === this.#searchSelected;
+		const mark = CWidgetHoloztekMonitoringMap.#SEARCH_MARK;
+		const color = marked
+			? { ...mark, highlight: { ...mark }, hover: { ...mark } }
+			: { background: 'rgba(0,0,0,0)', border: 'rgba(0,0,0,0)' };
+
+		return {
+			size: CWidgetHoloztekMonitoringMap.#NODE_SIZE * step,
+			color,
+			borderWidth:         marked ? 3 : 1,
+			borderWidthSelected: marked ? 3 : 2,
+			shapeProperties: { useBorderWithImage: marked },
+			shadow: marked
+				? { enabled: true, color: mark.border, size: 18, x: 0, y: 0 }
+				: { enabled: false },
 			font: {
 				color: this.#s.fontColor,
-				size:  this.#s.fontSize,
-				bold:  this.#s.fontWeight === 'bold' ? { size: this.#s.fontSize, vadjust: 0 } : false,
+				size:  fontSize,
+				bold:  this.#s.fontWeight === 'bold' ? { size: fontSize, vadjust: 0 } : false,
 				ital:  this.#s.fontStyle === 'italic',
 			},
 		};
+	}
+
+	#edgeDashes(relation) {
+		const pattern = CWidgetHoloztekMonitoringMap.#RELATION_DASHES[relation];
+		return pattern ? pattern.map(length => length * this.#zoomStep) : true;
 	}
 
 	#visEdge({ id, from, to, relation }) {
@@ -774,11 +914,9 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			// an edge take its connected node's color instead of this
 			// explicit one unless disabled here.
 			color: { color: this.#s.edgeColor, highlight: this.#s.edgeColor, inherit: false },
-			width: this.#s.edgeWidth,
+			width: this.#s.edgeWidth * this.#zoomStep,
 			smooth: { type: 'continuous' },
-			...(relation !== 'monitoring'
-				? { dashes: CWidgetHoloztekMonitoringMap.#RELATION_DASHES[relation] || true }
-				: {}),
+			...(relation !== 'monitoring' ? { dashes: this.#edgeDashes(relation) } : {}),
 		};
 	}
 
@@ -835,6 +973,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		this.#applyVisibility();
 		this.#paintHighlight();
+		this.#refreshSearch();
 
 		if (removedNodes.length > 0 || addedNodes.length > 0) this.#fitIfNothingInView();
 	}
@@ -854,6 +993,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		this.#applyVisibility();
 		this.#paintHighlight();
+		this.#refreshSearch();
 
 		this.#layoutPhase = 'initial';
 		this.#network.setOptions({ physics: { enabled: true } });
@@ -1029,8 +1169,8 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			}
 		}
 
-		const baseWidth = this.#s.edgeWidth;
-		const highlightWidth = baseWidth * 3 + 2;
+		const baseWidth = this.#s.edgeWidth * this.#zoomStep;
+		const highlightWidth = (this.#s.edgeWidth * 3 + 2) * this.#zoomStep;
 
 		const updates = [];
 		for (const edge of this.#edgesDS.get()) {
@@ -1457,6 +1597,11 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		const row = (key, label) =>
 			`<label class="mm-filter-item">`
 			+ `<input type="checkbox" data-filter="${key}"> ${this.#escape(label)}</label>`;
+		// Relations carry their line style, so the filter doubles as a legend.
+		const relationRow = (key, relation) =>
+			`<label class="mm-filter-item">`
+			+ `<input type="checkbox" data-filter="${key}"> ${this.#relationSample(relation)}`
+			+ ` ${this.#escape(t(CWidgetHoloztekMonitoringMap.#RELATION_LABEL[relation]))}</label>`;
 
 		return `
 			<div class="mm-filter-header">
@@ -1503,10 +1648,10 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			</details>
 			<details class="mm-filter-category">
 				<summary>${this.#escape(t('Relations'))}</summary>
-				${row('relMonitoring', t('Monitoring'))}
-				${row('relDatabase', t('Database'))}
-				${row('relApmStorage', t('APM storage'))}
-				${row('relTelemetry', t('Telemetry'))}
+				${relationRow('relMonitoring', 'monitoring')}
+				${relationRow('relDatabase', 'database')}
+				${relationRow('relApmStorage', 'apm_storage')}
+				${relationRow('relTelemetry', 'telemetry')}
 			</details>
 		`;
 	}
@@ -1533,31 +1678,482 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		});
 	}
 
+	// The toolbar - [search][fit][legend][filter], the filter in the corner -
+	// and the panels it opens. Built once per Network: updates keep it as is.
 	#buildFilterUI(container) {
 		const posClass = CWidgetHoloztekMonitoringMap.#FILTER_POSITION_CLASS[this.#s.filterPosition]
 			|| CWidgetHoloztekMonitoringMap.#FILTER_POSITION_CLASS[1];
+		const icon = paths => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="16" height="16"'
+			+ ' aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.6"'
+			+ ` stroke-linejoin="round" stroke-linecap="round">${paths}</g></svg>`;
 
-		this.#btnEl = document.createElement('button');
-		this.#btnEl.type = 'button';
-		this.#btnEl.className = `mm-filter-btn ${posClass}`;
-		this.#btnEl.title = t('Filter');
-		this.#btnEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="16" height="16">'
-			+ '<path d="M2 3.5h16l-6 7.2v5l-4 2v-7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
-		container.appendChild(this.#btnEl);
+		const toolbar = document.createElement('div');
+		toolbar.className = `mm-toolbar ${posClass}`;
+		toolbar.setAttribute('role', 'toolbar');
+		container.appendChild(toolbar);
+
+		this.#buildSearchUI(toolbar, icon('<circle cx="8.5" cy="8.5" r="5.5"/><path d="M12.6 12.6l5 5"/>'));
+
+		toolbar.appendChild(this.#toolButton('mm-fit-btn', t('Fit topology to view'),
+			icon('<path d="M3 7.5V3h4.5M12.5 3H17v4.5M17 12.5V17h-4.5M7.5 17H3v-4.5"/>'),
+			() => this.#fitVisible()
+		));
+
+		this.#legendBtnEl = this.#toolButton('mm-legend-btn', t('Legend'),
+			icon('<path d="M8 5h9M8 10h9M8 15h9"/><path d="M3 5h1.5M3 10h1.5M3 15h1.5"/>'),
+			() => this.#setLegendOpen(!this.#legendOpen)
+		);
+		toolbar.appendChild(this.#legendBtnEl);
+
+		this.#btnEl = this.#toolButton('mm-filter-btn', t('Filter'), icon('<path d="M2 3.5h16l-6 7.2v5l-4 2v-7z"/>'), () => {
+			const open = this.#panelEl.style.display === 'none';
+			this.#panelEl.style.display = open ? 'block' : 'none';
+			if (open) this.#setLegendOpen(false);
+		});
+		toolbar.appendChild(this.#btnEl);
 
 		this.#panelEl = document.createElement('div');
 		this.#panelEl.className = `mm-filter-panel ${posClass}`;
 		this.#panelEl.style.display = 'none';
 		this.#panelEl.innerHTML = this.#filterPanelHtml();
 		container.appendChild(this.#panelEl);
-
-		this.#btnEl.addEventListener('click', (e) => {
-			e.stopPropagation();
-			this.#panelEl.style.display = this.#panelEl.style.display === 'none' ? 'block' : 'none';
-		});
 		this.#panelEl.addEventListener('click', (e) => e.stopPropagation());
 
 		this.#wireFilterPanel(this.#panelEl);
+
+		this.#legendEl = document.createElement('div');
+		this.#legendEl.className = `mm-filter-panel mm-legend-panel ${posClass}`;
+		this.#legendEl.setAttribute('role', 'region');
+		this.#legendEl.setAttribute('aria-label', t('Legend'));
+		container.appendChild(this.#legendEl);
+		this.#legendEl.addEventListener('click', (e) => e.stopPropagation());
+
+		this.#setLegendOpen(this.#legendOpen);
+	}
+
+	#toolButton(className, label, svg, onClick) {
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.className = `mm-tool-btn ${className}`;
+		button.title = label;
+		button.setAttribute('aria-label', label);
+		button.innerHTML = svg;
+		button.addEventListener('click', (e) => {
+			e.stopPropagation();
+			this.#closeSearchList();
+			onClick();
+		});
+		return button;
+	}
+
+	// ── search / fit / legend ─────────────────────────────────────────────────
+
+	#buildSearchUI(toolbar, svg) {
+		const listId = `mm-search-list-${this.getUniqueId()}`;
+
+		this.#searchWrapEl = document.createElement('div');
+		this.#searchWrapEl.className = 'mm-search';
+
+		const input = document.createElement('input');
+		input.type = 'search';
+		input.className = 'mm-search-input';
+		input.placeholder = t('Search nodes');
+		input.autocomplete = 'off';
+		input.spellcheck = false;
+		input.value = this.#searchQuery;
+		input.setAttribute('aria-label', t('Search nodes'));
+		input.setAttribute('role', 'combobox');
+		input.setAttribute('aria-autocomplete', 'list');
+		input.setAttribute('aria-expanded', 'false');
+		input.setAttribute('aria-controls', listId);
+
+		const list = document.createElement('ul');
+		list.className = 'mm-search-list';
+		list.id = listId;
+		list.setAttribute('role', 'listbox');
+		list.setAttribute('aria-label', t('Search nodes'));
+		list.style.display = 'none';
+
+		this.#searchWrapEl.append(input, list);
+		this.#searchInputEl = input;
+		this.#searchListEl = list;
+
+		toolbar.append(this.#searchWrapEl, this.#toolButton('mm-search-btn', t('Search nodes'), svg, () => {
+			if (this.#searchWrapEl.classList.contains('mm-search--open')) {
+				this.#clearSearch();
+				this.#showSearchInput(false);
+			}
+			else {
+				this.#showSearchInput(true);
+			}
+		}));
+
+		// Rebuilt with a query: shown again, but without taking the focus.
+		this.#showSearchInput(this.#searchQuery !== '', false);
+
+		input.addEventListener('input', () => {
+			this.#searchQuery = input.value;
+			clearTimeout(this.#searchTimer);
+			this.#searchTimer = null;
+
+			if (input.value.trim() === '') {
+				this.#clearSearch();
+				return;
+			}
+
+			this.#searchTimer = setTimeout(() => this.#runSearch(), CWidgetHoloztekMonitoringMap.#SEARCH_DEBOUNCE_MS);
+		});
+
+		input.addEventListener('focus', () => {
+			if (this.#searchQuery.trim() !== '') this.#runSearch();
+		});
+
+		input.addEventListener('keydown', (e) => {
+			const listOpen = list.style.display !== 'none';
+
+			switch (e.key) {
+				case 'ArrowDown':
+				case 'ArrowUp':
+					e.preventDefault();
+					if (!listOpen || this.#searchTimer !== null) {
+						this.#runSearch();
+						return;
+					}
+					if (this.#searchResults.length > 0) {
+						const count = this.#searchResults.length;
+						this.#searchActive = (this.#searchActive + (e.key === 'ArrowDown' ? 1 : count - 1)) % count;
+						this.#markActiveResult();
+					}
+					return;
+
+				case 'Enter':
+					e.preventDefault();
+					if (!listOpen || this.#searchTimer !== null) this.#runSearch();
+					this.#selectSearchResult(this.#searchResults[Math.max(this.#searchActive, 0)]);
+					return;
+
+				case 'Escape':
+					// Esc would otherwise also leave the dashboard's kiosk mode.
+					e.preventDefault();
+					e.stopPropagation();
+					if (this.#searchQuery !== '' || this.#searchSelected !== null) {
+						this.#clearSearch();
+					}
+					else {
+						this.#showSearchInput(false);
+					}
+					return;
+			}
+		});
+
+		// Keeps the focus in the input while a result is clicked.
+		list.addEventListener('mousedown', (e) => e.preventDefault());
+		list.addEventListener('click', (e) => {
+			const item = e.target.closest('[data-index]');
+			if (item) this.#selectSearchResult(this.#searchResults[Number(item.dataset.index)]);
+		});
+	}
+
+	#showSearchInput(show, focus = show) {
+		this.#searchWrapEl.classList.toggle('mm-search--open', show);
+		if (focus) this.#searchInputEl.focus();
+	}
+
+	// The searchable nodes with their search text, built from the model on
+	// demand and dropped on every update. Only what the graph already shows
+	// is searched: labels, OTel service/namespace/host names, cluster addresses.
+	#searchEntries() {
+		if (this.#searchIndex !== null) return this.#searchIndex;
+
+		const proxiesOf = new Map();
+		for (const edge of this.#model.edges.values()) {
+			if (edge.relation === 'telemetry') {
+				if (!proxiesOf.has(edge.to)) proxiesOf.set(edge.to, []);
+				proxiesOf.get(edge.to).push(edge.from);
+			}
+		}
+
+		const entries = [];
+		const add = (id, label, meta) => {
+			const text = String(label ?? '');
+			const name = text.split('\n')[0];
+
+			entries.push({
+				id,
+				name,
+				meta,
+				nameKey:  name.toLocaleLowerCase(),
+				textKey:  [text, meta.otel_service, meta.otel_namespace, ...(meta.otel_hosts ?? []), ...(meta.member_ips ?? [])]
+					.filter(Boolean).join('\n').toLocaleLowerCase(),
+				proxies:  proxiesOf.get(id) ?? [],
+			});
+		};
+
+		for (const { id, label, meta } of this.#model.nodes.values()) add(id, label, meta);
+
+		// Groups are the rendered graph's, not the server's.
+		for (const [id, meta] of Object.entries(this.#nodesMeta)) {
+			if (meta.node_type === 'otel_group') add(id, this.#nodesDS.get(id)?.label, meta);
+		}
+
+		this.#searchIndex = entries;
+		return entries;
+	}
+
+	// How a result is reached: { expand: null } when it is drawn and shown,
+	// { expand: proxyId } when it is folded into a group that is shown, or null.
+	#searchTarget(entry) {
+		const node = this.#nodesDS.get(entry.id);
+		if (node !== null) return node.hidden ? null : { expand: null };
+
+		for (const proxyId of entry.proxies) {
+			const group = this.#nodesDS.get(`otelg_${proxyId}`);
+			if (group !== null && !group.hidden) return { expand: proxyId };
+		}
+
+		return null;
+	}
+
+	#runSearch() {
+		clearTimeout(this.#searchTimer);
+		this.#searchTimer = null;
+
+		const query = this.#searchQuery.trim().toLocaleLowerCase();
+		if (query === '' || !this.#nodesDS || !this.#searchListEl) {
+			this.#closeSearchList();
+			return;
+		}
+
+		const matches = [];
+		for (const entry of this.#searchEntries()) {
+			const rank = entry.nameKey === query ? 0
+				: entry.nameKey.startsWith(query) ? 1
+				: entry.nameKey.includes(query) ? 2
+				: entry.textKey.includes(query) ? 3
+				: -1;
+
+			if (rank !== -1 && this.#searchTarget(entry) !== null) matches.push({ entry, rank });
+		}
+
+		matches.sort((a, b) => a.rank - b.rank || a.entry.name.localeCompare(b.entry.name));
+
+		const limit = CWidgetHoloztekMonitoringMap.#SEARCH_LIMIT;
+		this.#searchResults = matches.slice(0, limit).map(({ entry }) => entry);
+		this.#searchActive = this.#searchResults.length > 0 ? 0 : -1;
+
+		const list = this.#searchListEl;
+		list.innerHTML = this.#searchResults.length === 0
+			? `<li class="mm-search-empty" role="presentation">${this.#escape(t('No matching nodes'))}</li>`
+			: this.#searchResults.map((entry, i) =>
+				`<li id="${list.id}-${i}" class="mm-search-item" role="option" data-index="${i}">`
+				+ `<span class="mm-search-name">${this.#escape(entry.name)}</span>`
+				+ `<span class="mm-search-type">${this.#escape(this.#typeLabel(entry.meta))}</span></li>`
+			).join('')
+			+ (matches.length > limit
+				? `<li class="mm-search-more" role="presentation">${this.#escape(t('More results available...'))}</li>`
+				: '');
+
+		list.style.display = 'block';
+		this.#searchInputEl.setAttribute('aria-expanded', 'true');
+		this.#markActiveResult();
+	}
+
+	#markActiveResult() {
+		const items = this.#searchListEl.querySelectorAll('.mm-search-item');
+		items.forEach((item, i) => {
+			const active = i === this.#searchActive;
+			item.classList.toggle('mm-search-item--active', active);
+			item.setAttribute('aria-selected', String(active));
+			if (active) item.scrollIntoView({ block: 'nearest' });
+		});
+
+		if (this.#searchActive >= 0) {
+			this.#searchInputEl.setAttribute('aria-activedescendant', `${this.#searchListEl.id}-${this.#searchActive}`);
+		}
+		else {
+			this.#searchInputEl.removeAttribute('aria-activedescendant');
+		}
+	}
+
+	#closeSearchList() {
+		if (!this.#searchListEl || this.#searchListEl.style.display === 'none') return;
+
+		this.#searchListEl.style.display = 'none';
+		this.#searchInputEl.setAttribute('aria-expanded', 'false');
+		this.#searchInputEl.removeAttribute('aria-activedescendant');
+	}
+
+	#selectSearchResult(entry) {
+		if (!entry || !this.#network) return;
+
+		this.#closeSearchList();
+
+		const target = this.#searchTarget(entry);
+		if (target === null) return;
+
+		this.#searchSelected = entry.id;
+
+		// An expansion like a click on the group: it stays until collapsed.
+		if (target.expand !== null) {
+			this.#otelExpanded.add(target.expand);
+			this.#syncGraph();
+		}
+		else {
+			this.#paintSearchHighlight();
+		}
+
+		this.#focusNode(entry.id);
+	}
+
+	#clearSearch() {
+		clearTimeout(this.#searchTimer);
+		this.#searchTimer = null;
+
+		this.#searchQuery = '';
+		if (this.#searchInputEl) this.#searchInputEl.value = '';
+		this.#searchSelected = null;
+
+		this.#closeSearchList();
+		this.#paintSearchHighlight();
+	}
+
+	// Marks #searchSelected, and unmarks what was marked before. Only a node
+	// gone from the data ends the selection: one folded into its group keeps
+	// it, and is marked again once drawn.
+	#paintSearchHighlight() {
+		if (!this.#nodesDS) return;
+
+		const selected = this.#searchSelected;
+		if (selected !== null && !this.#model.nodes.has(selected) && !(selected in this.#nodesMeta)) {
+			this.#searchSelected = null;
+		}
+
+		const updates = [];
+		const restyle = (id) => {
+			const meta = this.#nodesMeta[id];
+			if (meta && this.#nodesDS.get(id) !== null) updates.push({ id, ...this.#nodeStyle(id, meta) });
+		};
+
+		if (this.#searchPainted !== null && this.#searchPainted !== this.#searchSelected) {
+			restyle(this.#searchPainted);
+		}
+
+		const node = this.#searchSelected !== null ? this.#nodesDS.get(this.#searchSelected) : null;
+		if (node !== null && !node.shapeProperties?.useBorderWithImage) restyle(this.#searchSelected);
+
+		this.#searchPainted = node !== null ? this.#searchSelected : null;
+
+		if (updates.length > 0) this.#nodesDS.update(updates);
+	}
+
+	// After every update: what can be found, and what is marked, may differ.
+	#refreshSearch() {
+		this.#searchIndex = null;
+		this.#paintSearchHighlight();
+
+		if (this.#searchListEl && this.#searchListEl.style.display !== 'none') this.#runSearch();
+		if (this.#legendOpen) this.#renderLegend();
+	}
+
+	// Centers the node, zooming in only as far as needed to make it readable.
+	// While a layout runs the node still moves: centered again once it is done,
+	// unless the user has moved the view in between.
+	#focusNode(id) {
+		if (this.#layoutPhase !== 'idle') this.#pendingFocus = id;
+		if (this.#layoutPhase === 'initial') return;
+
+		const position = this.#network.getPositions([id])[id];
+		if (!position) return;
+
+		this.#userInteracted = true;
+		this.#network.moveTo({
+			position,
+			scale: Math.max(this.#network.getScale(), CWidgetHoloztekMonitoringMap.#FOCUS_MIN_SCALE),
+			animation: { duration: 300, easingFunction: 'easeInOutQuad' },
+		});
+	}
+
+	// Explicit, unlike #fitIfNothingInView(): the nodes the filters left shown.
+	// The first layout fits by itself once it is done.
+	#fitVisible() {
+		if (!this.#network || this.#layoutPhase === 'initial') return;
+
+		const ids = this.#nodesDS.get({ filter: node => !node.hidden, fields: ['id'] }).map(({ id }) => id);
+		if (ids.length === 0) return;
+
+		this.#userInteracted = true;
+		this.#network.fit({ nodes: ids, animation: { duration: 300, easingFunction: 'easeInOutQuad' } });
+	}
+
+	#setLegendOpen(open) {
+		this.#legendOpen = open;
+		if (!this.#legendEl) return;
+
+		if (open) {
+			this.#renderLegend();
+			this.#panelEl.style.display = 'none';
+		}
+
+		this.#legendEl.style.display = open ? 'block' : 'none';
+		this.#legendBtnEl.setAttribute('aria-expanded', String(open));
+	}
+
+	// What the current graph has, not every type there is.
+	#renderLegend() {
+		const nodeTypes = new Set();
+		for (const meta of Object.values(this.#nodesMeta)) {
+			nodeTypes.add(meta.node_type);
+
+			if (meta.node_type === 'cluster' || meta.node_type === 'datacenter'
+					|| (meta.node_type === 'host' && /^(virtual|vcenter|esxi|vm|k8s_)/.test(meta.device_type))) {
+				nodeTypes.add('virtual');
+			}
+		}
+
+		const relations = new Set(this.#edgesDS.get().map(edge => edge.relation));
+
+		const typeIcon = CWidgetHoloztekMonitoringMap.#TYPE_ICON;
+		const deviceIcon = CWidgetHoloztekMonitoringMap.#DEVICE_ICON;
+		const icons = {
+			server:  typeIcon.zbxserver,
+			network: deviceIcon.subnet,
+			virtual: typeIcon.cluster,
+			host:    deviceIcon.server,
+		};
+
+		const relationRows = Object.keys(CWidgetHoloztekMonitoringMap.#RELATION_KEYS)
+			.filter(relation => relations.has(relation))
+			.map(relation => `<div class="mm-legend-row">${this.#relationSample(relation)}`
+				+ `<span>${this.#escape(t(CWidgetHoloztekMonitoringMap.#RELATION_LABEL[relation]))}</span></div>`)
+			.join('');
+
+		const nodeRows = CWidgetHoloztekMonitoringMap.#LEGEND_NODE_ROWS
+			.filter(([type]) => nodeTypes.has(type))
+			.map(([type, label]) => `<div class="mm-legend-row">`
+				+ `<img class="mm-legend-icon" src="${icons[type] ?? typeIcon[type]}" alt="">`
+				+ `<span>${this.#escape(t(label))}</span></div>`)
+			.join('');
+
+		this.#legendEl.innerHTML = `
+			<div class="mm-filter-header"><span>${this.#escape(t('Legend'))}</span></div>
+			${relationRows !== '' ? `<div class="mm-legend-section">
+				<div class="mm-legend-title">${this.#escape(t('Relations'))}</div>${relationRows}</div>` : ''}
+			${nodeRows !== '' ? `<div class="mm-legend-section">
+				<div class="mm-legend-title">${this.#escape(t('Node types'))}</div>${nodeRows}</div>` : ''}
+		`;
+	}
+
+	// Drawn in the text color: the pattern, not the edge color, tells relations apart.
+	#relationSample(relation) {
+		const pattern = CWidgetHoloztekMonitoringMap.#RELATION_DASHES[relation];
+
+		return '<svg class="mm-line-sample" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 8" width="32" height="8"'
+			+ ' aria-hidden="true" focusable="false"><line x1="0" y1="4" x2="32" y2="4" stroke="currentColor" stroke-width="2"'
+			+ (pattern ? ` stroke-dasharray="${pattern.join(' ')}"` : '') + '/></svg>';
+	}
+
+	#typeLabel(meta) {
+		return t(CWidgetHoloztekMonitoringMap.#NODE_TYPE_LABEL[meta.node_type] || meta.node_type);
 	}
 
 	// ── tooltip ───────────────────────────────────────────────────────────────
