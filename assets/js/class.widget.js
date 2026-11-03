@@ -52,8 +52,9 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		apm_datastore: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3QgeD0nNCcgeT0nNCcgd2lkdGg9JzI0JyBoZWlnaHQ9JzcnIHJ4PScyJyBmaWxsPScjN2E1ZmIwJy8+PHJlY3QgeD0nNCcgeT0nMTIuNScgd2lkdGg9JzI0JyBoZWlnaHQ9JzcnIHJ4PScyJyBmaWxsPScjN2E1ZmIwJy8+PHJlY3QgeD0nNCcgeT0nMjEnIHdpZHRoPScyNCcgaGVpZ2h0PSc3JyByeD0nMicgZmlsbD0nIzdhNWZiMCcvPjxjaXJjbGUgY3g9JzknIGN5PSc3LjUnIHI9JzEuNScgZmlsbD0nI2ZmZicvPjxjaXJjbGUgY3g9JzknIGN5PScxNicgcj0nMS41JyBmaWxsPScjZmZmJy8+PGNpcmNsZSBjeD0nOScgY3k9JzI0LjUnIHI9JzEuNScgZmlsbD0nI2ZmZicvPjwvc3ZnPg==",
 		// OTel System: hexagon with a small fan-out, no product logo.
 		otel_system: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHBhdGggZD0nTTE2IDIuNWwxMS43IDYuNzV2MTMuNUwxNiAyOS41IDQuMyAyMi43NVY5LjI1eicgZmlsbD0nIzJmOWU4ZicvPjxjaXJjbGUgY3g9JzE2JyBjeT0nMTYnIHI9JzMuNCcgZmlsbD0nI2ZmZicvPjxjaXJjbGUgY3g9JzE2JyBjeT0nOC42JyByPScyJyBmaWxsPScjZmZmJy8+PGNpcmNsZSBjeD0nOS42JyBjeT0nMTkuNycgcj0nMicgZmlsbD0nI2ZmZicvPjxjaXJjbGUgY3g9JzIyLjQnIGN5PScxOS43JyByPScyJyBmaWxsPScjZmZmJy8+PHBhdGggZD0nTTE2IDE2VjguNk0xNiAxNmwtNi40IDMuN00xNiAxNmw2LjQgMy43JyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMS40Jy8+PC9zdmc+",
-		// OTel Systems group: stacked hexagons of the OTel System glyph.
-		otel_group: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHBhdGggZD0nTTIwIDNsOCA0LjZ2OS4yTDIwIDIxLjRsLTgtNC42VjcuNnonIGZpbGw9JyM4ZmNmYzQnLz48cGF0aCBkPSdNMTUgN2w4IDQuNnY5LjJMMTUgMjUuNGwtOC00LjZ2LTkuMnonIGZpbGw9JyM1Y2I1YTcnLz48cGF0aCBkPSdNMTEgMTFsOC43IDV2MTBMMTEgMzFsLTguNy01VjE2eicgZmlsbD0nIzJmOWU4ZicvPjxjaXJjbGUgY3g9JzExJyBjeT0nMjEnIHI9JzMnIGZpbGw9JyNmZmYnLz48L3N2Zz4=",
+		// OTel Service: application window with tiles, a group of what it runs -
+		// a different shape from the System hexagon, not only a different color.
+		otel_service: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3QgeD0nMycgeT0nNCcgd2lkdGg9JzI2JyBoZWlnaHQ9JzI0JyByeD0nNCcgZmlsbD0nIzFmN2Y5MScvPjxwYXRoIGQ9J00zIDhhNCA0IDAgMCAxIDQtNGgxOGE0IDQgMCAwIDEgNCA0djIuNUgzeicgZmlsbD0nIzE0NTg2NicvPjxyZWN0IHg9JzcnIHk9JzEzLjUnIHdpZHRoPSc3LjUnIGhlaWdodD0nNScgcng9JzEnIGZpbGw9JyNmZmYnLz48cmVjdCB4PScxNy41JyB5PScxMy41JyB3aWR0aD0nNy41JyBoZWlnaHQ9JzUnIHJ4PScxJyBmaWxsPScjZmZmJy8+PHJlY3QgeD0nNycgeT0nMjAuNScgd2lkdGg9JzcuNScgaGVpZ2h0PSc0LjUnIHJ4PScxJyBmaWxsPScjZmZmJy8+PHJlY3QgeD0nMTcuNScgeT0nMjAuNScgd2lkdGg9JzcuNScgaGVpZ2h0PSc0LjUnIHJ4PScxJyBmaWxsPScjZmZmJy8+PC9zdmc+",
 		// Root Zabbix Server node: badge with "Z", filled with the Zabbix
 		// brand red so this node reads as "Zabbix itself" at a glance.
 		zbxserver: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzE2JyBoZWlnaHQ9JzE2JyByeD0nMycgZmlsbD0nI2Q0MDAwMCcgc3Ryb2tlPScjYTMwMDAwJyBzdHJva2Utd2lkdGg9JzEuNCcvPjx0ZXh0IHg9JzEwJyB5PScxNC44JyBmb250LXNpemU9JzEyJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC13ZWlnaHQ9J2JvbGQnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9JyNmZmYnPlo8L3RleHQ+PC9zdmc+",
@@ -104,12 +105,12 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		zabbix_db:     'Zabbix DB',
 		proxy_db:      'Proxy DB',
 		apm_datastore: 'APM Data Store',
+		otel_service:  'OpenTelemetry service',
 		otel_system:   'OpenTelemetry system',
-		otel_group:    'OTel Systems',
 	};
 
 	// Not part of the monitoring tree - see #applyVisibility().
-	static #BACKEND_NODE_TYPES = new Set(['zabbix_db', 'proxy_db', 'apm_datastore', 'otel_system', 'otel_group']);
+	static #BACKEND_NODE_TYPES = new Set(['zabbix_db', 'proxy_db', 'apm_datastore', 'otel_service', 'otel_system']);
 
 	// relation_type -> Relations filter key; an edge without one is monitoring.
 	static #RELATION_KEYS = {
@@ -117,10 +118,8 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		database:    'relDatabase',
 		apm_storage: 'relApmStorage',
 		telemetry:   'relTelemetry',
+		telemetry_member: 'relTelemetry',
 	};
-
-	// A Proxy with more OTel Systems than this shows them as one group node.
-	static #OTEL_GROUP_THRESHOLD = 10;
 
 	// Below this share of the new graph already being on screen, an update is
 	// a different Topology and gets a fresh layout and fit (see #syncGraph()).
@@ -140,11 +139,12 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		database:    [8, 5],
 		apm_storage: [2, 5],
 		telemetry:   [10, 4, 2, 4],
+		telemetry_member: [10, 4, 2, 4, 2, 4],
 	};
 
 	// Kept identifiable when zoomed out: their icon and label grow with the
 	// zoom step below, while Host and OTel System labels are left to fade.
-	static #MAJOR_NODE_TYPES = new Set(['server', 'proxy', 'proxy_group', 'apm_datastore', 'zabbix_db', 'otel_group']);
+	static #MAJOR_NODE_TYPES = new Set(['server', 'proxy', 'proxy_group', 'apm_datastore', 'zabbix_db', 'otel_service']);
 
 	// [minimum scale, step]: the step multiplies major nodes' icon and label
 	// size and every edge's width and dash pattern. Coarse, so that zooming
@@ -174,8 +174,8 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		['zabbix_db',     'Zabbix DB'],
 		['proxy_db',      'Proxy DB'],
 		['apm_datastore', 'APM Data Store'],
+		['otel_service',  'OpenTelemetry service'],
 		['otel_system',   'OpenTelemetry system'],
-		['otel_group',    'OTel Systems'],
 	];
 
 	static #RELATION_LABEL = {
@@ -183,6 +183,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		database:    'Database',
 		apm_storage: 'APM storage',
 		telemetry:   'Telemetry',
+		telemetry_member: 'Service member',
 	};
 
 	static #COMM_METHOD_LABEL = {
@@ -308,12 +309,11 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	#filter       = {};
 	#panelEl      = null;
 	#btnEl        = null;
-	// Everything the server sent, before OTel aggregation.
+	// Everything the server sent.
 	#model        = { nodes: new Map(), edges: new Map() };
 	// Settings the rendered graph was built with - a change needs a rebuild.
 	#settingsKey  = null;
-	// Node positions outliving a node's stay in the DataSet: an OTel System
-	// inside a collapsed group, or the whole graph across a rebuild.
+	// Node positions outliving the DataSet: the whole graph across a rebuild.
 	#positions    = new Map();
 	#savedView    = null;
 	#userInteracted = false;
@@ -322,8 +322,6 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	#settleTimer  = null;
 	#dragging     = false;
 	#userPlaced   = new Set();
-	// Proxies whose OTel group the user expanded.
-	#otelExpanded = new Set();
 	#zoomStep     = 1;
 	// Search, legend: the state outlives a rebuild, the elements do not.
 	#searchQuery    = '';
@@ -559,12 +557,6 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				return;
 			}
 
-			if (meta.node_type === 'otel_group') {
-				this.#hideTooltip();
-				this.#toggleOtelGroup(meta.backend_owner);
-				return;
-			}
-
 			this.#resetEdgeHighlight();
 		});
 
@@ -760,8 +752,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				apm_db:              el.data.apm_db || null,
 				otel_truncated:      el.data.otel_truncated === true,
 				otel_host:           el.data.otel_host || null,
-				otel_services:       el.data.otel_services || [],
-				otel_services_more:  Number(el.data.otel_services_more) || 0,
+				otel_service:        el.data.otel_service || null,
 				otel_namespaces:     el.data.otel_namespaces || [],
 				otel_environments:   el.data.otel_environments || [],
 				otel_system_count:   el.data.otel_system_count || 0,
@@ -783,41 +774,16 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		this.#model = { nodes, edges };
 	}
 
-	// Folds the model into what is actually drawn, and refreshes #nodesMeta and
-	// #children to match. The count is per Proxy, so a system seen by a Proxy
-	// with a group and by one without stays drawn, attached to the latter only.
+	// Turns the model into what is drawn, and refreshes #nodesMeta and
+	// #children to match.
 	#renderedGraph() {
-		const threshold = CWidgetHoloztekMonitoringMap.#OTEL_GROUP_THRESHOLD;
 		const { nodes: modelNodes, edges: modelEdges } = this.#model;
-
-		const systemsByProxy = new Map();
-		for (const edge of modelEdges.values()) {
-			if (edge.relation === 'telemetry') {
-				if (!systemsByProxy.has(edge.from)) systemsByProxy.set(edge.from, []);
-				systemsByProxy.get(edge.from).push(edge.to);
-			}
-		}
-
-		// Expanding is a choice about one group: it does not survive the group.
-		for (const proxyId of this.#otelExpanded) {
-			if ((systemsByProxy.get(proxyId)?.length ?? 0) <= threshold) this.#otelExpanded.delete(proxyId);
-		}
-
-		const collapsed = proxyId => (systemsByProxy.get(proxyId)?.length ?? 0) > threshold
-			&& !this.#otelExpanded.has(proxyId);
-
-		const drawnSystems = new Set();
-		for (const [proxyId, systems] of systemsByProxy) {
-			if (!collapsed(proxyId)) systems.forEach(id => drawnSystems.add(id));
-		}
 
 		this.#nodesMeta = {};
 		const nodes = [];
 		const edges = [];
 
 		for (const { id, label, meta } of modelNodes.values()) {
-			if (meta.node_type === 'otel_system' && !drawnSystems.has(id)) continue;
-
 			this.#nodesMeta[id] = meta;
 			nodes.push(this.#visNode(id, label, meta));
 		}
@@ -825,8 +791,6 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		this.#children = {};
 
 		for (const edge of modelEdges.values()) {
-			if (edge.relation === 'telemetry' && collapsed(edge.from)) continue;
-
 			// #children is the monitoring tree only: filter visibility and
 			// Proxy highlighting both walk it. A backend relation stays out.
 			if (edge.relation === 'monitoring') {
@@ -834,28 +798,6 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			}
 
 			edges.push(this.#visEdge(edge));
-		}
-
-		// A group stays while expanded, as the way back to collapsing it.
-		for (const [proxyId, systems] of systemsByProxy) {
-			if (systems.length <= threshold) continue;
-
-			const groupId = `otelg_${proxyId}`;
-			const meta = {
-				node_type:     'otel_group',
-				backend_owner: proxyId,
-				otel_expanded: this.#otelExpanded.has(proxyId),
-				otel_system_count: systems.length,
-			};
-
-			this.#nodesMeta[groupId] = meta;
-			nodes.push(this.#visNode(groupId, `${t('OTel Systems')} (${systems.length})`, meta));
-			edges.push(this.#visEdge({
-				id:       `${proxyId}__${groupId}__telemetry`,
-				from:     proxyId,
-				to:       groupId,
-				relation: 'telemetry',
-			}));
 		}
 
 		return { nodes, edges };
@@ -943,16 +885,10 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		const removedEdges = this.#edgesDS.getIds().filter(id => !nextEdgeIds.has(id));
 		if (removedEdges.length > 0) this.#edgesDS.remove(removedEdges);
 
-		if (removedNodes.length > 0) {
-			// A system folded into a group comes back where it was.
-			const folded = this.#network.getPositions(removedNodes.filter(id => this.#model.nodes.has(id)));
-			for (const id in folded) this.#positions.set(id, folded[id]);
-
-			this.#nodesDS.remove(removedNodes);
-		}
+		if (removedNodes.length > 0) this.#nodesDS.remove(removedNodes);
 
 		for (const id of this.#positions.keys()) {
-			if (this.#model.nodes.has(id) || nextNodeIds.has(id)) continue;
+			if (nextNodeIds.has(id)) continue;
 
 			this.#positions.delete(id);
 			this.#userPlaced.delete(id);
@@ -1090,17 +1026,6 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		});
 
 		if (!anyInView) this.#network.fit({ animation: false });
-	}
-
-	#toggleOtelGroup(proxyId) {
-		if (this.#otelExpanded.has(proxyId)) {
-			this.#otelExpanded.delete(proxyId);
-		}
-		else {
-			this.#otelExpanded.add(proxyId);
-		}
-
-		this.#syncGraph();
 	}
 
 	// No node_font_color set in the widget's settings (the field is left blank
@@ -1561,11 +1486,13 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	#syncRelationRows() {
 		if (!this.#panelEl) return;
 
-		const present = new Set(this.#edgesDS.get().map(edge => edge.relation));
+		// One key can switch several relations: Telemetry is the whole OTel path.
+		const relationKeys = CWidgetHoloztekMonitoringMap.#RELATION_KEYS;
+		const present = new Set(this.#edgesDS.get().map(edge => relationKeys[edge.relation]));
 
-		for (const [relation, key] of Object.entries(CWidgetHoloztekMonitoringMap.#RELATION_KEYS)) {
+		for (const key of new Set(Object.values(relationKeys))) {
 			const input = this.#panelEl.querySelector(`input[data-filter="${key}"]`);
-			if (input) input.disabled = !present.has(relation);
+			if (input) input.disabled = !present.has(key);
 		}
 	}
 
@@ -1862,17 +1789,10 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 	// The searchable nodes with their search text, built from the model on
 	// demand and dropped on every update. Only what the graph already shows
-	// is searched: labels, OTel service/namespace/host names, cluster addresses.
+	// is searched: labels, the OTel Service and metadata of an OTel System,
+	// cluster addresses.
 	#searchEntries() {
 		if (this.#searchIndex !== null) return this.#searchIndex;
-
-		const proxiesOf = new Map();
-		for (const edge of this.#model.edges.values()) {
-			if (edge.relation === 'telemetry') {
-				if (!proxiesOf.has(edge.to)) proxiesOf.set(edge.to, []);
-				proxiesOf.get(edge.to).push(edge.from);
-			}
-		}
 
 		const entries = [];
 		const add = (id, label, meta) => {
@@ -1884,36 +1804,22 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				name,
 				meta,
 				nameKey:  name.toLocaleLowerCase(),
-				textKey:  [text, ...(meta.otel_services ?? []), ...(meta.otel_namespaces ?? []),
+				textKey:  [text, meta.otel_service, ...(meta.otel_namespaces ?? []),
 					...(meta.otel_environments ?? []), ...(meta.member_ips ?? [])]
 					.filter(Boolean).join('\n').toLocaleLowerCase(),
-				proxies:  proxiesOf.get(id) ?? [],
 			});
 		};
 
 		for (const { id, label, meta } of this.#model.nodes.values()) add(id, label, meta);
 
-		// Groups are the rendered graph's, not the server's.
-		for (const [id, meta] of Object.entries(this.#nodesMeta)) {
-			if (meta.node_type === 'otel_group') add(id, this.#nodesDS.get(id)?.label, meta);
-		}
-
 		this.#searchIndex = entries;
 		return entries;
 	}
 
-	// How a result is reached: { expand: null } when it is drawn and shown,
-	// { expand: proxyId } when it is folded into a group that is shown, or null.
-	#searchTarget(entry) {
+	// A result is offered only when it is shown: a click on it then reaches it.
+	#searchReachable(entry) {
 		const node = this.#nodesDS.get(entry.id);
-		if (node !== null) return node.hidden ? null : { expand: null };
-
-		for (const proxyId of entry.proxies) {
-			const group = this.#nodesDS.get(`otelg_${proxyId}`);
-			if (group !== null && !group.hidden) return { expand: proxyId };
-		}
-
-		return null;
+		return node !== null && !node.hidden;
 	}
 
 	#runSearch() {
@@ -1934,7 +1840,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				: entry.textKey.includes(query) ? 3
 				: -1;
 
-			if (rank !== -1 && this.#searchTarget(entry) !== null) matches.push({ entry, rank });
+			if (rank !== -1 && this.#searchReachable(entry)) matches.push({ entry, rank });
 		}
 
 		matches.sort((a, b) => a.rank - b.rank || a.entry.name.localeCompare(b.entry.name));
@@ -1990,20 +1896,10 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		this.#closeSearchList();
 
-		const target = this.#searchTarget(entry);
-		if (target === null) return;
+		if (!this.#searchReachable(entry)) return;
 
 		this.#searchSelected = entry.id;
-
-		// An expansion like a click on the group: it stays until collapsed.
-		if (target.expand !== null) {
-			this.#otelExpanded.add(target.expand);
-			this.#syncGraph();
-		}
-		else {
-			this.#paintSearchHighlight();
-		}
-
+		this.#paintSearchHighlight();
 		this.#focusNode(entry.id);
 	}
 
@@ -2020,13 +1916,13 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	}
 
 	// Marks #searchSelected, and unmarks what was marked before. Only a node
-	// gone from the data ends the selection: one folded into its group keeps
-	// it, and is marked again once drawn.
+	// gone from the data ends the selection: one hidden by a filter keeps it,
+	// and is marked again once shown.
 	#paintSearchHighlight() {
 		if (!this.#nodesDS) return;
 
 		const selected = this.#searchSelected;
-		if (selected !== null && !this.#model.nodes.has(selected) && !(selected in this.#nodesMeta)) {
+		if (selected !== null && !this.#model.nodes.has(selected)) {
 			this.#searchSelected = null;
 		}
 
@@ -2174,7 +2070,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		// A backend label's second line is its type, shown as its own row below.
 		const title = isBackend ? String(label).split('\n')[0] : label;
 		let html = `<strong>${this.#escape(title)}</strong>`;
-		if (title !== typeLabel && meta.node_type !== 'otel_system' && meta.node_type !== 'otel_group') {
+		if (title !== typeLabel && meta.node_type !== 'otel_service' && meta.node_type !== 'otel_system') {
 			html += `<br><span style="opacity:.7">${typeLabel}</span>`;
 		}
 
@@ -2242,23 +2138,27 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			}
 		}
 
+		if (meta.node_type === 'otel_service') {
+			html += row(`${t('Type')}: ${t('OpenTelemetry service')}`);
+			html += row(`${t('Service')}: ${this.#escape(meta.otel_service)}`);
+			if (meta.otel_system_count > 0) {
+				html += row(`${t('Systems')}: ${meta.otel_system_count}`);
+			}
+		}
+
 		if (meta.node_type === 'otel_system') {
 			html += row(`${t('Type')}: ${t('OpenTelemetry system')}`);
 			html += row(`${t('Host')}: ${this.#escape(meta.otel_host)}`);
-			if (meta.otel_services.length > 0) {
-				const more = meta.otel_services_more > 0 ? ` (+${meta.otel_services_more})` : '';
-				html += row(`${t('Services')}: ${this.#escape(meta.otel_services.join(', '))}${more}`);
-			}
+			html += row(`${t('Service')}: ${this.#escape(meta.otel_service)}`);
+		}
+
+		if (meta.node_type === 'otel_service' || meta.node_type === 'otel_system') {
 			if (meta.otel_namespaces.length > 0) {
 				html += row(`${t('Namespace')}: ${this.#escape(meta.otel_namespaces.join(', '))}`);
 			}
 			if (meta.otel_environments.length > 0) {
 				html += row(`${t('Environment')}: ${this.#escape(meta.otel_environments.join(', '))}`);
 			}
-		}
-
-		if (meta.node_type === 'otel_group') {
-			html += row(t(meta.otel_expanded ? 'Click to collapse' : 'Click to expand'));
 		}
 
 		if (meta.node_type === 'proxy_db') {

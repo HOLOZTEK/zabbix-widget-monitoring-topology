@@ -246,11 +246,17 @@ msgstr "APM"
 msgid "APM (available on Zabbix 8.0 or later)"
 msgstr "APM (available on Zabbix 8.0 or later)"
 
+msgid "OpenTelemetry service"
+msgstr "OpenTelemetry service"
+
 msgid "OpenTelemetry system"
 msgstr "OpenTelemetry system"
 
-msgid "Services"
-msgstr "Services"
+msgid "Service"
+msgstr "Service"
+
+msgid "Systems"
+msgstr "Systems"
 
 msgid "Namespace"
 msgstr "Namespace"
@@ -276,14 +282,8 @@ msgstr "APM storage"
 msgid "Telemetry"
 msgstr "Telemetry"
 
-msgid "OTel Systems"
-msgstr "OTel Systems"
-
-msgid "Click to expand"
-msgstr "Click to expand"
-
-msgid "Click to collapse"
-msgstr "Click to collapse"
+msgid "Service member"
+msgstr "Service member"
 
 msgid "Drag follow hops"
 msgstr "Drag follow hops"

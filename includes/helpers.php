@@ -14,18 +14,22 @@ const HOLOZTEK_MM_NODE_PROXY = 'proxy';
 const HOLOZTEK_MM_NODE_ZABBIX_DB = 'zabbix_db';
 const HOLOZTEK_MM_NODE_PROXY_DB = 'proxy_db';
 const HOLOZTEK_MM_NODE_APM_DATASTORE = 'apm_datastore';
+const HOLOZTEK_MM_NODE_OTEL_SERVICE = 'otel_service';
 const HOLOZTEK_MM_NODE_OTEL_SYSTEM = 'otel_system';
 
 const HOLOZTEK_MM_RELATION_DATABASE = 'database';
 const HOLOZTEK_MM_RELATION_APM_STORAGE = 'apm_storage';
+// Proxy -> OTel Service, and OTel Service -> OTel System.
 const HOLOZTEK_MM_RELATION_TELEMETRY = 'telemetry';
+const HOLOZTEK_MM_RELATION_TELEMETRY_MEMBER = 'telemetry_member';
 
 // Resource Attribute a Proxy adds to received traces through its
 // additional_resource_attributes, with its own proxyid as the value. It is the
 // only basis for linking telemetry to a Proxy.
 const HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE = 'holoztek.zabbix.proxyid';
-// Resource Attribute that identifies an OTel System. Telemetry without it is
-// not shown.
+// Resource Attributes of the fixed Proxy -> Service -> System path: telemetry
+// without service.name is not shown, without host.name it stops at its Service.
+const HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE = 'service.name';
 const HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE = 'host.name';
 const HOLOZTEK_MM_OTEL_SIGNAL_TRACES = 0;
 const HOLOZTEK_MM_OTEL_TIME_RANGE = 900;
@@ -389,10 +393,15 @@ function holoztek_mm_node_id_apm_datastore(): string {
 	return 'apmds';
 }
 
-// A system is the host the telemetry comes from, as host.name reports it:
-// case-sensitive, so HOST01 and host01 are two systems.
-function holoztek_mm_node_id_otel_system(string $host): string {
-	return 'otel_' . md5($host);
+// Both are one path of telemetry collection, not one real thing: the same
+// service.name or host.name under another Proxy (or another Service) is another
+// node. Case-sensitive, so HOST01 and host01 are two systems.
+function holoztek_mm_node_id_otel_service(string $proxyid, string $service): string {
+	return 'otels_' . md5($proxyid . "\0" . $service);
+}
+
+function holoztek_mm_node_id_otel_system(string $proxyid, string $service, string $host): string {
+	return 'otel_' . md5($proxyid . "\0" . $service . "\0" . $host);
 }
 
 function holoztek_mm_node_id_proxy_group(string $proxy_groupid): string {
