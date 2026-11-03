@@ -77,6 +77,13 @@ class Widget extends CWidget {
                 'Observed telemetry systems' => _holoztek_mm('Observed telemetry systems'),
                 'Too many APM systems to display.' => _holoztek_mm('Too many APM systems to display.'),
                 'Database details are not available from the Zabbix API.' => _holoztek_mm('Database details are not available from the Zabbix API.'),
+                'Relations' => _holoztek_mm('Relations'),
+                'Monitoring' => _holoztek_mm('Monitoring'),
+                'APM storage' => _holoztek_mm('APM storage'),
+                'Telemetry' => _holoztek_mm('Telemetry'),
+                'OTel Systems' => _holoztek_mm('OTel Systems'),
+                'Click to expand' => _holoztek_mm('Click to expand'),
+                'Click to collapse' => _holoztek_mm('Click to collapse'),
             ]
         ];
     }
