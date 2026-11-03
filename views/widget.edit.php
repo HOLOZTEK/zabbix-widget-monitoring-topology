@@ -40,6 +40,9 @@
 		new CWidgetFieldIntegerBoxView($data['fields']['edge_width'])
 	)
 	->addField(
+		new CWidgetFieldIntegerBoxView($data['fields']['drag_follow_hops'])
+	)
+	->addField(
 		new CWidgetFieldRadioButtonListView($data['fields']['filter_position'])
 	)
 	->addField(

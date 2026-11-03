@@ -52,6 +52,12 @@ Zabbix 管理画面 → 管理 → モジュール からウィジェットを�
 - ホストを選択した場合: ZabbixServerからそのホストまでの経路を表示します。
 - ホストグループを選択した場合: グループに属する全ホストの経路を表示します。
 
+### 表示状態の維持 / Keeping the view
+
+ウィジェットの更新やブロードキャストによる切替では、拡大位置、ノード位置（ドラッグした位置を含む）、Proxy ハイライト、OTel 集約の展開状態を維持します。増えたノードだけを配置し、消えたノードは取り除きます。ノードをドラッグすると、設定「ドラッグ時の追従ホップ数」（0〜10、既定は 3）以内のノードだけが追従し、それより離れたノードと手動で置いたノードは動きません。0 ならドラッグしたノードだけが動きます。全体表示に戻るのは初回表示時、構成が大きく変わったとき、画面内に表示対象がなくなったときです。
+
+Refreshes and broadcast changes keep the zoom, pan, node positions (including dragged nodes), Proxy highlight and the expanded state of OTel groups. Only added nodes are placed; removed nodes are dropped. Dragging a node also moves the nodes within the "Drag follow hops" setting (0-10, default 3); nodes further away and nodes placed by hand stay put. With 0, only the dragged node moves. The view fits again only on first display, on a substantially different topology, or when nothing remains in view.
+
 ## バックエンド構成 / Backend components
 
 設定画面の「バックエンド構成」で、監視経路とは別に Zabbix のバックエンドを図へ追加できます。既定ではどちらも OFF で、OFF の間は従来と同じ表示です。
@@ -79,6 +85,8 @@ Zabbix 管理画面 → 管理 → モジュール からウィジェットを�
 - **フィルター**: バックエンド構成のノードは Host フィルターの対象外です。Proxy DB は対応する Proxy に従います。Proxy クリック時のハイライトは監視経路のみを対象とします。
 
 - **OTel System**: APM を ON にすると、Proxy を経由して観測された OpenTelemetry の送信元を表示します。単位は `service.namespace` + `service.name`（namespace がなければ `service.name`）で、同じ System は Proxy が複数でも 1 ノードです。Zabbix 8.0 以上が対象です。
+- **OTel 集約**: 1 Proxy の OTel System が 11 件以上のときは `OTel Systems (N)` にまとめます。クリックで展開／集約できます。表示上のまとまりで、監視対象ではありません。
+- **関係フィルター**: フィルターの「関係」で、取得済みの監視経路 / データベース / APM データストア / Telemetry を表示／非表示にできます。表示中の関係につながるノードは残ります。取得の有無は設定「バックエンド構成」が決め、ホストのフィルターとは独立です。
 - **Proxy との関連付け**: 関連付けの根拠は、Proxy の `additional_resource_attributes` に設定した属性だけです。signal type `traces` に、キー `holoztek.zabbix.proxyid`、値はその Proxy 自身の proxyid を設定してください。設定がない Proxy のテレメトリは表示しません。`host.name` や IP からの推測は行いません。
 - **観測範囲**: 直近 15 分の Span が対象で、最大 100 System まで表示します。表示は観測の事実であり、現在受信中であることを示すものではありません。送信元が同じキーを自分で設定した場合は区別できません。
 
@@ -90,6 +98,8 @@ Backend components (Database / APM) are optional and off by default; while off, 
 - The Global Data Source does not guarantee where a given Proxy actually writes: per-Proxy overrides are not available from the API.
 - With APM on, OTel Systems observed through a Proxy are shown (Zabbix 8.0+; last 15 minutes, up to 100 systems). The link relies only on the Proxy's `additional_resource_attributes`: on signal type `traces`, set the key `holoztek.zabbix.proxyid` to that Proxy's own proxyid. Telemetry without it is not shown, and a Proxy is never inferred from `host.name` or an IP address.
 - Backend nodes are not affected by the Host filter, and Proxy highlighting follows monitoring edges only.
+- A Proxy with more than 10 OTel Systems shows them as one `OTel Systems (N)` node. Click it to expand or collapse. This is a display grouping, not a monitored object.
+- The filter panel's Relations category shows or hides the Monitoring, Database, APM storage and Telemetry relations already loaded. A node stays visible while any shown relation connects it. The widget's Backend components setting decides what is loaded, and the Host filter works independently.
 
 ## 旧ID（monitoringmap）からのアップグレード手順
 

@@ -155,6 +155,11 @@ div.dashboard-widget-holoztek_monitoringmap .mm-filter-item input {
     margin: 0;
 }
 
+div.dashboard-widget-holoztek_monitoringmap .mm-filter-item:has(input:disabled) {
+    opacity: .5;
+    cursor: default;
+}
+
 /* Separates the display-only "深刻度で色分け表示" toggle from the visibility
    checkboxes above it in the 障害状態 category. */
 div.dashboard-widget-holoztek_monitoringmap .mm-filter-divider {
