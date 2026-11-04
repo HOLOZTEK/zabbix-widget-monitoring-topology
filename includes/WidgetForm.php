@@ -128,6 +128,13 @@ class WidgetForm extends CWidgetForm {
 				new CWidgetFieldCheckBoxList('backend_components', _holoztek_mm('Backend components'),
 					self::backendComponentValues()
 				)
+			)
+			// Used only with APM on; kept editable otherwise, like the APM option on 7.0.
+			->addField(
+				(new CWidgetFieldOtelWindow('otel_observation_window', _holoztek_mm('OTel observation window (minutes)'),
+					HOLOZTEK_MM_OTEL_WINDOW_MIN, HOLOZTEK_MM_OTEL_WINDOW_MAX
+				))
+					->setDefault(HOLOZTEK_MM_OTEL_WINDOW_DEFAULT)
 			);
 	}
 }

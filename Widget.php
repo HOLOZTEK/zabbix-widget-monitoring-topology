@@ -69,8 +69,10 @@ class Widget extends CWidget {
                 'Server runtime' => _holoztek_mm('Server runtime'),
                 'Frontend configuration' => _holoztek_mm('Frontend configuration'),
                 'Global APM Data Source' => _holoztek_mm('Global APM Data Source'),
+                'OpenTelemetry service' => _holoztek_mm('OpenTelemetry service'),
                 'OpenTelemetry system' => _holoztek_mm('OpenTelemetry system'),
                 'Service' => _holoztek_mm('Service'),
+                'Systems' => _holoztek_mm('Systems'),
                 'Namespace' => _holoztek_mm('Namespace'),
                 'Environment' => _holoztek_mm('Environment'),
                 'Host' => _holoztek_mm('Host'),
@@ -81,9 +83,14 @@ class Widget extends CWidget {
                 'Monitoring' => _holoztek_mm('Monitoring'),
                 'APM storage' => _holoztek_mm('APM storage'),
                 'Telemetry' => _holoztek_mm('Telemetry'),
-                'OTel Systems' => _holoztek_mm('OTel Systems'),
-                'Click to expand' => _holoztek_mm('Click to expand'),
-                'Click to collapse' => _holoztek_mm('Click to collapse'),
+                'Service member' => _holoztek_mm('Service member'),
+                'Search nodes' => _holoztek_mm('Search nodes'),
+                'No matching nodes' => _holoztek_mm('No matching nodes'),
+                'More results available...' => _holoztek_mm('More results available...'),
+                'Fit topology to view' => _holoztek_mm('Fit topology to view'),
+                'Legend' => _holoztek_mm('Legend'),
+                'Node types' => _holoztek_mm('Node types'),
+                'Virtualization / Cluster' => _holoztek_mm('Virtualization / Cluster'),
             ]
         ];
     }

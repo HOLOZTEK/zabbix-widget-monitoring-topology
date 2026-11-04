@@ -48,6 +48,13 @@
 	->addField(
 		new CWidgetFieldCheckBoxListView($data['fields']['backend_components'])
 	)
+	->addField(
+		(new CWidgetFieldIntegerBoxView($data['fields']['otel_observation_window']))
+			->setFieldHint(makeHelpIcon([
+				_holoztek_mm('Displays OpenTelemetry services and systems observed within this period.'), BR(),
+				_holoztek_mm('A longer period keeps low-frequency telemetry sources visible.')
+			]))
+	)
 	->includeJsFile('widget.edit.js.php')
 	->addJavaScript('holoztek_monitoringmap_form.init();')
 	->show();

@@ -246,11 +246,17 @@ msgstr "APM"
 msgid "APM (available on Zabbix 8.0 or later)"
 msgstr "APM（Zabbix 8.0 以降で利用可能）"
 
+msgid "OpenTelemetry service"
+msgstr "OpenTelemetry サービス"
+
 msgid "OpenTelemetry system"
 msgstr "OpenTelemetry システム"
 
 msgid "Service"
 msgstr "サービス"
+
+msgid "Systems"
+msgstr "システム数"
 
 msgid "Namespace"
 msgstr "名前空間"
@@ -276,14 +282,38 @@ msgstr "APMデータストア"
 msgid "Telemetry"
 msgstr "Telemetry"
 
-msgid "OTel Systems"
-msgstr "OTelシステム"
-
-msgid "Click to expand"
-msgstr "クリックで展開"
-
-msgid "Click to collapse"
-msgstr "クリックで集約"
+msgid "Service member"
+msgstr "サービス所属"
 
 msgid "Drag follow hops"
 msgstr "ドラッグ時の追従ホップ数"
+
+msgid "OTel observation window (minutes)"
+msgstr "OTel観測期間（分）"
+
+msgid "Displays OpenTelemetry services and systems observed within this period."
+msgstr "指定期間内にTelemetryが確認されたOpenTelemetryサービス／システムを表示します。"
+
+msgid "A longer period keeps low-frequency telemetry sources visible."
+msgstr "期間を長くすると、送信頻度の低いシステムも表示されます。"
+
+msgid "Search nodes"
+msgstr "ノードを検索"
+
+msgid "No matching nodes"
+msgstr "一致するノードはありません"
+
+msgid "More results available..."
+msgstr "ほかにも候補があります（条件を絞り込んでください）"
+
+msgid "Fit topology to view"
+msgstr "全体を表示"
+
+msgid "Legend"
+msgstr "凡例"
+
+msgid "Node types"
+msgstr "ノード種別"
+
+msgid "Virtualization / Cluster"
+msgstr "仮想化 / クラスター"

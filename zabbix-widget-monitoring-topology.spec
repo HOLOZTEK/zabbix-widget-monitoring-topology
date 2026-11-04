@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.2.2
+Version:        1.2.3
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -60,6 +60,7 @@ install -m 644 ${SRCDIR}/actions/WidgetView.php                                 
 install -m 644 ${SRCDIR}/assets/css/widget.css                                  ${STAGEDIR}/assets/css/
 install -m 644 ${SRCDIR}/assets/js/vis-network.min.js                           ${STAGEDIR}/assets/js/
 install -m 644 ${SRCDIR}/assets/js/class.widget.js                              ${STAGEDIR}/assets/js/
+install -m 644 ${SRCDIR}/includes/CWidgetFieldOtelWindow.php                   ${STAGEDIR}/includes/
 install -m 644 ${SRCDIR}/includes/helpers.php                                   ${STAGEDIR}/includes/
 install -m 644 ${SRCDIR}/includes/WidgetForm.php                                ${STAGEDIR}/includes/
 install -m 644 ${SRCDIR}/locale/ja_JP/LC_MESSAGES/holoztek-monitoringmap.po     ${STAGEDIR}/locale/ja_JP/LC_MESSAGES/
@@ -121,6 +122,13 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Tue Nov 03 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.3-0
+- ノード検索を追加（表示中のノードを名前などで部分一致検索し、候補に種別を表示。選択したノードへ移動して強調）。
+- ツールバーに「全体を表示」ボタンを追加（フィルターで表示中のノードを全体表示）。
+- 凡例を追加（関係の線種とノード種別）。フィルターの「関係」にも線種の見本を表示。
+- 縮小表示で主要ノード（Zabbix サーバー、Proxy、Proxy グループ、APM データストア、Zabbix DB、OTel Service）と関係の線種を判別しやすく描画。
+- OpenTelemetry の表示を Proxy → OTel Service（service.name）→ OTel System（host.name）の固定階層に変更（service.name のないテレメトリは表示せず、host.name がない場合は Service のみ表示。Zabbix の Host とは統合・接続しない。OTel System の自動集約を廃止）。
+- OTel観測期間（分）設定を追加（既定 15、5〜1440。指定期間内に Span が確認された OTel Service・OTel System を表示）。
 * Tue Nov 03 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.2-0
 - 更新時に画面の状態を維持（拡大位置、ノード位置、Proxy ハイライト、OTel 集約の展開状態）。
 - 更新は差分で反映し、ネットワーク図の再生成と不要な再配置を抑制。
