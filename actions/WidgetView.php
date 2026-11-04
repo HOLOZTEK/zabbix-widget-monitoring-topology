@@ -631,7 +631,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		}
 
 		if ($show_apm) {
-			$this->addApmComponents($apm_proxies);
+			$this->addApmComponents($apm_proxies, self::otelWindowSeconds($fv));
 		}
 
 		$this->applyClusterMemberIps();
@@ -826,103 +826,211 @@ class WidgetView extends CControllerDashboardWidgetView {
 		return false;
 	}
 
-	// The API has no DISTINCT and a busy service fills any limit, so a service
-	// already seen is excluded from the next query: rare ones still turn up, in a
-	// bounded number of queries that does not depend on the number of Proxies.
-	// A service seen on one Proxy is therefore not looked for on the others, so
-	// the rarer link of a service on several Proxies can be missed.
-	private function fetchOtelSystems(array $proxyids): array {
+	// The API has no DISTINCT and a busy path fills any limit. The first query
+	// takes the busiest paths; the next two exclude what was seen, so rare ones
+	// still turn up: Services not seen yet, then hosts not seen yet in any
+	// Service. A host and a Service both seen, but not together, can therefore be
+	// missed, and so can the rarer Proxy of a host or Service seen elsewhere;
+	// such gaps are reported as truncated (see isOtelFetchComplete()).
+	// The number of queries does not depend on the number of Proxies. Spans
+	// without service.name are excluded by the query itself, so they never use up
+	// the limit.
+	private function fetchOtelTelemetry(array $proxyids, int $window): array {
 		$time_till = time();
-		$systems = [];
 		$services = [];
-		$truncated = true;
-		$truncated_systems = false;
+		$systems = [];
+		$seen = [HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE => ['' => true], HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE => ['' => true]];
+		$full = [];
+		$truncated_nodes = false;
+		// Raw Proxy => Service => host combinations returned, and what each query
+		// excluded.
+		$observed = [];
+		$excluded = [];
+
+		$condition = static fn(string $key, int $operator, string $value = '') =>
+			['key' => $key, 'operator' => $operator, 'value' => $value];
+		$exclude = static fn(string $key, array $values) => array_map(
+			static fn($value) => $condition($key, TAG_OPERATOR_NOT_EQUAL, (string) $value), array_keys($values)
+		);
+
+		$proxy_filter = array_map(
+			static fn(string $proxyid) => $condition(HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE, TAG_OPERATOR_EQUAL, $proxyid),
+			$proxyids
+		);
+		$service_filter = [
+			$condition(HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE, TAG_OPERATOR_EXISTS),
+			$condition(HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE, TAG_OPERATOR_NOT_EQUAL)
+		];
 
 		$options = [
-			'output'              => ['service_name', 'resource_attributes'],
-			'time_from'           => $time_till - HOLOZTEK_MM_OTEL_TIME_RANGE,
-			'time_till'           => $time_till,
-			'resource_attributes' => array_map(static fn(string $proxyid) => [
-				'key'      => HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE,
-				'operator' => TAG_OPERATOR_EQUAL,
-				'value'    => $proxyid
-			], $proxyids),
-			'sortfield'           => ['timestamp'],
-			'sortorder'           => ZBX_SORT_DOWN,
-			'limit'               => HOLOZTEK_MM_OTEL_SPANS_PER_QUERY
+			'output'    => ['resource_attributes'],
+			'time_from' => $time_till - $window,
+			'time_till' => $time_till,
+			'sortfield' => ['timestamp'],
+			'sortorder' => ZBX_SORT_DOWN,
+			'limit'     => HOLOZTEK_MM_OTEL_SPANS_PER_QUERY
 		];
 
 		for ($i = 0; $i < HOLOZTEK_MM_OTEL_MAX_QUERIES; $i++) {
-			if ($services) {
-				$options = [
-					'search'                 => ['service_name' => array_keys($services)],
-					'searchByAny'            => true,
-					'excludeSearch'          => true,
-					'searchWildcardsEnabled' => true
-				] + $options;
+			if ($i == 1) {
+				$excluded[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE] = $seen[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE];
 			}
+			elseif ($i == 2) {
+				$excluded[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE] = $seen[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE];
+			}
+
+			// Conditions on different keys are ANDed, NOT_EQUAL values on one key too.
+			$exclusions = match ($i) {
+				0 => [],
+				1 => $exclude(HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE, $seen[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE]),
+				default => array_merge([$condition(HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE, TAG_OPERATOR_EXISTS)],
+					$exclude(HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE, $seen[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE])
+				)
+			};
+			$options['resource_attributes'] = array_merge($proxy_filter, $service_filter, $exclusions);
 
 			$spans = $this->optionalApiCall(static fn() => API::ApmSpan()->get($options));
 
 			if ($spans === null) {
-				return ['systems' => [], 'truncated' => false];
+				return ['services' => [], 'systems' => [], 'truncated' => false];
 			}
 
 			foreach ($spans as $span) {
-				$services[(string) $span['service_name']] = true;
-				$this->collectOtelSystem($systems, $span, $proxyids, $truncated_systems);
+				foreach ($seen as $key => $values) {
+					$seen[$key][(string) ($span['resource_attributes'][$key] ?? '')] = true;
+				}
+				$attributes = $span['resource_attributes'] ?? [];
+				$observed[(string) ($attributes[HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE] ?? '')]
+					[(string) ($attributes[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE] ?? '')]
+					[(string) ($attributes[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE] ?? '')] = true;
+				$this->collectOtelTelemetry($services, $systems, $span, $proxyids, $truncated_nodes);
 			}
 
-			if (count($spans) < HOLOZTEK_MM_OTEL_SPANS_PER_QUERY) {
-				$truncated = false;
+			$full[$i] = count($spans) >= HOLOZTEK_MM_OTEL_SPANS_PER_QUERY;
+
+			// The first query was not full, so nothing was left out.
+			if (!$full[0]) {
 				break;
 			}
 		}
 
+		ksort($services);
 		ksort($systems);
 
-		return ['systems' => $systems, 'truncated' => $truncated || $truncated_systems];
+		return [
+			'services'  => $services,
+			'systems'   => $systems,
+			'truncated' => $truncated_nodes
+				|| ($full[0] && !self::isOtelFetchComplete($full, $proxyids, $excluded, $observed))
+		];
+	}
+
+	// After a full first query, the second returned every span of a Service not
+	// seen first, and the third every span of a host not seen by then, unless
+	// they were full too. What can remain unread are spans of a Service seen
+	// first, with no host or a host seen by then. They add nothing only if every
+	// such Proxy + Service, and Proxy + Service + host, was already returned.
+	// Keys of these sets may be integers (PHP converts numeric strings), so they
+	// are only looked up, never compared.
+	private static function isOtelFetchComplete(array $full, array $proxyids, array $excluded,
+			array $observed): bool {
+		if (in_array(true, array_slice($full, 1), true) || count($full) < HOLOZTEK_MM_OTEL_MAX_QUERIES) {
+			return false;
+		}
+
+		// Values that never make a node cannot be missing.
+		$named = static fn(array $values) => array_filter($values,
+			static fn($key) => trim((string) $key) !== '', ARRAY_FILTER_USE_KEY
+		);
+		$proxies = array_fill_keys($proxyids, true);
+		$services = $named($excluded[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE]);
+		$hosts = $named($excluded[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE]);
+
+		$service_paths = 0;
+		$system_paths = 0;
+
+		foreach (array_intersect_key($observed, $proxies) as $observed_services) {
+			foreach (array_intersect_key($observed_services, $services) as $observed_hosts) {
+				$service_paths++;
+				$system_paths += count(array_intersect_key($observed_hosts, $hosts));
+			}
+		}
+
+		return $service_paths == count($proxies) * count($services)
+			&& $system_paths == count($proxies) * count($services) * count($hosts);
 	}
 
 	// Reads only the attributes named here: the rest of a span's Resource
 	// Attributes is sender-defined, can hold anything, and must not reach the
 	// browser.
-	private function collectOtelSystem(array &$systems, array $span, array $proxyids, bool &$truncated): void {
+	private function collectOtelTelemetry(array &$services, array &$systems, array $span, array $proxyids,
+			bool &$truncated): void {
 		$attributes = $span['resource_attributes'] ?? [];
-		$clip = static fn(string $value) => mb_substr($value, 0, HOLOZTEK_MM_OTEL_MAX_VALUE_LENGTH);
+		$clip = static fn($value) => mb_substr(trim((string) $value), 0, HOLOZTEK_MM_OTEL_MAX_VALUE_LENGTH);
 
 		$proxyid = (string) ($attributes[HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE] ?? '');
-		$service = $clip((string) ($attributes['service.name'] ?? $span['service_name'] ?? ''));
-		$namespace = $clip((string) ($attributes['service.namespace'] ?? ''));
+		$service = $clip($attributes[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE] ?? '');
+		$host = $clip($attributes[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE] ?? '');
 
+		// No service.name, no path: a System is never hung on the Proxy directly.
 		if ($service === '' || !in_array($proxyid, $proxyids, true)) {
 			return;
 		}
 
-		$id = holoztek_mm_node_id_otel_system($namespace, $service);
+		$service_id = holoztek_mm_node_id_otel_service($proxyid, $service);
 
-		if (!isset($systems[$id])) {
+		// Services are capped like Systems, so that ever-new service.name values
+		// cannot flood the graph either.
+		if (!isset($services[$service_id])) {
+			if (count($services) >= HOLOZTEK_MM_OTEL_MAX_SYSTEMS) {
+				$truncated = true;
+				return;
+			}
+
+			$services[$service_id] = [
+				'proxyid'      => $proxyid,
+				'service'      => $service,
+				'systems'      => [],
+				'namespaces'   => [],
+				'environments' => []
+			];
+		}
+
+		self::collectOtelMetadata($services[$service_id], $attributes, $clip);
+
+		// The Service is known to send, but not from where.
+		if ($host === '') {
+			return;
+		}
+
+		$system_id = holoztek_mm_node_id_otel_system($proxyid, $service, $host);
+
+		if (!isset($systems[$system_id])) {
 			if (count($systems) >= HOLOZTEK_MM_OTEL_MAX_SYSTEMS) {
 				$truncated = true;
 				return;
 			}
 
-			$systems[$id] = [
+			$systems[$system_id] = [
+				'service_id'   => $service_id,
 				'service'      => $service,
-				'namespace'    => $namespace,
-				'proxyids'     => [],
-				'environments' => [],
-				'hosts'        => []
+				'host'         => $host,
+				'namespaces'   => [],
+				'environments' => []
 			];
+			$services[$service_id]['systems'][$system_id] = true;
 		}
 
-		$systems[$id]['proxyids'][$proxyid] = true;
+		self::collectOtelMetadata($systems[$system_id], $attributes, $clip);
+	}
 
-		foreach (['environments' => 'deployment.environment', 'hosts' => 'host.name'] as $field => $key) {
-			$value = $clip((string) ($attributes[$key] ?? ''));
+	// Shown, never used to tell nodes apart.
+	private static function collectOtelMetadata(array &$node, array $attributes, callable $clip): void {
+		foreach (['namespaces' => 'service.namespace', 'environments' => 'deployment.environment'] as $field => $key) {
+			$value = $clip($attributes[$key] ?? '');
 
-			if ($value !== '' && count($systems[$id][$field]) < HOLOZTEK_MM_OTEL_MAX_VALUES) {
-				$systems[$id][$field][$value] = true;
+			if ($value !== '' && count($node[$field]) < HOLOZTEK_MM_OTEL_MAX_VALUES) {
+				$node[$field][$value] = true;
 			}
 		}
 	}
@@ -1006,7 +1114,14 @@ class WidgetView extends CControllerDashboardWidgetView {
 	// which the API doesn't expose, so an edge here means "APM-enabled Proxy and
 	// the Global Data Source", not a confirmed write path. With no readable
 	// Global Data Source, the node stays abstract instead of naming ClickHouse.
-	private function addApmComponents(array $apm_proxies): void {
+	// Dashboards saved before the setting existed have no value: 15 minutes.
+	private static function otelWindowSeconds(array $fv): int {
+		$minutes = (int) ($fv['otel_observation_window'] ?? HOLOZTEK_MM_OTEL_WINDOW_DEFAULT);
+
+		return 60 * max(HOLOZTEK_MM_OTEL_WINDOW_MIN, min(HOLOZTEK_MM_OTEL_WINDOW_MAX, $minutes));
+	}
+
+	private function addApmComponents(array $apm_proxies, int $otel_window): void {
 		$global = $this->fetchApmGlobalDataSource();
 		$is_configured = $global !== null && $global['status'] === 1;
 
@@ -1016,8 +1131,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 		$tagged_proxyids = array_map('strval', array_keys(array_filter(array_column($apm_proxies, 'otel_tagged', 'proxyid'))));
 		$otel = $tagged_proxyids
-			? $this->fetchOtelSystems($tagged_proxyids)
-			: ['systems' => [], 'truncated' => false];
+			? $this->fetchOtelTelemetry($tagged_proxyids, $otel_window)
+			: ['services' => [], 'systems' => [], 'truncated' => false];
 
 		$datastore_node = holoztek_mm_node_id_apm_datastore();
 
@@ -1035,33 +1150,39 @@ class WidgetView extends CControllerDashboardWidgetView {
 			);
 		}
 
-		$this->addOtelSystems($otel['systems']);
+		$this->addOtelTelemetry($otel['services'], $otel['systems']);
 	}
 
-	// One node per system, shared by the Proxies it was observed on. Observed
-	// means within the time range: it does not prove the Proxy is receiving now.
-	private function addOtelSystems(array $systems): void {
+	// Proxy -> Service -> System, one node per path: the same host.name under
+	// another Service or Proxy is another node. Observed means within the time
+	// range: it does not prove the Proxy is receiving now.
+	private function addOtelTelemetry(array $services, array $systems): void {
 		$system_counts = [];
+		$metadata = static fn(array $node) => [
+			'otel_namespaces'   => array_map('strval', array_keys($node['namespaces'])),
+			'otel_environments' => array_map('strval', array_keys($node['environments']))
+		];
+
+		foreach ($services as $node_id => $service) {
+			$proxy_node = holoztek_mm_node_id_proxy($service['proxyid']);
+
+			$this->addNode($node_id, $service['service'], HOLOZTEK_MM_NODE_OTEL_SERVICE, [
+				'backend_owner'     => $proxy_node,
+				'otel_service'      => $service['service'],
+				'otel_system_count' => count($service['systems'])
+			] + $metadata($service));
+			$this->addRelationEdge($proxy_node, $node_id, HOLOZTEK_MM_RELATION_TELEMETRY);
+
+			$system_counts[$proxy_node] = ($system_counts[$proxy_node] ?? 0) + count($service['systems']);
+		}
 
 		foreach ($systems as $node_id => $system) {
-			$this->addNode($node_id,
-				$system['namespace'] !== ''
-					? $system['namespace'] . ' / ' . $system['service']
-					: $system['service'],
-				HOLOZTEK_MM_NODE_OTEL_SYSTEM,
-				[
-					'otel_service'      => $system['service'],
-					'otel_namespace'    => $system['namespace'],
-					'otel_environments' => array_map('strval', array_keys($system['environments'])),
-					'otel_hosts'        => array_map('strval', array_keys($system['hosts']))
-				]
-			);
-
-			foreach (array_keys($system['proxyids']) as $proxyid) {
-				$proxy_node = holoztek_mm_node_id_proxy((string) $proxyid);
-				$this->addRelationEdge($proxy_node, $node_id, HOLOZTEK_MM_RELATION_TELEMETRY);
-				$system_counts[$proxy_node] = ($system_counts[$proxy_node] ?? 0) + 1;
-			}
+			$this->addNode($node_id, $system['host'], HOLOZTEK_MM_NODE_OTEL_SYSTEM, [
+				'backend_owner' => $system['service_id'],
+				'otel_host'     => $system['host'],
+				'otel_service'  => $system['service']
+			] + $metadata($system));
+			$this->addRelationEdge($system['service_id'], $node_id, HOLOZTEK_MM_RELATION_TELEMETRY_MEMBER);
 		}
 
 		foreach ($this->elements as &$element) {

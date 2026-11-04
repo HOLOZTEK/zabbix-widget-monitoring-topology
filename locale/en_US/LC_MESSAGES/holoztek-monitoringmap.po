@@ -246,11 +246,17 @@ msgstr "APM"
 msgid "APM (available on Zabbix 8.0 or later)"
 msgstr "APM (available on Zabbix 8.0 or later)"
 
+msgid "OpenTelemetry service"
+msgstr "OpenTelemetry service"
+
 msgid "OpenTelemetry system"
 msgstr "OpenTelemetry system"
 
 msgid "Service"
 msgstr "Service"
+
+msgid "Systems"
+msgstr "Systems"
 
 msgid "Namespace"
 msgstr "Namespace"
@@ -276,14 +282,38 @@ msgstr "APM storage"
 msgid "Telemetry"
 msgstr "Telemetry"
 
-msgid "OTel Systems"
-msgstr "OTel Systems"
-
-msgid "Click to expand"
-msgstr "Click to expand"
-
-msgid "Click to collapse"
-msgstr "Click to collapse"
+msgid "Service member"
+msgstr "Service member"
 
 msgid "Drag follow hops"
 msgstr "Drag follow hops"
+
+msgid "OTel observation window (minutes)"
+msgstr "OTel observation window (minutes)"
+
+msgid "Displays OpenTelemetry services and systems observed within this period."
+msgstr "Displays OpenTelemetry services and systems observed within this period."
+
+msgid "A longer period keeps low-frequency telemetry sources visible."
+msgstr "A longer period keeps low-frequency telemetry sources visible."
+
+msgid "Search nodes"
+msgstr "Search nodes"
+
+msgid "No matching nodes"
+msgstr "No matching nodes"
+
+msgid "More results available..."
+msgstr "More results available..."
+
+msgid "Fit topology to view"
+msgstr "Fit topology to view"
+
+msgid "Legend"
+msgstr "Legend"
+
+msgid "Node types"
+msgstr "Node types"
+
+msgid "Virtualization / Cluster"
+msgstr "Virtualization / Cluster"

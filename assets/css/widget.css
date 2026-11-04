@@ -28,9 +28,22 @@ div.dashboard-widget-holoztek_monitoringmap .mm-empty {
 
 /* ── Filter panel ──────────────────────────────────────────────────────────── */
 
-div.dashboard-widget-holoztek_monitoringmap .mm-filter-btn {
+/* Toolbar: [search][fit][legend][filter], the filter button in the corner. */
+div.dashboard-widget-holoztek_monitoringmap .mm-toolbar {
     position: absolute;
-    z-index: 20;
+    z-index: 21;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-toolbar.mm-filter--top-left     { top: 6px;    left: 6px;   flex-direction: row-reverse; }
+div.dashboard-widget-holoztek_monitoringmap .mm-toolbar.mm-filter--top-right    { top: 6px;    right: 6px; }
+div.dashboard-widget-holoztek_monitoringmap .mm-toolbar.mm-filter--bottom-left  { bottom: 6px; left: 6px;   flex-direction: row-reverse; }
+div.dashboard-widget-holoztek_monitoringmap .mm-toolbar.mm-filter--bottom-right { bottom: 6px; right: 6px; }
+
+div.dashboard-widget-holoztek_monitoringmap .mm-tool-btn {
+    flex: none;
     width: 26px;
     height: 26px;
     display: flex;
@@ -44,14 +57,147 @@ div.dashboard-widget-holoztek_monitoringmap .mm-filter-btn {
     padding: 0;
 }
 
-div.dashboard-widget-holoztek_monitoringmap .mm-filter-btn:hover {
+div.dashboard-widget-holoztek_monitoringmap .mm-tool-btn:hover {
     background: var(--ui-hover-bg-color, #f0f3f5);
 }
 
-div.dashboard-widget-holoztek_monitoringmap .mm-filter-btn.mm-filter--top-left     { top: 6px;    left: 6px; }
-div.dashboard-widget-holoztek_monitoringmap .mm-filter-btn.mm-filter--top-right    { top: 6px;    right: 6px; }
-div.dashboard-widget-holoztek_monitoringmap .mm-filter-btn.mm-filter--bottom-left  { bottom: 6px; left: 6px; }
-div.dashboard-widget-holoztek_monitoringmap .mm-filter-btn.mm-filter--bottom-right { bottom: 6px; right: 6px; }
+div.dashboard-widget-holoztek_monitoringmap .mm-tool-btn:focus-visible,
+div.dashboard-widget-holoztek_monitoringmap .mm-search-input:focus-visible {
+    outline: 2px solid var(--link-color, #0275b8);
+    outline-offset: 1px;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-tool-btn[aria-expanded="true"] {
+    background: var(--ui-hover-bg-color, #f0f3f5);
+    border-color: var(--font-alt-color, #768d99);
+}
+
+/* ── Node search ───────────────────────────────────────────────────────────── */
+
+div.dashboard-widget-holoztek_monitoringmap .mm-search {
+    position: relative;
+    display: none;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-search.mm-search--open {
+    display: block;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-search-input {
+    width: 170px;
+    max-width: 40vw;
+    height: 26px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 2px 6px;
+    border: 1px solid var(--ui-border-color, #d3d3d3);
+    border-radius: 4px;
+    background: var(--ui-bg-color, #fff);
+    color: var(--font-color, #1f2c33);
+    font-size: 12px;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-search-list {
+    position: absolute;
+    z-index: 22;
+    width: 260px;
+    max-height: 280px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 2px 0;
+    list-style: none;
+    background: var(--ui-bg-color, #fff);
+    border: 1px solid var(--ui-border-color, #d3d3d3);
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .18);
+    font-size: 12px;
+    color: var(--font-color, #1f2c33);
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-filter--top-right .mm-search-list    { top: 30px;    right: 0; }
+div.dashboard-widget-holoztek_monitoringmap .mm-filter--top-left .mm-search-list     { top: 30px;    left: 0; }
+div.dashboard-widget-holoztek_monitoringmap .mm-filter--bottom-right .mm-search-list { bottom: 30px; right: 0; }
+div.dashboard-widget-holoztek_monitoringmap .mm-filter--bottom-left .mm-search-list  { bottom: 30px; left: 0; }
+
+div.dashboard-widget-holoztek_monitoringmap .mm-search-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 10px;
+    cursor: pointer;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-search-item:hover,
+div.dashboard-widget-holoztek_monitoringmap .mm-search-item--active {
+    background: var(--ui-hover-bg-color, #f0f3f5);
+}
+
+/* Not only a background: the active row is also marked by a bar. */
+div.dashboard-widget-holoztek_monitoringmap .mm-search-item--active {
+    box-shadow: inset 3px 0 0 #f0a400;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-search-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-search-type {
+    flex: none;
+    color: var(--font-alt-color, #768d99);
+    font-size: 11px;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-search-empty,
+div.dashboard-widget-holoztek_monitoringmap .mm-search-more {
+    padding: 4px 10px;
+    color: var(--font-alt-color, #768d99);
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-search-more {
+    border-top: 1px solid var(--ui-border-color, #f0f2f3);
+    font-style: italic;
+}
+
+/* ── Legend ────────────────────────────────────────────────────────────────── */
+
+div.dashboard-widget-holoztek_monitoringmap .mm-filter-panel.mm-legend-panel {
+    width: 210px;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-legend-section {
+    padding: 4px 0;
+    border-bottom: 1px solid var(--ui-border-color, #f0f2f3);
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-legend-section:last-child {
+    border-bottom: none;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-legend-title {
+    padding: 4px 10px;
+    font-weight: bold;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 10px 3px 18px;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-legend-icon {
+    flex: none;
+    width: 18px;
+    height: 18px;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-line-sample {
+    flex: none;
+    vertical-align: middle;
+}
 
 div.dashboard-widget-holoztek_monitoringmap .mm-filter-panel {
     position: absolute;

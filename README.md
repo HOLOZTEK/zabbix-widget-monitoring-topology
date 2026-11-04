@@ -54,9 +54,27 @@ Zabbix 管理画面 → 管理 → モジュール からウィジェットを�
 
 ### 表示状態の維持 / Keeping the view
 
-ウィジェットの更新やブロードキャストによる切替では、拡大位置、ノード位置（ドラッグした位置を含む）、Proxy ハイライト、OTel 集約の展開状態を維持します。増えたノードだけを配置し、消えたノードは取り除きます。ノードをドラッグすると、設定「ドラッグ時の追従ホップ数」（0〜10、既定は 3）以内のノードだけが追従し、それより離れたノードと手動で置いたノードは動きません。0 ならドラッグしたノードだけが動きます。全体表示に戻るのは初回表示時、構成が大きく変わったとき、画面内に表示対象がなくなったときです。
+ウィジェットの更新やブロードキャストによる切替では、拡大位置、ノード位置（ドラッグした位置を含む）、Proxy ハイライトを維持します。増えたノードだけを配置し、消えたノードは取り除きます。ノードをドラッグすると、設定「ドラッグ時の追従ホップ数」（0〜10、既定は 3）以内のノードだけが追従し、それより離れたノードと手動で置いたノードは動きません。0 ならドラッグしたノードだけが動きます。全体表示に戻るのは初回表示時、構成が大きく変わったとき、画面内に表示対象がなくなったときです。
 
-Refreshes and broadcast changes keep the zoom, pan, node positions (including dragged nodes), Proxy highlight and the expanded state of OTel groups. Only added nodes are placed; removed nodes are dropped. Dragging a node also moves the nodes within the "Drag follow hops" setting (0-10, default 3); nodes further away and nodes placed by hand stay put. With 0, only the dragged node moves. The view fits again only on first display, on a substantially different topology, or when nothing remains in view.
+Refreshes and broadcast changes keep the zoom, pan, node positions (including dragged nodes) and Proxy highlight. Only added nodes are placed; removed nodes are dropped. Dragging a node also moves the nodes within the "Drag follow hops" setting (0-10, default 3); nodes further away and nodes placed by hand stay put. With 0, only the dragged node moves. The view fits again only on first display, on a substantially different topology, or when nothing remains in view.
+
+### 検索・全体表示・凡例 / Search, fit and legend
+
+設定「フィルタアイコンの位置」の隅（既定は右上）のツールバーに [検索] [全体を表示] [凡例] [フィルター] が並びます。
+
+- **検索**: 表示中のノードを名前で検索します（大文字・小文字を区別しない部分一致、最大 20 件）。OTel Service は `service.name`、OTel System は `host.name` で表示・検索され、名前空間・環境でも見つかります。OTel System は所属する Service 名でも見つかります。候補には種別（OpenTelemetry サービス／システム）を表示します。クラスターはメンバーのアドレスでも検索できます。候補を選ぶとそのノードへ移動して枠で強調します。フィルターで非表示のノードは候補になりません。Enter で選択、Esc で検索をクリアします。検索語と選択は更新後も維持されます。
+- **全体を表示**: フィルターで表示中のノードがすべて収まるように表示します。
+- **凡例**: 現在の図にある関係（線種）とノード種別を表示します。
+
+縮小表示では Zabbix サーバー、Proxy、Proxy グループ、APM データストア、Zabbix DB、OTel Service を大きく描き、関係の線種も見分けられる太さに保ちます。
+
+The toolbar in the corner set by "Filter icon position" (top right by default) holds Search, Fit, Legend and Filter.
+
+- **Search** finds shown nodes by name (case-insensitive substring, up to 20 results); OTel services are listed by `service.name` and OTel systems by `host.name`; both also match their namespaces and environments, and a system also matches its service name. Each result shows its type (OpenTelemetry service / system). Clusters match their member addresses. Picking a result moves the view to the node and marks it with a frame. Nodes hidden by the filters are not offered. Enter picks, Esc clears. The query and the pick survive refreshes.
+- **Fit** shows every node the filters leave visible.
+- **Legend** lists the relations (line styles) and node types in the current graph.
+
+When zoomed out, the Zabbix server, Proxies, Proxy groups, APM datastores, Zabbix DB and OTel services are drawn larger, and relation line styles stay distinguishable.
 
 ## バックエンド構成 / Backend components
 
@@ -74,7 +92,8 @@ Refreshes and broadcast changes keep the zoom, pan, node positions (including dr
 | 監視 | Server — Proxy — Network — Host | 実線 |
 | データベース | Server — Zabbix DB、Proxy — Proxy DB | 破線 |
 | APM ストレージ | Server — ClickHouse — APM 有効 Proxy | 点線 |
-| テレメトリ | APM 有効 Proxy — OTel System | 一点鎖線 |
+| テレメトリ | APM 有効 Proxy — OTel Service | 一点鎖線 |
+| サービス所属 | OTel Service — OTel System | 二点鎖線 |
 
 - **Zabbix DB**: Server が報告したデータベース種別を表示します。取得できないときはフロントエンドの接続設定を参考情報として使い、ツールチップに取得元を示します。どちらも取得できなければ「Zabbix DB」のみを表示します。接続先アドレスは表示しません。
 - **Proxy DB**: Zabbix API は Proxy のデータベース詳細を提供しないため、「Proxy DB」とだけ表示します。
@@ -84,11 +103,10 @@ Refreshes and broadcast changes keep the zoom, pan, node positions (including dr
 - **Override**: Proxy ごとの Override は API から取得できません。線は Global Data Source との関係を示すもので、その Proxy が実際にこの ClickHouse へ書き込むことを保証しません。
 - **フィルター**: バックエンド構成のノードは Host フィルターの対象外です。Proxy DB は対応する Proxy に従います。Proxy クリック時のハイライトは監視経路のみを対象とします。
 
-- **OTel System**: APM を ON にすると、Proxy を経由して観測された OpenTelemetry の送信元を表示します。単位は `service.namespace` + `service.name`（namespace がなければ `service.name`）で、同じ System は Proxy が複数でも 1 ノードです。Zabbix 8.0 以上が対象です。
-- **OTel 集約**: 1 Proxy の OTel System が 11 件以上のときは `OTel Systems (N)` にまとめます。クリックで展開／集約できます。表示上のまとまりで、監視対象ではありません。
-- **関係フィルター**: フィルターの「関係」で、取得済みの監視経路 / データベース / APM データストア / Telemetry を表示／非表示にできます。表示中の関係につながるノードは残ります。取得の有無は設定「バックエンド構成」が決め、ホストのフィルターとは独立です。
+- **OTel Service / OTel System**: APM を ON にすると、Proxy を経由して観測された OpenTelemetry のテレメトリを「Proxy → OTel Service → OTel System」の固定階層で表示します。OTel Service は Resource Attribute の `service.name`、OTel System は `host.name` をノード名とします（大文字・小文字は区別します）。Service は「Proxy＋`service.name`」、System は「Proxy＋`service.name`＋`host.name`」で識別するため、同じ `host.name` でも Service や Proxy が異なれば別ノードです。`service.name` がないテレメトリは表示せず、`host.name` がない場合は Service だけを表示します。OTel のノードを Zabbix の Host と統合したり、Host と線で結んだりはしません。`service.namespace`・`deployment.environment` は識別に使わない補足情報で、ツールチップに表示し、検索でも使います。Zabbix 8.0 以上が対象です。
+- **関係フィルター**: フィルターの「関係」で、取得済みの監視経路 / データベース / APM データストア / Telemetry を表示／非表示にできます（Telemetry は Proxy—Service と Service—System の両方の線と OTel ノードが対象）。表示中の関係につながるノードは残ります。取得の有無は設定「バックエンド構成」が決め、ホストのフィルターとは独立です。
 - **Proxy との関連付け**: 関連付けの根拠は、Proxy の `additional_resource_attributes` に設定した属性だけです。signal type `traces` に、キー `holoztek.zabbix.proxyid`、値はその Proxy 自身の proxyid を設定してください。設定がない Proxy のテレメトリは表示しません。`host.name` や IP からの推測は行いません。
-- **観測範囲**: 直近 15 分の Span が対象で、最大 100 System まで表示します。表示は観測の事実であり、現在受信中であることを示すものではありません。送信元が同じキーを自分で設定した場合は区別できません。
+- **観測範囲**: 設定「OTel観測期間（分）」（5〜1440、既定は 15）の期間内に Span が確認された OTel Service・OTel System を表示します。期間を長くすると送信頻度の低いシステムも表示されます。この期間はリフレッシュ間隔とは独立で、APM が OFF のときは使いません。OTel Service・OTel System はそれぞれ最大 100 件まで表示します。Span が多く、表示から漏れた組み合わせがある可能性を否定できないときは、APM データストアのツールチップに「APM システムが多すぎるため、一部を表示していません。」と表示します。表示は観測の事実であり、現在受信中であることを示すものではありません。送信元が同じキーを自分で設定した場合は区別できません。
 
 Backend components (Database / APM) are optional and off by default; while off, the widget behaves as before.
 
@@ -96,10 +114,9 @@ Backend components (Database / APM) are optional and off by default; while off, 
 - **APM** (Zabbix 8.0+ only, ignored on 7.0) adds the Global Data Source as a ClickHouse node and shows APM-enabled Proxies, including those with no monitored Hosts. An enabled collector is a configuration state, not proof that telemetry is arriving.
 - Only Super admins can read the Global Data Source. Other users see an abstract "APM Data Store" node when an APM-enabled Proxy exists. Credentials are never passed to the browser.
 - The Global Data Source does not guarantee where a given Proxy actually writes: per-Proxy overrides are not available from the API.
-- With APM on, OTel Systems observed through a Proxy are shown (Zabbix 8.0+; last 15 minutes, up to 100 systems). The link relies only on the Proxy's `additional_resource_attributes`: on signal type `traces`, set the key `holoztek.zabbix.proxyid` to that Proxy's own proxyid. Telemetry without it is not shown, and a Proxy is never inferred from `host.name` or an IP address.
+- With APM on, telemetry observed through a Proxy is shown as a fixed Proxy → OTel Service → OTel System hierarchy (Zabbix 8.0+; up to 100 services and 100 systems; when there are too many spans to rule out a missed combination, the APM datastore tooltip says "Too many APM systems to display."). Services and systems are shown while they have a span within the "OTel observation window (minutes)" setting (5-1440, default 15); a longer window keeps low-frequency telemetry sources visible. The window is independent of the refresh interval and unused while APM is off. An OTel Service is labelled by the resource attribute `service.name` and an OTel System by `host.name` (case-sensitive). A service is identified by Proxy + `service.name` and a system by Proxy + `service.name` + `host.name`, so the same `host.name` under another service or Proxy is a separate node. Telemetry without `service.name` is not shown; without `host.name`, only the service is shown. OTel nodes are never merged with or linked to Zabbix Hosts. `service.namespace` and `deployment.environment` are supplementary: shown in the tooltip and matched by search, never used for identity. The link relies only on the Proxy's `additional_resource_attributes`: on signal type `traces`, set the key `holoztek.zabbix.proxyid` to that Proxy's own proxyid. Telemetry without it is not shown, and a Proxy is never inferred from `host.name` or an IP address.
 - Backend nodes are not affected by the Host filter, and Proxy highlighting follows monitoring edges only.
-- A Proxy with more than 10 OTel Systems shows them as one `OTel Systems (N)` node. Click it to expand or collapse. This is a display grouping, not a monitored object.
-- The filter panel's Relations category shows or hides the Monitoring, Database, APM storage and Telemetry relations already loaded. A node stays visible while any shown relation connects it. The widget's Backend components setting decides what is loaded, and the Host filter works independently.
+- The filter panel's Relations category shows or hides the Monitoring, Database, APM storage and Telemetry relations already loaded (Telemetry covers both the Proxy—service and service—system lines and the OTel nodes). A node stays visible while any shown relation connects it. The widget's Backend components setting decides what is loaded, and the Host filter works independently.
 
 ## 旧ID（monitoringmap）からのアップグレード手順
 
