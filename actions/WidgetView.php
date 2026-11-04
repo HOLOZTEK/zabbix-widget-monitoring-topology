@@ -830,7 +830,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 	// takes the busiest paths; the next two exclude what was seen, so rare ones
 	// still turn up: Services not seen yet, then hosts not seen yet in any
 	// Service. A host and a Service both seen, but not together, can therefore be
-	// missed, and so can the rarer Proxy of a host or Service seen elsewhere.
+	// missed, and so can the rarer Proxy of a host or Service seen elsewhere;
+	// such gaps are reported as truncated (see isOtelFetchComplete()).
 	// The number of queries does not depend on the number of Proxies. Spans
 	// without service.name are excluded by the query itself, so they never use up
 	// the limit.
@@ -841,6 +842,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$seen = [HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE => ['' => true], HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE => ['' => true]];
 		$full = [];
 		$truncated_nodes = false;
+		// Raw Proxy => Service => host combinations returned, and what each query
+		// excluded.
+		$observed = [];
+		$excluded = [];
 
 		$condition = static fn(string $key, int $operator, string $value = '') =>
 			['key' => $key, 'operator' => $operator, 'value' => $value];
@@ -867,6 +872,13 @@ class WidgetView extends CControllerDashboardWidgetView {
 		];
 
 		for ($i = 0; $i < HOLOZTEK_MM_OTEL_MAX_QUERIES; $i++) {
+			if ($i == 1) {
+				$excluded[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE] = $seen[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE];
+			}
+			elseif ($i == 2) {
+				$excluded[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE] = $seen[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE];
+			}
+
 			// Conditions on different keys are ANDed, NOT_EQUAL values on one key too.
 			$exclusions = match ($i) {
 				0 => [],
@@ -887,6 +899,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 				foreach ($seen as $key => $values) {
 					$seen[$key][(string) ($span['resource_attributes'][$key] ?? '')] = true;
 				}
+				$attributes = $span['resource_attributes'] ?? [];
+				$observed[(string) ($attributes[HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE] ?? '')]
+					[(string) ($attributes[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE] ?? '')]
+					[(string) ($attributes[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE] ?? '')] = true;
 				$this->collectOtelTelemetry($services, $systems, $span, $proxyids, $truncated_nodes);
 			}
 
@@ -901,12 +917,47 @@ class WidgetView extends CControllerDashboardWidgetView {
 		ksort($services);
 		ksort($systems);
 
-		// After a full first query, the rest is complete only if no later query was full.
 		return [
 			'services'  => $services,
 			'systems'   => $systems,
-			'truncated' => $truncated_nodes || ($full[0] && in_array(true, array_slice($full, 1), true))
+			'truncated' => $truncated_nodes
+				|| ($full[0] && !self::isOtelFetchComplete($full, $proxyids, $excluded, $observed))
 		];
+	}
+
+	// After a full first query, the second returned every span of a Service not
+	// seen first, and the third every span of a host not seen by then, unless
+	// they were full too. What can remain unread are spans of a Service seen
+	// first, with no host or a host seen by then. They add nothing only if every
+	// such Proxy + Service, and Proxy + Service + host, was already returned.
+	// Keys of these sets may be integers (PHP converts numeric strings), so they
+	// are only looked up, never compared.
+	private static function isOtelFetchComplete(array $full, array $proxyids, array $excluded,
+			array $observed): bool {
+		if (in_array(true, array_slice($full, 1), true) || count($full) < HOLOZTEK_MM_OTEL_MAX_QUERIES) {
+			return false;
+		}
+
+		// Values that never make a node cannot be missing.
+		$named = static fn(array $values) => array_filter($values,
+			static fn($key) => trim((string) $key) !== '', ARRAY_FILTER_USE_KEY
+		);
+		$proxies = array_fill_keys($proxyids, true);
+		$services = $named($excluded[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE]);
+		$hosts = $named($excluded[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE]);
+
+		$service_paths = 0;
+		$system_paths = 0;
+
+		foreach (array_intersect_key($observed, $proxies) as $observed_services) {
+			foreach (array_intersect_key($observed_services, $services) as $observed_hosts) {
+				$service_paths++;
+				$system_paths += count(array_intersect_key($observed_hosts, $hosts));
+			}
+		}
+
+		return $service_paths == count($proxies) * count($services)
+			&& $system_paths == count($proxies) * count($services) * count($hosts);
 	}
 
 	// Reads only the attributes named here: the rest of a span's Resource
