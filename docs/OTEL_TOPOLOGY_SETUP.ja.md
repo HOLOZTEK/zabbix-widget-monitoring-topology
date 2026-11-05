@@ -30,8 +30,8 @@ Monitoring Topology は、ネットワークの物理的なつながりを描く
 そのため、同じ実機が次の 2 つのノードとして同時に表示されることがあります。これは正常な表示です。
 
 ```text
-Zabbix Host: cc001     （Zabbix が監視している Host）
-OpenTelemetry システム: cc001   （Proxy 経由でテレメトリを送ってきた System）
+Zabbix Host: claude-node01            （Zabbix が監視している Host）
+OpenTelemetry システム: claude-node01  （Proxy 経由でテレメトリを送ってきた System）
 ```
 
 ウィジェットはこの 2 つを名前が同じでも自動で統合せず、線でも結びません。
@@ -59,13 +59,13 @@ APM データストアは、Super admin が閲覧し、Zabbix にグローバル
 ```text
 Zabbix Proxy
  ├─ codex-app-server
- │    ├─ cd001
- │    ├─ cd002
- │    └─ cd003
+ │    ├─ codex-node01
+ │    ├─ codex-node02
+ │    └─ codex-node03
  │
  └─ claude-code
-      ├─ cc001
-      └─ cc002
+      ├─ claude-node01
+      └─ claude-node02
 ```
 
 本ガイドでは、OpenTelemetry サービスを「OTel Service」、OpenTelemetry システムを「OTel System」と略して書くことがあります。
@@ -97,7 +97,7 @@ OTel のノードを表示するには、次のすべてが必要です。
 
 値の扱い:
 
-- 大文字と小文字は区別します（`Cd001` と `cd001` は別のノードです）。
+- 大文字と小文字は区別します（`Codex-node01` と `codex-node01` は別のノードです）。
 - 前後の空白は取り除きます。空白だけの値は設定されていないものとして扱います。
 - 表示に使うのは先頭 128 文字までです。
 - `service.namespace` と `deployment.environment` は補足情報です。ツールチップに表示し、検索の対象にもなりますが、ノードを区別するためには使いません。
@@ -122,7 +122,7 @@ OTel のノードを表示するには、次のすべてが必要です。
   "method": "proxy.get",
   "params": {
     "output": ["proxyid", "name"],
-    "filter": {"name": ["Proxy A"]}
+    "filter": {"name": ["proxy01"]}
   },
   "id": 1
 }
@@ -139,7 +139,7 @@ OTel のノードを表示するには、次のすべてが必要です。
 | Data collection enabled | ON |
 | Resource attributes（Process） | Key: `holoztek.zabbix.proxyid`、Value: その Proxy の `proxyid`、Category: `Traces` |
 
-例（`proxyid` が 1 の場合）:
+例（`proxyid` が 1 の場合。実際の値は各 Proxy のものを使います）:
 
 ```text
 holoztek.zabbix.proxyid=1   （Category: Traces）
@@ -181,7 +181,7 @@ AI Agent などの送信元が、ウィジェットに必要な Resource Attribu
 
 ```text
 service.name = codex-app-server
-host.name    = cd001
+host.name    = codex-node01
 ```
 
 ### 6.2 service.name
@@ -201,9 +201,9 @@ service.name = gemini-cli
 `host.name` は、テレメトリを送っている System を見分けるための名前です。OS のホスト名か、組織内で一意な Agent ノード名を推奨します。
 
 ```text
-host.name = cd001
-host.name = cc001
-host.name = gc001
+host.name = codex-node01
+host.name = claude-node01
+host.name = gemini-node01
 ```
 
 ### 6.4 service.name と host.name の役割
@@ -215,12 +215,12 @@ host.name    → 「どの System から来たか」
 
 ```text
 service.name = codex-app-server
-host.name    = cd001 / cd002 / cd003
+host.name    = codex-node01 / codex-node02 / codex-node03
 
 codex-app-server
- ├─ cd001
- ├─ cd002
- └─ cd003
+ ├─ codex-node01
+ ├─ codex-node02
+ └─ codex-node03
 ```
 
 ### 6.5 属性が足りない場合
@@ -238,7 +238,7 @@ OpenTelemetry SDK を使う送信元では、OpenTelemetry 標準の環境変数
 
 ```bash
 export OTEL_SERVICE_NAME="codex-app-server"
-export OTEL_RESOURCE_ATTRIBUTES="host.name=cd001"
+export OTEL_RESOURCE_ATTRIBUTES="host.name=codex-node01"
 ```
 
 ただし、どの設定方法に対応しているかは送信元の実装によって異なります。環境変数を読まない送信元もあれば、独自の設定項目を持つ送信元もあります。**実際に使う送信元のドキュメントで、対応している設定方法を確認してください。** 設定後は、Zabbix の **APM → Traces** で Span の Resource attributes に `service.name` と `host.name` が付いているかを確認できます。
@@ -253,7 +253,7 @@ export OTEL_RESOURCE_ATTRIBUTES="host.name=cd001"
 
 ```text
 service.name = codex-app-server
-host.name    = cd001
+host.name    = codex-node01
 ```
 
 Codex app-server は、ユーザーが操作していないときでも、`auth`、`fs.read_file`、`fs.get_metadata`、`list_models` などの内部処理の Span を継続して送る場合があります。検証環境では、3 台の System のどれも、1 時間のうち Span の間隔が最長で約 4.5 分でした。
@@ -338,13 +338,13 @@ Topology に表示する
 | OpenTelemetry サービス | 最大 100 件 |
 | OpenTelemetry システム | 最大 100 件 |
 
-Span は新しい順に、次の 3 回に分けて取得します。
+Span は新しい順に、最大 3 回に分けて取得します。どの回も「観測期間内」「`holoztek.zabbix.proxyid` が対象 Proxy のもの」「`service.name` があり空でない」を共通の条件とします。
 
-1. 条件なし
+1. 共通の条件のみ（既出値の除外なし）。500 件未満ならここで取得を終えます
 2. 1 回目に出なかった Service
-3. それまでに出なかった `host.name`
+3. それまでに出なかった `host.name`（`host.name` があるものに限る）
 
-`service.name` のない Span は、取得の段階で除外するので上限を使いません。
+`service.name` のない Span は共通の条件で除外するので、上限を使いません。
 
 ### 10.2 取りこぼしが起きる仕組み
 
@@ -375,16 +375,16 @@ Span は新しい順に、次の 3 回に分けて取得します。
 
 ```text
 service.name            = codex-app-server
-host.name               = cd001
-holoztek.zabbix.proxyid = 1   （Proxy 側で付与）
+host.name               = codex-node01
+holoztek.zabbix.proxyid = 1   （Proxy 側で付与。1 は例示値）
 ```
 
 ```text
-Proxy 1
+proxy01（proxyid 1）
    |
 codex-app-server
    |
- cd001
+ codex-node01
 ```
 
 ### 11.2 1 つの Service に複数の System
@@ -393,9 +393,9 @@ codex-app-server
 Proxy
   |
 codex-app-server
- ├─ cd001
- ├─ cd002
- └─ cd003
+ ├─ codex-node01
+ ├─ codex-node02
+ └─ codex-node03
 ```
 
 ### 11.3 複数の Service
@@ -403,12 +403,12 @@ codex-app-server
 ```text
 Proxy
  ├─ codex-app-server
- │   ├─ cd001
- │   └─ cd002
+ │   ├─ codex-node01
+ │   └─ codex-node02
  │
  └─ claude-code
-     ├─ cc001
-     └─ cc002
+     ├─ claude-node01
+     └─ claude-node02
 ```
 
 ### 11.4 同じ host.name で Service が異なる
@@ -427,7 +427,7 @@ service-a          service-b
 
 ### 11.6 Zabbix Host と OpenTelemetry システムの同時表示
 
-[1 章](#1-このtopologyが表すもの)のとおり、`Zabbix Host: cc001` と `OpenTelemetry システム: cc001` が同時に表示されるのは正常です。
+[1 章](#1-このtopologyが表すもの)のとおり、`Zabbix Host: claude-node01` と `OpenTelemetry システム: claude-node01` が同時に表示されるのは正常です。
 
 ## 12. 画面の操作
 
@@ -479,7 +479,7 @@ service-a          service-b
 
 ### 13.5 同じホストが二重に表示される
 
-`Zabbix Host: cc001` と `OpenTelemetry システム: cc001` が両方表示されるのは正常です（[1 章](#1-このtopologyが表すもの)）。
+`Zabbix Host: claude-node01` と `OpenTelemetry システム: claude-node01` が両方表示されるのは正常です（[1 章](#1-このtopologyが表すもの)）。
 
 ### 13.6 期待と違う Proxy の配下に表示される
 
@@ -495,4 +495,7 @@ service-a          service-b
 - 表示されているかどうかは「期間内に Span が観測された」ことを示すだけで、現在受信中であることや、Agent が動いていることを示すものではありません。
 - 最後に Span を受信した時刻はウィジェットには表示されません。**APM → Traces** で確認してください。
 - Span の多い環境では、取得上限のために取りこぼしの警告がほぼ常に表示されることがあります（[10 章](#10-取得上限と取りこぼし)）。
+- OTel観測期間を長くすると、期間内の Span が増えるため取りこぼしが起きやすくなります。
+- 送信元によってテレメトリの送信頻度は大きく異なります。同じ観測期間でも、残り続ける送信元とすぐ消える送信元があります（[7 章](#7-実機で確認した送信元ごとの挙動)）。
+- OTel ノードの表示には対象 Host が 1 台以上表示されている必要がありますが、どの Host を選んだかとは連動しません。条件を満たす全 Proxy 配下のテレメトリを表示します。
 - Super admin 以外の利用者では、APM データストアは種別を特定しない「APM データストア」として表示されます。

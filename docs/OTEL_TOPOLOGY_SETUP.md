@@ -30,8 +30,8 @@ Monitoring Topology is not a network topology. It shows **monitoring and telemet
 Because of this, the same machine can appear as two nodes at the same time. This is expected.
 
 ```text
-Zabbix Host: cc001                 (a Host monitored by Zabbix)
-OpenTelemetry System: cc001        (a System that sent telemetry through a Proxy)
+Zabbix Host: claude-node01           (a Host monitored by Zabbix)
+OpenTelemetry System: claude-node01  (a System that sent telemetry through a Proxy)
 ```
 
 The widget never merges the two or links them, even when their names match.
@@ -59,13 +59,13 @@ Example:
 ```text
 Zabbix Proxy
  ├─ codex-app-server
- │    ├─ cd001
- │    ├─ cd002
- │    └─ cd003
+ │    ├─ codex-node01
+ │    ├─ codex-node02
+ │    └─ codex-node03
  │
  └─ claude-code
-      ├─ cc001
-      └─ cc002
+      ├─ claude-node01
+      └─ claude-node02
 ```
 
 This guide sometimes abbreviates OpenTelemetry Service as "OTel Service" and OpenTelemetry System as "OTel System".
@@ -97,7 +97,7 @@ Notes:
 
 Value handling:
 
-- Values are case-sensitive (`Cd001` and `cd001` are different nodes).
+- Values are case-sensitive (`Codex-node01` and `codex-node01` are different nodes).
 - Leading and trailing spaces are removed. A value of only spaces counts as unset.
 - Only the first 128 characters are used for display.
 - `service.namespace` and `deployment.environment` are supplementary. They are shown in the tooltip and matched by search, but never used to tell nodes apart.
@@ -122,7 +122,7 @@ Set `holoztek.zabbix.proxyid` to the Proxy's **own** `proxyid`. You can find the
   "method": "proxy.get",
   "params": {
     "output": ["proxyid", "name"],
-    "filter": {"name": ["Proxy A"]}
+    "filter": {"name": ["proxy01"]}
   },
   "id": 1
 }
@@ -139,7 +139,7 @@ In **Administration → Proxies**, open the Proxy and set the following on the *
 | Data collection enabled | On |
 | Resource attributes (Process) | Key: `holoztek.zabbix.proxyid`, Value: that Proxy's `proxyid`, Category: `Traces` |
 
-Example (for `proxyid` 1):
+Example (for `proxyid` 1; use your own Proxy's value):
 
 ```text
 holoztek.zabbix.proxyid=1   (Category: Traces)
@@ -181,7 +181,7 @@ For each sender, set at least these two explicitly:
 
 ```text
 service.name = codex-app-server
-host.name    = cd001
+host.name    = codex-node01
 ```
 
 ### 6.2 service.name
@@ -201,9 +201,9 @@ Several Systems can send telemetry for the same Service.
 `host.name` identifies the System that sends the telemetry. Use the OS hostname, or an agent node name that is unique within your organization.
 
 ```text
-host.name = cd001
-host.name = cc001
-host.name = gc001
+host.name = codex-node01
+host.name = claude-node01
+host.name = gemini-node01
 ```
 
 ### 6.4 Roles of service.name and host.name
@@ -215,12 +215,12 @@ host.name    → "which System it came from"
 
 ```text
 service.name = codex-app-server
-host.name    = cd001 / cd002 / cd003
+host.name    = codex-node01 / codex-node02 / codex-node03
 
 codex-app-server
- ├─ cd001
- ├─ cd002
- └─ cd003
+ ├─ codex-node01
+ ├─ codex-node02
+ └─ codex-node03
 ```
 
 ### 6.5 Missing attributes
@@ -238,7 +238,7 @@ Senders that use an OpenTelemetry SDK may accept the standard OpenTelemetry envi
 
 ```bash
 export OTEL_SERVICE_NAME="codex-app-server"
-export OTEL_RESOURCE_ATTRIBUTES="host.name=cd001"
+export OTEL_RESOURCE_ATTRIBUTES="host.name=codex-node01"
 ```
 
 Which methods are supported depends on the sender. Some senders ignore these variables and some have their own settings. **Check your sender's documentation for the methods it supports.** After setting them, use **APM → Traces** in Zabbix to confirm that the spans' resource attributes include `service.name` and `host.name`.
@@ -253,7 +253,7 @@ Example settings:
 
 ```text
 service.name = codex-app-server
-host.name    = cd001
+host.name    = codex-node01
 ```
 
 Codex app-server can keep sending spans for internal work, such as `auth`, `fs.read_file`, `fs.get_metadata` and `list_models`, even when nobody is using it. In the lab, the longest gap between spans of each of the three Systems was about 4.5 minutes over an hour.
@@ -338,13 +338,13 @@ A longer window means:
 | OpenTelemetry Services | Up to 100 |
 | OpenTelemetry Systems | Up to 100 |
 
-Spans are fetched newest first, in three queries:
+Spans are fetched newest first, in up to three queries. Every query has the same base conditions: within the observation window, `holoztek.zabbix.proxyid` belongs to a target Proxy, and `service.name` is present and not empty.
 
-1. With no extra condition
+1. The base conditions only (nothing already seen is excluded). If this returns fewer than 500 rows, fetching stops here
 2. Services not seen in the first query
-3. `host.name` values not seen so far
+3. `host.name` values not seen so far (only spans that have `host.name`)
 
-Spans without `service.name` are excluded by the query itself, so they never use up the limit.
+Spans without `service.name` are excluded by the base conditions, so they never use up the limit.
 
 ### 10.2 How telemetry gets missed
 
@@ -375,16 +375,16 @@ The widget omits the warning only when it could confirm every combination within
 
 ```text
 service.name            = codex-app-server
-host.name               = cd001
-holoztek.zabbix.proxyid = 1   (set by the Proxy)
+host.name               = codex-node01
+holoztek.zabbix.proxyid = 1   (set by the Proxy; 1 is an example value)
 ```
 
 ```text
-Proxy 1
+proxy01 (proxyid 1)
    |
 codex-app-server
    |
- cd001
+ codex-node01
 ```
 
 ### 11.2 Several Systems in one Service
@@ -393,9 +393,9 @@ codex-app-server
 Proxy
   |
 codex-app-server
- ├─ cd001
- ├─ cd002
- └─ cd003
+ ├─ codex-node01
+ ├─ codex-node02
+ └─ codex-node03
 ```
 
 ### 11.3 Several Services
@@ -403,12 +403,12 @@ codex-app-server
 ```text
 Proxy
  ├─ codex-app-server
- │   ├─ cd001
- │   └─ cd002
+ │   ├─ codex-node01
+ │   └─ codex-node02
  │
  └─ claude-code
-     ├─ cc001
-     └─ cc002
+     ├─ claude-node01
+     └─ claude-node02
 ```
 
 ### 11.4 Same host.name under different Services
@@ -427,7 +427,7 @@ A System observed through several Proxies is also shown as separate paths. Monit
 
 ### 11.6 A Zabbix Host and an OpenTelemetry System together
 
-As explained in [section 1](#1-what-this-topology-shows), `Zabbix Host: cc001` and `OpenTelemetry System: cc001` shown together is expected.
+As explained in [section 1](#1-what-this-topology-shows), `Zabbix Host: claude-node01` and `OpenTelemetry System: claude-node01` shown together is expected.
 
 ## 12. Using the view
 
@@ -479,7 +479,7 @@ This is not necessarily a fault. Check whether the agent itself keeps sending ba
 
 ### 13.5 The same host appears twice
 
-`Zabbix Host: cc001` and `OpenTelemetry System: cc001` shown together is expected ([section 1](#1-what-this-topology-shows)).
+`Zabbix Host: claude-node01` and `OpenTelemetry System: claude-node01` shown together is expected ([section 1](#1-what-this-topology-shows)).
 
 ### 13.6 Shown under an unexpected Proxy
 
@@ -495,4 +495,7 @@ See [10.4](#104-what-to-do-about-the-warning).
 - A node being shown only means a span was observed within the window. It does not mean telemetry is arriving now or that the agent is running.
 - The widget does not show when the last span arrived. Check **APM → Traces**.
 - In environments with many spans, the warning about missed telemetry can show nearly all the time because of the fetch limits ([section 10](#10-fetch-limits-and-missed-telemetry)).
+- A longer OTel observation window includes more spans, so telemetry is more likely to be missed.
+- Senders differ widely in how often they send telemetry. With the same observation window, some senders stay visible while others soon disappear ([section 7](#7-sender-behaviour-observed-in-a-lab)).
+- OTel nodes need at least one target host to be shown, but they do not follow which hosts are selected. Telemetry under every qualifying Proxy is shown.
 - For users other than Super admins, the APM data store is shown as a generic "APM Data Store" without naming its type.
