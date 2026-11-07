@@ -16,6 +16,7 @@ Zabbixの監視経路（ZabbixServer / Proxy / Network / Host のつながり）
 - ホストノードクリックでホスト詳細画面へ遷移
 - ノードホバーでツールチップ表示
 - バックエンド構成（Zabbix DB / Proxy DB / APM）の表示（任意・既定 OFF）
+- OpenTelemetry Topology（Proxy → OpenTelemetry サービス → OpenTelemetry システム）の表示（Zabbix 8.0 以上・[導入ガイド](docs/OTEL_TOPOLOGY_SETUP.ja.md) / [Setup Guide](docs/OTEL_TOPOLOGY_SETUP.md)）
 
 ## 動作要件
 
@@ -117,6 +118,31 @@ Backend components (Database / APM) are optional and off by default; while off, 
 - With APM on, telemetry observed through a Proxy is shown as a fixed Proxy → OTel Service → OTel System hierarchy (Zabbix 8.0+; up to 100 services and 100 systems; when there are too many spans to rule out a missed combination, the APM datastore tooltip says "Too many APM systems to display."). Services and systems are shown while they have a span within the "OTel observation window (minutes)" setting (5-1440, default 15); a longer window keeps low-frequency telemetry sources visible. The window is independent of the refresh interval and unused while APM is off. An OTel Service is labelled by the resource attribute `service.name` and an OTel System by `host.name` (case-sensitive). A service is identified by Proxy + `service.name` and a system by Proxy + `service.name` + `host.name`, so the same `host.name` under another service or Proxy is a separate node. Telemetry without `service.name` is not shown; without `host.name`, only the service is shown. OTel nodes are never merged with or linked to Zabbix Hosts. `service.namespace` and `deployment.environment` are supplementary: shown in the tooltip and matched by search, never used for identity. The link relies only on the Proxy's `additional_resource_attributes`: on signal type `traces`, set the key `holoztek.zabbix.proxyid` to that Proxy's own proxyid. Telemetry without it is not shown, and a Proxy is never inferred from `host.name` or an IP address.
 - Backend nodes are not affected by the Host filter, and Proxy highlighting follows monitoring edges only.
 - The filter panel's Relations category shows or hides the Monitoring, Database, APM storage and Telemetry relations already loaded (Telemetry covers both the Proxy—service and service—system lines and the OTel nodes). A node stays visible while any shown relation connects it. The widget's Backend components setting decides what is loaded, and the Host filter works independently.
+
+## OpenTelemetry Topology
+
+Zabbix Proxy が受信した OpenTelemetry のテレメトリを、次の固定階層で表示します（Zabbix 8.0 以上、設定「バックエンド構成」の APM を ON）。
+
+```text
+Zabbix Server → APM Data Store (ClickHouse) → Zabbix Proxy
+    → OpenTelemetry サービス (service.name) → OpenTelemetry システム (host.name)
+```
+
+- Proxy の APM 設定で、Resource attribute `holoztek.zabbix.proxyid`（Category: Traces）にその Proxy 自身の proxyid を設定します。
+- 送信元は `service.name`（必須）と `host.name`（推奨）を Resource Attribute として送信します。
+- OpenTelemetry システムは Zabbix の Host と統合しません。同じ名前の Host とシステムが並んで表示されるのは正常です。
+- 「OTel観測期間（分）」内に Span が観測されたものだけを表示します。
+
+設定手順・送信元ごとの注意・観測期間の選び方・トラブルシュートは [OpenTelemetry Topology 導入ガイド](docs/OTEL_TOPOLOGY_SETUP.ja.md) を参照してください。
+
+Shows OpenTelemetry telemetry received by a Zabbix Proxy as a fixed hierarchy: Zabbix Server → APM Data Store (ClickHouse) → Zabbix Proxy → OpenTelemetry Service (`service.name`) → OpenTelemetry System (`host.name`). It needs Zabbix 8.0+ and APM turned on under Backend components.
+
+- On the Proxy's APM tab, set the resource attribute `holoztek.zabbix.proxyid` (Category: Traces) to that Proxy's own proxyid.
+- Senders send `service.name` (required) and `host.name` (recommended) as resource attributes.
+- OpenTelemetry Systems are never merged with Zabbix Hosts, so a Host and a System with the same name shown side by side is expected.
+- Only telemetry with a span within the "OTel observation window (minutes)" is shown.
+
+For setup steps, sender notes, choosing the observation window and troubleshooting, see the [OpenTelemetry Topology Setup Guide](docs/OTEL_TOPOLOGY_SETUP.md).
 
 ## 旧ID（monitoringmap）からのアップグレード手順
 
