@@ -7,6 +7,41 @@ function _holoztek_mm(string $string): string {
 const HOLOZTEK_MM_NODE_SERVER = 'server';
 const HOLOZTEK_MM_NODE_PROXY_GROUP = 'proxy_group';
 const HOLOZTEK_MM_NODE_PROXY = 'proxy';
+
+// Backend components (see WidgetView::addDatabaseComponents() and
+// addApmComponents()). These are not part of the monitoring tree: they carry no
+// Hosts, and their edges carry a relation_type so the client keeps them apart.
+const HOLOZTEK_MM_NODE_ZABBIX_DB = 'zabbix_db';
+const HOLOZTEK_MM_NODE_PROXY_DB = 'proxy_db';
+const HOLOZTEK_MM_NODE_APM_DATASTORE = 'apm_datastore';
+const HOLOZTEK_MM_NODE_OTEL_SERVICE = 'otel_service';
+const HOLOZTEK_MM_NODE_OTEL_SYSTEM = 'otel_system';
+
+const HOLOZTEK_MM_RELATION_DATABASE = 'database';
+const HOLOZTEK_MM_RELATION_APM_STORAGE = 'apm_storage';
+// Proxy -> OTel Service, and OTel Service -> OTel System.
+const HOLOZTEK_MM_RELATION_TELEMETRY = 'telemetry';
+const HOLOZTEK_MM_RELATION_TELEMETRY_MEMBER = 'telemetry_member';
+
+// Resource Attribute a Proxy adds to received traces through its
+// additional_resource_attributes, with its own proxyid as the value. It is the
+// only basis for linking telemetry to a Proxy.
+const HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE = 'holoztek.zabbix.proxyid';
+// Resource Attributes of the fixed Proxy -> Service -> System path: telemetry
+// without service.name is not shown, without host.name it stops at its Service.
+const HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE = 'service.name';
+const HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE = 'host.name';
+const HOLOZTEK_MM_OTEL_SIGNAL_TRACES = 0;
+// OTel observation window in minutes: a Service or System is shown while it
+// has a span this recent. Widget setting, independent of the refresh interval.
+const HOLOZTEK_MM_OTEL_WINDOW_DEFAULT = 15;
+const HOLOZTEK_MM_OTEL_WINDOW_MIN = 5;
+const HOLOZTEK_MM_OTEL_WINDOW_MAX = 1440;
+const HOLOZTEK_MM_OTEL_MAX_SYSTEMS = 100;
+const HOLOZTEK_MM_OTEL_MAX_QUERIES = 3;
+const HOLOZTEK_MM_OTEL_SPANS_PER_QUERY = 500;
+const HOLOZTEK_MM_OTEL_MAX_VALUES = 5;
+const HOLOZTEK_MM_OTEL_MAX_VALUE_LENGTH = 128;
 const HOLOZTEK_MM_NODE_NETWORK = 'network';
 const HOLOZTEK_MM_NODE_CLUSTER = 'cluster';
 const HOLOZTEK_MM_NODE_DATACENTER = 'datacenter';
@@ -350,6 +385,29 @@ function holoztek_mm_node_id_proxy(string $proxyid): string {
 	return 'p_' . $proxyid;
 }
 
+function holoztek_mm_node_id_zabbix_db(): string {
+	return 'zdb';
+}
+
+function holoztek_mm_node_id_proxy_db(string $proxyid): string {
+	return 'pdb_' . $proxyid;
+}
+
+function holoztek_mm_node_id_apm_datastore(): string {
+	return 'apmds';
+}
+
+// Both are one path of telemetry collection, not one real thing: the same
+// service.name or host.name under another Proxy (or another Service) is another
+// node. Case-sensitive, so HOST01 and host01 are two systems.
+function holoztek_mm_node_id_otel_service(string $proxyid, string $service): string {
+	return 'otels_' . md5($proxyid . "\0" . $service);
+}
+
+function holoztek_mm_node_id_otel_system(string $proxyid, string $service, string $host): string {
+	return 'otel_' . md5($proxyid . "\0" . $service . "\0" . $host);
+}
+
 function holoztek_mm_node_id_proxy_group(string $proxy_groupid): string {
 	return 'pg_' . $proxy_groupid;
 }
@@ -461,4 +519,33 @@ function holoztek_mm_node_id_datacenter(string $upstream, string $name): string 
 // it was discovered in.
 function holoztek_mm_node_id_vmware_cluster(string $datacenter_node, string $name): string {
 	return 'vc_' . $datacenter_node . '_' . holoztek_mm_id_slug($name);
+}
+
+// proxy.get selectApm and settings.get apm_global_db exist from Zabbix 8.0 only.
+// ZABBIX_API_VERSION rather than ZABBIX_VERSION: it carries no "rc" suffix.
+function holoztek_mm_apm_supported(): bool {
+	return defined('ZABBIX_API_VERSION') && version_compare(ZABBIX_API_VERSION, '8.0', '>=');
+}
+
+// Reduces the Server's dbversion_status to a database type name. Entries are
+// matched against a fixed list, so only a known name ever reaches the client;
+// an extension entry such as TimescaleDB, or anything unrecognized, is skipped.
+function holoztek_mm_db_type_from_version_status(array $status): ?string {
+	$known = ['mysql' => 'MySQL', 'mariadb' => 'MariaDB', 'postgresql' => 'PostgreSQL'];
+
+	foreach ($status as $entry) {
+		$name = is_array($entry) ? strtolower((string) ($entry['database'] ?? '')) : '';
+
+		if (isset($known[$name])) {
+			return $known[$name];
+		}
+	}
+
+	return null;
+}
+
+function holoztek_mm_db_type_from_frontend_config(string $type): ?string {
+	$known = ['MYSQL' => 'MySQL', 'POSTGRESQL' => 'PostgreSQL'];
+
+	return $known[strtoupper($type)] ?? null;
 }

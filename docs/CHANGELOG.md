@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.2.3 - 2026-11-04
+
+- Added node search, fit-to-view, legends, and improved zoomed-out readability.
+- Displayed OpenTelemetry as Proxy → OTel Service (`service.name`) → OTel System (`host.name`).
+- Added the OTel observation window and truncation warning.
+
+## v1.2.2 - 2026-11-03
+
+- Preserved zoom, pan, node positions, and Proxy highlights during incremental updates.
+- Added relation filters and configurable drag-follow hops.
+
+## v1.2.1 - 2026-11-01
+
+- Added OpenTelemetry systems observed through APM-enabled Zabbix Proxies.
+
+## v1.2.0 - 2026-10-31
+
+- Added optional Zabbix DB, Proxy DB, and Zabbix 8.0 APM backend topology.
+
 ## v1.1.3 - 2026-10-11
 
 - Standardized RPM PHP dependencies as `(php >= 8.1 or php-common >= 8.1)` and `php-fpm >= 8.1`.

@@ -4,7 +4,10 @@ namespace Modules\HoloztekMonitoringMap\Actions;
 
 use API,
 	CControllerDashboardWidgetView,
-	CControllerResponseData;
+	CControllerResponseData,
+	CMessageHelper,
+	CSettingsHelper,
+	CWebUser;
 
 use Modules\HoloztekMonitoringMap\Includes\WidgetForm;
 
@@ -30,6 +33,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'node_font_style'  => (int) ($fv['node_font_style'] ?? 0),
 			'node_font_color'  => ($fv['node_font_color'] ?? '') !== '' ? '#' . $fv['node_font_color'] : '',
 			'edge_width'       => (int) ($fv['edge_width'] ?? 1),
+			'drag_follow_hops' => (int) ($fv['drag_follow_hops'] ?? 3),
 			'edge_color'       => '#' . ($fv['edge_color'] ?: 'aac4d8'),
 			'filter_position'  => (int) ($fv['filter_position'] ?? WidgetForm::FILTER_POSITION_TOP_RIGHT),
 			'severity_colors'  => $this->severityColors(),
@@ -335,6 +339,22 @@ class WidgetView extends CControllerDashboardWidgetView {
 			])
 			: [];
 
+		$backend_components = array_map('intval', (array) ($fv['backend_components'] ?? []));
+		$show_database = in_array(WidgetForm::BACKEND_DATABASE, $backend_components, true);
+		$show_apm = in_array(WidgetForm::BACKEND_APM, $backend_components, true) && holoztek_mm_apm_supported();
+
+		// An APM-enabled Proxy need not monitor any selected Host, so it is added
+		// to the same list: one Proxy always stays one node, and its Proxy Group
+		// is resolved along with those of the Hosts.
+		$apm_proxies = $show_apm ? $this->fetchApmProxies() : [];
+		if ($apm_proxies) {
+			$proxies = (array) $proxies + $apm_proxies;
+			$proxy_groupids = array_values(array_unique(array_filter(
+				array_merge($proxy_groupids, array_column($apm_proxies, 'proxy_groupid')),
+				$is_id
+			)));
+		}
+
 		$proxy_groups = $proxy_groupids
 			? API::ProxyGroup()->get([
 				'output'         => ['proxy_groupid', 'name'],
@@ -368,7 +388,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$proxy_unresponsive = ((int) ($proxy['state'] ?? ZBX_PROXY_STATE_UNKNOWN)) !== ZBX_PROXY_STATE_ONLINE;
 			$this->addNode($proxy_node, (string) $proxy['name'], HOLOZTEK_MM_NODE_PROXY, [
 				'proxy_unresponsive' => $proxy_unresponsive
-			]);
+			] + (isset($apm_proxies[$proxyid]) ? ['apm_collector' => true] : []));
 
 			$proxy_parent = $proxy_group_upstream_node[$proxy['proxy_groupid']] ?? holoztek_mm_node_id_server();
 			$this->addEdge($proxy_parent, $proxy_node);
@@ -606,6 +626,14 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$this->addEdge($cluster_node, $host_node);
 		}
 
+		if ($show_database) {
+			$this->addDatabaseComponents($proxies);
+		}
+
+		if ($show_apm) {
+			$this->addApmComponents($apm_proxies, self::otelWindowSeconds($fv));
+		}
+
 		$this->applyClusterMemberIps();
 		$this->applyProblems($hosts);
 
@@ -719,6 +747,452 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$this->elements[] = [
 			'data' => ['id' => $id, 'label' => $label, 'type' => $type] + $extra
 		];
+	}
+
+	// A backend relation (database, apm_storage), as opposed to the monitoring
+	// tree that addEdge() builds. The relation_type is what keeps the client from
+	// walking it as a parent-child link - see #initGraph() in class.widget.js.
+	private function addRelationEdge(string $source, string $target, string $relation_type): void {
+		$key = $source . '->' . $target;
+		if (isset($this->edge_keys[$key])) {
+			return;
+		}
+		$this->edge_keys[$key] = true;
+
+		$this->elements[] = [
+			'data' => ['source' => $source, 'target' => $target, 'relation_type' => $relation_type]
+		];
+	}
+
+	// Backend components are optional enrichment: a failure here must leave the
+	// topology intact. CFrontendApiWrapper reports a failed call by queueing an
+	// error message, which the widget would then show, so the queue is put back
+	// as it was. Returns null on failure.
+	private function optionalApiCall(callable $call): ?array {
+		$messages = CMessageHelper::getMessages();
+
+		try {
+			$result = $call();
+		}
+		catch (\Throwable $e) {
+			$result = false;
+		}
+
+		if (!is_array($result)) {
+			CMessageHelper::clear();
+			foreach ($messages as $message) {
+				CMessageHelper::addMessage($message);
+			}
+
+			return null;
+		}
+
+		return $result;
+	}
+
+	// data_collection_status = 1 means the Proxy's APM Collector is enabled. It
+	// says nothing about telemetry actually arriving.
+	private function fetchApmProxies(): array {
+		$proxies = $this->optionalApiCall(static fn() => API::Proxy()->get([
+			'output'       => ['proxyid', 'name', 'proxy_groupid', 'state'],
+			'selectApm'    => ['data_collection_status', 'additional_resource_attributes'],
+			'preservekeys' => true
+		]));
+
+		$apm_proxies = [];
+		foreach ($proxies ?? [] as $proxyid => $proxy) {
+			if ((int) ($proxy['apm']['data_collection_status'] ?? 0) === 1) {
+				$proxy['otel_tagged'] = $this->isOtelTaggedProxy((string) $proxyid, $proxy['apm']);
+				unset($proxy['apm']);
+				$apm_proxies[$proxyid] = $proxy;
+			}
+		}
+
+		return $apm_proxies;
+	}
+
+	// Only a Proxy configured to tag its traces with its own proxyid can be linked
+	// to telemetry. A sender can set the same attribute itself, so a value no
+	// Proxy claims must not match anything. Other attributes are not kept.
+	private function isOtelTaggedProxy(string $proxyid, array $apm): bool {
+		foreach ($apm['additional_resource_attributes'] ?? [] as $attribute) {
+			if (($attribute['key'] ?? '') === HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE
+					&& (int) ($attribute['signal_type'] ?? -1) === HOLOZTEK_MM_OTEL_SIGNAL_TRACES
+					&& (string) ($attribute['value'] ?? '') === $proxyid) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	// The API has no DISTINCT and a busy path fills any limit. The first query
+	// takes the busiest paths; the next two exclude what was seen, so rare ones
+	// still turn up: Services not seen yet, then hosts not seen yet in any
+	// Service. A host and a Service both seen, but not together, can therefore be
+	// missed, and so can the rarer Proxy of a host or Service seen elsewhere;
+	// such gaps are reported as truncated (see isOtelFetchComplete()).
+	// The number of queries does not depend on the number of Proxies. Spans
+	// without service.name are excluded by the query itself, so they never use up
+	// the limit.
+	private function fetchOtelTelemetry(array $proxyids, int $window): array {
+		$time_till = time();
+		$services = [];
+		$systems = [];
+		$seen = [HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE => ['' => true], HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE => ['' => true]];
+		$full = [];
+		$truncated_nodes = false;
+		// Raw Proxy => Service => host combinations returned, and what each query
+		// excluded.
+		$observed = [];
+		$excluded = [];
+
+		$condition = static fn(string $key, int $operator, string $value = '') =>
+			['key' => $key, 'operator' => $operator, 'value' => $value];
+		$exclude = static fn(string $key, array $values) => array_map(
+			static fn($value) => $condition($key, TAG_OPERATOR_NOT_EQUAL, (string) $value), array_keys($values)
+		);
+
+		$proxy_filter = array_map(
+			static fn(string $proxyid) => $condition(HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE, TAG_OPERATOR_EQUAL, $proxyid),
+			$proxyids
+		);
+		$service_filter = [
+			$condition(HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE, TAG_OPERATOR_EXISTS),
+			$condition(HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE, TAG_OPERATOR_NOT_EQUAL)
+		];
+
+		$options = [
+			'output'    => ['resource_attributes'],
+			'time_from' => $time_till - $window,
+			'time_till' => $time_till,
+			'sortfield' => ['timestamp'],
+			'sortorder' => ZBX_SORT_DOWN,
+			'limit'     => HOLOZTEK_MM_OTEL_SPANS_PER_QUERY
+		];
+
+		for ($i = 0; $i < HOLOZTEK_MM_OTEL_MAX_QUERIES; $i++) {
+			if ($i == 1) {
+				$excluded[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE] = $seen[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE];
+			}
+			elseif ($i == 2) {
+				$excluded[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE] = $seen[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE];
+			}
+
+			// Conditions on different keys are ANDed, NOT_EQUAL values on one key too.
+			$exclusions = match ($i) {
+				0 => [],
+				1 => $exclude(HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE, $seen[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE]),
+				default => array_merge([$condition(HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE, TAG_OPERATOR_EXISTS)],
+					$exclude(HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE, $seen[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE])
+				)
+			};
+			$options['resource_attributes'] = array_merge($proxy_filter, $service_filter, $exclusions);
+
+			$spans = $this->optionalApiCall(static fn() => API::ApmSpan()->get($options));
+
+			if ($spans === null) {
+				return ['services' => [], 'systems' => [], 'truncated' => false];
+			}
+
+			foreach ($spans as $span) {
+				foreach ($seen as $key => $values) {
+					$seen[$key][(string) ($span['resource_attributes'][$key] ?? '')] = true;
+				}
+				$attributes = $span['resource_attributes'] ?? [];
+				$observed[(string) ($attributes[HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE] ?? '')]
+					[(string) ($attributes[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE] ?? '')]
+					[(string) ($attributes[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE] ?? '')] = true;
+				$this->collectOtelTelemetry($services, $systems, $span, $proxyids, $truncated_nodes);
+			}
+
+			$full[$i] = count($spans) >= HOLOZTEK_MM_OTEL_SPANS_PER_QUERY;
+
+			// The first query was not full, so nothing was left out.
+			if (!$full[0]) {
+				break;
+			}
+		}
+
+		ksort($services);
+		ksort($systems);
+
+		return [
+			'services'  => $services,
+			'systems'   => $systems,
+			'truncated' => $truncated_nodes
+				|| ($full[0] && !self::isOtelFetchComplete($full, $proxyids, $excluded, $observed))
+		];
+	}
+
+	// After a full first query, the second returned every span of a Service not
+	// seen first, and the third every span of a host not seen by then, unless
+	// they were full too. What can remain unread are spans of a Service seen
+	// first, with no host or a host seen by then. They add nothing only if every
+	// such Proxy + Service, and Proxy + Service + host, was already returned.
+	// Keys of these sets may be integers (PHP converts numeric strings), so they
+	// are only looked up, never compared.
+	private static function isOtelFetchComplete(array $full, array $proxyids, array $excluded,
+			array $observed): bool {
+		if (in_array(true, array_slice($full, 1), true) || count($full) < HOLOZTEK_MM_OTEL_MAX_QUERIES) {
+			return false;
+		}
+
+		// Values that never make a node cannot be missing.
+		$named = static fn(array $values) => array_filter($values,
+			static fn($key) => trim((string) $key) !== '', ARRAY_FILTER_USE_KEY
+		);
+		$proxies = array_fill_keys($proxyids, true);
+		$services = $named($excluded[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE]);
+		$hosts = $named($excluded[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE]);
+
+		$service_paths = 0;
+		$system_paths = 0;
+
+		foreach (array_intersect_key($observed, $proxies) as $observed_services) {
+			foreach (array_intersect_key($observed_services, $services) as $observed_hosts) {
+				$service_paths++;
+				$system_paths += count(array_intersect_key($observed_hosts, $hosts));
+			}
+		}
+
+		return $service_paths == count($proxies) * count($services)
+			&& $system_paths == count($proxies) * count($services) * count($hosts);
+	}
+
+	// Reads only the attributes named here: the rest of a span's Resource
+	// Attributes is sender-defined, can hold anything, and must not reach the
+	// browser.
+	private function collectOtelTelemetry(array &$services, array &$systems, array $span, array $proxyids,
+			bool &$truncated): void {
+		$attributes = $span['resource_attributes'] ?? [];
+		$clip = static fn($value) => mb_substr(trim((string) $value), 0, HOLOZTEK_MM_OTEL_MAX_VALUE_LENGTH);
+
+		$proxyid = (string) ($attributes[HOLOZTEK_MM_OTEL_PROXY_ATTRIBUTE] ?? '');
+		$service = $clip($attributes[HOLOZTEK_MM_OTEL_SERVICE_ATTRIBUTE] ?? '');
+		$host = $clip($attributes[HOLOZTEK_MM_OTEL_HOST_ATTRIBUTE] ?? '');
+
+		// No service.name, no path: a System is never hung on the Proxy directly.
+		if ($service === '' || !in_array($proxyid, $proxyids, true)) {
+			return;
+		}
+
+		$service_id = holoztek_mm_node_id_otel_service($proxyid, $service);
+
+		// Services are capped like Systems, so that ever-new service.name values
+		// cannot flood the graph either.
+		if (!isset($services[$service_id])) {
+			if (count($services) >= HOLOZTEK_MM_OTEL_MAX_SYSTEMS) {
+				$truncated = true;
+				return;
+			}
+
+			$services[$service_id] = [
+				'proxyid'      => $proxyid,
+				'service'      => $service,
+				'systems'      => [],
+				'namespaces'   => [],
+				'environments' => []
+			];
+		}
+
+		self::collectOtelMetadata($services[$service_id], $attributes, $clip);
+
+		// The Service is known to send, but not from where.
+		if ($host === '') {
+			return;
+		}
+
+		$system_id = holoztek_mm_node_id_otel_system($proxyid, $service, $host);
+
+		if (!isset($systems[$system_id])) {
+			if (count($systems) >= HOLOZTEK_MM_OTEL_MAX_SYSTEMS) {
+				$truncated = true;
+				return;
+			}
+
+			$systems[$system_id] = [
+				'service_id'   => $service_id,
+				'service'      => $service,
+				'host'         => $host,
+				'namespaces'   => [],
+				'environments' => []
+			];
+			$services[$service_id]['systems'][$system_id] = true;
+		}
+
+		self::collectOtelMetadata($systems[$system_id], $attributes, $clip);
+	}
+
+	// Shown, never used to tell nodes apart.
+	private static function collectOtelMetadata(array &$node, array $attributes, callable $clip): void {
+		foreach (['namespaces' => 'service.namespace', 'environments' => 'deployment.environment'] as $field => $key) {
+			$value = $clip($attributes[$key] ?? '');
+
+			if ($value !== '' && count($node[$field]) < HOLOZTEK_MM_OTEL_MAX_VALUES) {
+				$node[$field][$value] = true;
+			}
+		}
+	}
+
+	// Only ever keeps status and db: the rest of apm_global_db (url, username,
+	// TLS options) is dropped here and never reaches the client. settings.get
+	// rejects this field for anyone but a Super admin, so that case is skipped
+	// outright and reported as null (unknown), not as "not configured".
+	private function fetchApmGlobalDataSource(): ?array {
+		if (CWebUser::getType() != USER_TYPE_SUPER_ADMIN) {
+			return null;
+		}
+
+		$settings = $this->optionalApiCall(static fn() => API::Settings()->get(['output' => ['apm_global_db']]));
+
+		if ($settings === null || !is_array($settings['apm_global_db'] ?? null)) {
+			return null;
+		}
+
+		return [
+			'status' => (int) ($settings['apm_global_db']['status'] ?? 0),
+			'db'     => (string) ($settings['apm_global_db']['db'] ?? '')
+		];
+	}
+
+	// The type the Server itself reported is preferred. The Frontend's own
+	// connection type is only a hint, as the two can be configured apart, so it
+	// is marked inferred. Of $DB, only TYPE is read.
+	private function detectServerDatabase(): array {
+		global $DB;
+
+		$status = [];
+		try {
+			if (class_exists('CSettingsHelper') && method_exists('CSettingsHelper', 'getDbVersionStatus')) {
+				$status = CSettingsHelper::getDbVersionStatus();
+			}
+		}
+		catch (\Throwable $e) {
+			$status = [];
+		}
+
+		$db_type = holoztek_mm_db_type_from_version_status($status);
+		if ($db_type !== null) {
+			return ['db_type' => $db_type, 'db_source' => 'server_runtime', 'db_confidence' => 'confirmed'];
+		}
+
+		$db_type = holoztek_mm_db_type_from_frontend_config((string) ($DB['TYPE'] ?? ''));
+
+		return $db_type !== null
+			? ['db_type' => $db_type, 'db_source' => 'frontend_config', 'db_confidence' => 'inferred']
+			: ['db_type' => null, 'db_source' => null, 'db_confidence' => null];
+	}
+
+	private function addDatabaseComponents(array $proxies): void {
+		$server_db = $this->detectServerDatabase();
+		$label = _holoztek_mm('Zabbix DB');
+		if ($server_db['db_type'] !== null) {
+			$label .= "\n" . $server_db['db_type'];
+		}
+
+		$this->addNode(holoztek_mm_node_id_zabbix_db(), $label, HOLOZTEK_MM_NODE_ZABBIX_DB, $server_db);
+		$this->addRelationEdge(holoztek_mm_node_id_server(), holoztek_mm_node_id_zabbix_db(),
+			HOLOZTEK_MM_RELATION_DATABASE
+		);
+
+		// The API exposes nothing about a Proxy's database, so db_type stays null
+		// rather than being guessed; a later source can fill it in.
+		foreach (array_keys($proxies) as $proxyid) {
+			$proxy_node = holoztek_mm_node_id_proxy((string) $proxyid);
+			$proxy_db_node = holoztek_mm_node_id_proxy_db((string) $proxyid);
+
+			$this->addNode($proxy_db_node, _holoztek_mm('Proxy DB'), HOLOZTEK_MM_NODE_PROXY_DB, [
+				'db_type'       => null,
+				'backend_owner' => $proxy_node
+			]);
+			$this->addRelationEdge($proxy_node, $proxy_db_node, HOLOZTEK_MM_RELATION_DATABASE);
+		}
+	}
+
+	// A Proxy can override the Global Data Source in the Server's configuration,
+	// which the API doesn't expose, so an edge here means "APM-enabled Proxy and
+	// the Global Data Source", not a confirmed write path. With no readable
+	// Global Data Source, the node stays abstract instead of naming ClickHouse.
+	// Dashboards saved before the setting existed have no value: 15 minutes.
+	private static function otelWindowSeconds(array $fv): int {
+		$minutes = (int) ($fv['otel_observation_window'] ?? HOLOZTEK_MM_OTEL_WINDOW_DEFAULT);
+
+		return 60 * max(HOLOZTEK_MM_OTEL_WINDOW_MIN, min(HOLOZTEK_MM_OTEL_WINDOW_MAX, $minutes));
+	}
+
+	private function addApmComponents(array $apm_proxies, int $otel_window): void {
+		$global = $this->fetchApmGlobalDataSource();
+		$is_configured = $global !== null && $global['status'] === 1;
+
+		if (!$is_configured && !$apm_proxies) {
+			return;
+		}
+
+		$tagged_proxyids = array_map('strval', array_keys(array_filter(array_column($apm_proxies, 'otel_tagged', 'proxyid'))));
+		$otel = $tagged_proxyids
+			? $this->fetchOtelTelemetry($tagged_proxyids, $otel_window)
+			: ['services' => [], 'systems' => [], 'truncated' => false];
+
+		$datastore_node = holoztek_mm_node_id_apm_datastore();
+
+		$this->addNode($datastore_node,
+			$is_configured ? 'ClickHouse' : _holoztek_mm('APM Data Store'),
+			HOLOZTEK_MM_NODE_APM_DATASTORE,
+			($is_configured ? ['db_type' => 'ClickHouse', 'apm_db' => $global['db']] : ['db_type' => null])
+				+ ($otel['truncated'] ? ['otel_truncated' => true] : [])
+		);
+		$this->addRelationEdge(holoztek_mm_node_id_server(), $datastore_node, HOLOZTEK_MM_RELATION_APM_STORAGE);
+
+		foreach (array_keys($apm_proxies) as $proxyid) {
+			$this->addRelationEdge($datastore_node, holoztek_mm_node_id_proxy((string) $proxyid),
+				HOLOZTEK_MM_RELATION_APM_STORAGE
+			);
+		}
+
+		$this->addOtelTelemetry($otel['services'], $otel['systems']);
+	}
+
+	// Proxy -> Service -> System, one node per path: the same host.name under
+	// another Service or Proxy is another node. Observed means within the time
+	// range: it does not prove the Proxy is receiving now.
+	private function addOtelTelemetry(array $services, array $systems): void {
+		$system_counts = [];
+		$metadata = static fn(array $node) => [
+			'otel_namespaces'   => array_map('strval', array_keys($node['namespaces'])),
+			'otel_environments' => array_map('strval', array_keys($node['environments']))
+		];
+
+		foreach ($services as $node_id => $service) {
+			$proxy_node = holoztek_mm_node_id_proxy($service['proxyid']);
+
+			$this->addNode($node_id, $service['service'], HOLOZTEK_MM_NODE_OTEL_SERVICE, [
+				'backend_owner'     => $proxy_node,
+				'otel_service'      => $service['service'],
+				'otel_system_count' => count($service['systems'])
+			] + $metadata($service));
+			$this->addRelationEdge($proxy_node, $node_id, HOLOZTEK_MM_RELATION_TELEMETRY);
+
+			$system_counts[$proxy_node] = ($system_counts[$proxy_node] ?? 0) + count($service['systems']);
+		}
+
+		foreach ($systems as $node_id => $system) {
+			$this->addNode($node_id, $system['host'], HOLOZTEK_MM_NODE_OTEL_SYSTEM, [
+				'backend_owner' => $system['service_id'],
+				'otel_host'     => $system['host'],
+				'otel_service'  => $system['service']
+			] + $metadata($system));
+			$this->addRelationEdge($system['service_id'], $node_id, HOLOZTEK_MM_RELATION_TELEMETRY_MEMBER);
+		}
+
+		foreach ($this->elements as &$element) {
+			$node_id = $element['data']['id'] ?? null;
+
+			if ($node_id !== null && isset($system_counts[$node_id])) {
+				$element['data']['otel_system_count'] = $system_counts[$node_id];
+			}
+		}
+		unset($element);
 	}
 
 	// Scoped by $upstream (the Server or Proxy node the network sits under) so

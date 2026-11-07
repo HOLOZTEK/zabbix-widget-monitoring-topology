@@ -6,13 +6,13 @@
 
 Monitoring Topology は、Zabbix が監視しているホストへ至る監視経路をトポロジーとして可視化するダッシュボードウィジェットです。
 
-固定指定した複数のホストグループ、またはナビゲータ等から受信したホスト／ホストグループを描画対象にできます。Server・Proxy・Proxy Groupの監視経路、並びにVMware仮想化とKubernetesクラスタの階層を可視化します。
+固定指定した複数のホストグループ、またはナビゲータ等から受信したホスト／ホストグループを描画対象にできます。Server・Proxy・Proxy Groupの監視経路、並びにVMware仮想化とKubernetesクラスタの階層を可視化します。Zabbix 8.0では、APMとOpenTelemetryのバックエンド構成も表示できます。
 
 グラフ描画には Vis Network の Canvas2D を使用しています。（WebGL は不要）
 
 <a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator と連携した Monitoring Topology ダッシュボード" /></a>
 
-[最新リリース](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.1.3) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.3/zabbix-widget-monitoring-topology-1.1.3.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.3/zabbix-widget-monitoring-topology_1.1.3_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.3/zabbix-widget-monitoring-topology-1.1.3.tar.gz)
+[最新リリース](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.2.3) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology-1.2.3.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology_1.2.3_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology-1.2.3.tar.gz)
 
 ## Monitoring Topology を使う理由
 
@@ -33,6 +33,8 @@ Monitoring Topology は、Zabbix が監視しているホストへ至る監視�
   <tr><td nowrap>障害状態の表示</td><td>ホストで検知されている障害の深刻度の色をアイコンの背景に表示します。複数の障害が発生している場合は、深刻度が最も高い障害の色が選択されます。</td></tr>
   <tr><td nowrap>表示フィルタ</td><td>障害状態、ホスト状態、インターフェース、監視経路、監視方式で表示内容の絞り込みを行います。</td></tr>
   <tr><td nowrap>描画対象の指定</td><td>複数のホストグループを固定指定するほか、ナビゲータからホスト／ホストグループを受信して動的に描画内容を変更できます。</td></tr>
+  <tr><td nowrap>バックエンド構成</td><td>Zabbix DBとProxy DB、Zabbix 8.0のAPM Data StoreとOpenTelemetry構成を任意で表示します。</td></tr>
+  <tr><td nowrap>表示状態の維持と操作ツール</td><td>差分更新時のノード位置を維持し、検索、全体表示、凡例、関係フィルタ、ドラッグ時の追従ホップ数設定を提供します。</td></tr>
   <tr><td nowrap>対話操作</td><td>ノードの移動とレイアウトの調整、ホストのメニューへのアクセスに対応します。</td></tr>
 </table>
 
@@ -53,9 +55,19 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
   <tr><td nowrap>Kubernetes監視</td><td><strong>代表的な経路:</strong> <code>Server/Proxy -&gt; Network -&gt; 集約ホスト（Zabbix Host） -&gt; Kubernetes Cluster -&gt; Kubernetes構成要素ホスト（Zabbix Host）</code><br>公式Kubernetesテンプレートのアイテムキーとディスカバリ親からクラスタを識別します。集約ホストをクラスタの親として自動取得し、API Server、Scheduler、Controller Manager、Kubeletなどの構成要素ホストをロール別に配置します。同じ経路上の複数クラスタも分離します。</td><td><a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes監視の経路"></a></td></tr>
 </table>
 
+## バックエンド構成とOpenTelemetry
+
+バックエンド構成は任意で、既定では無効です。データベース構成はZabbix 7.0以降、APMとOpenTelemetryはZabbix 8.0以降に対応します。
+
+- データベース: `Zabbix Server → Zabbix DB`、`Zabbix Proxy → Proxy DB`
+- APMストレージ: `Zabbix Server → APM Data Store → APM有効Zabbix Proxy`
+- テレメトリ: `Zabbix Proxy → OTel Service（service.name）→ OTel System（host.name）`
+
+OpenTelemetryノードはZabbix Hostとは統合しません。設定した観測期間内にSpanが確認されたService／Systemを表示します。ProxyのResource Attribute、送信元設定、制限、トラブルシュートは[OpenTelemetry Topology導入ガイド](docs/OTEL_TOPOLOGY_SETUP.ja.md)を参照してください。
+
 ## 表示フィルタ
 
-フィルタパネルは、グラフに残すHostノードを絞り込みます。同じカテゴリ内の選択肢はOR、5つのカテゴリ間はANDで組み合わせます。表示対象の子孫Hostへ至る上位ノードとエッジは表示を維持し、経路が分断されないようにします。
+フィルタパネルは、グラフに残すHostノードを絞り込みます。ホストに関する同じカテゴリ内の選択肢はOR、5つのホストカテゴリ間はANDで組み合わせます。独立した「関係」カテゴリでは監視経路、データベース、APMストレージ、Telemetryの関係を制御します。表示対象の子孫Hostへ至る上位ノードとエッジは表示を維持し、経路が分断されないようにします。
 
 <table>
         <tr><th align="left" nowrap>カテゴリ</th><th align="left">選択肢</th><th align="left">用途と既定状態</th></tr>
@@ -64,6 +76,7 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
         <tr><td nowrap>インターフェイス</td><td>正常、一部監視不可、監視不可、状況不明</td><td>インターフェースの可用性でHostを絞り込みます。既定ではすべてONです。</td></tr>
         <tr><td nowrap>監視経路</td><td>Zabbix Server、Zabbix Proxy、Proxy Group</td><td>上流の監視経路でHostを絞り込みます。既定ではすべてONです。</td></tr>
         <tr><td nowrap>監視方式</td><td>Ping、Zabbix Agent、SNMP、IPMI、JMX、その他</td><td>検出した監視方式でHostを絞り込みます。既定ではすべてONです。「その他」にはVMware、ODBC、Kubernetes、個別分類できない方式を含みます。</td></tr>
+        <tr><td nowrap>関係</td><td>監視経路、データベース、APMストレージ、Telemetry</td><td>取得済みの関係とバックエンド／OpenTelemetryノードを表示・非表示にします。利用可能な関係は既定ですべてONです。</td></tr>
 </table>
 
 <a href="screenshots/monitoring-topology-filters.png" target="_blank"><img src="screenshots/monitoring-topology-filters.png" height="395" alt="Monitoring Topology の表示フィルタパネル"></a>
@@ -83,7 +96,10 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
   <tr><td nowrap>フォント色</td><td>空欄ではライト／ダークテーマを自動判定し、指定時はその色を使用します。</td></tr>
   <tr><td nowrap>エッジ色</td><td>ノード間を結ぶ線の色です。</td></tr>
   <tr><td nowrap>エッジ幅</td><td>1〜8pxの線幅です。</td></tr>
+  <tr><td nowrap>ドラッグ時の追従ホップ数</td><td>ドラッグしたノードに追従する接続範囲を0〜10で指定します。既定値は3です。</td></tr>
   <tr><td nowrap>フィルタアイコン位置</td><td>左上、右上、左下、右下から選択します。</td></tr>
+  <tr><td nowrap>バックエンド構成</td><td>データベースとAPM構成を任意で有効にします。APMはZabbix 8.0以降が必要です。</td></tr>
+  <tr><td nowrap>OTel観測期間（分）</td><td>OpenTelemetryのSpanを観測対象とする期間を5〜1440分で指定します。既定値は15です。</td></tr>
 </table>
 
 <a href="screenshots/monitoring-topology-settings-ja.png" target="_blank"><img src="screenshots/monitoring-topology-settings-ja.png" width="620" alt="Monitoring Topology ウィジェットの日本語設定画面"></a>
@@ -103,7 +119,7 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
 ## 動作要件
 
 - 対応バージョン: Zabbix 7.0／8.0
-- 動作確認済み: Zabbix 7.0.31／8.0.0rc1
+- 動作確認済み: Zabbix 7.0／8.0.0
 - PHP 8.1 以上
 - Canvas2D 対応ブラウザ
 
@@ -112,13 +128,13 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
 ### RPM
 
 ```bash
-dnf install ./zabbix-widget-monitoring-topology-1.1.3.noarch.rpm
+dnf install ./zabbix-widget-monitoring-topology-1.2.3.noarch.rpm
 ```
 
 ### DEB
 
 ```bash
-apt install ./zabbix-widget-monitoring-topology_1.1.3_all.deb
+apt install ./zabbix-widget-monitoring-topology_1.2.3_all.deb
 ```
 
 パッケージは実行ファイルを利用中のZabbixフロントエンドモジュールディレクトリへ配置します。その後、管理 → モジュールで再スキャンして有効化し、ダッシュボードへ追加してください。
@@ -128,10 +144,10 @@ apt install ./zabbix-widget-monitoring-topology_1.1.3_all.deb
 通常はRPMまたはDEBを推奨します。ソースから配置する場合:
 
 ```bash
-curl -L -o zabbix-widget-monitoring-topology-1.1.3.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.3/zabbix-widget-monitoring-topology-1.1.3.tar.gz
-tar -xzf zabbix-widget-monitoring-topology-1.1.3.tar.gz
+curl -L -o zabbix-widget-monitoring-topology-1.2.3.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology-1.2.3.tar.gz
+tar -xzf zabbix-widget-monitoring-topology-1.2.3.tar.gz
 install -d /usr/share/zabbix/ui/modules/holoztek_monitoringmap
-cd zabbix-widget-monitoring-topology-1.1.3
+cd zabbix-widget-monitoring-topology-1.2.3
 cp -a manifest.json Module.php Widget.php actions assets includes locale views /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
 ```
 
@@ -143,6 +159,7 @@ cp -a manifest.json Module.php Widget.php actions assets includes locale views /
 - [コントリビューション](docs/CONTRIBUTING.md)
 - [セキュリティ](docs/SECURITY.md)
 - [スクリーンショットガイド](docs/screenshot-guide.md)
+- [OpenTelemetry Topology導入ガイド](docs/OTEL_TOPOLOGY_SETUP.ja.md)
 - [ライセンス](LICENSE)
 
 ## リポジトリ構成

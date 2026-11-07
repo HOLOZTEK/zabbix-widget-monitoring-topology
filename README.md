@@ -1,18 +1,18 @@
 # zabbix-widget-monitoring-topology
 
-English | [日本語](README.ja.md)
+English | [æ¥æ¬èª](README.ja.md)
 
 ## Overview
 
 Monitoring Topology is a dashboard widget that visualizes the monitoring paths to hosts monitored by Zabbix as a topology.
 
-It draws one or more fixed host groups, or a host or host group received from Navigator or another compatible widget. The topology visualizes Zabbix Server, Zabbix Proxy, and Proxy Group monitoring routes together with VMware virtualization and Kubernetes cluster hierarchies.
+It draws one or more fixed host groups, or a host or host group received from Navigator or another compatible widget. The topology visualizes Zabbix Server, Zabbix Proxy, and Proxy Group monitoring routes together with VMware virtualization and Kubernetes cluster hierarchies. On Zabbix 8.0, it can also show APM and OpenTelemetry backend topology.
 
 Vis Network renders the graph in Canvas2D; WebGL is not required.
 
 <a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator driving a Monitoring Topology dashboard" /></a>
 
-[Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.1.3) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.3/zabbix-widget-monitoring-topology-1.1.3.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.3/zabbix-widget-monitoring-topology_1.1.3_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.3/zabbix-widget-monitoring-topology-1.1.3.tar.gz)
+[Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.2.3) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology-1.2.3.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology_1.2.3_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology-1.2.3.tar.gz)
 
 ## Why Monitoring Topology?
 
@@ -26,13 +26,15 @@ It is suited to environments with many monitored hosts or advanced distributed m
   <tr><th align="left" nowrap>Function</th><th align="left">Description</th></tr>
   <tr><td nowrap>Monitoring-path graph</td><td>Connects and displays Zabbix Server, Zabbix Proxy, Proxy Group, Network, and Host nodes.</td></tr>
   <tr><td nowrap>Network display</td><td>Calculates Network nodes from host interface IP addresses and a configurable IPv4 prefix length. Because monitoring-route clarity takes priority, the same network segment can appear in multiple places when it is reached through different routes.</td></tr>
-  <tr><td nowrap>VMware monitoring</td><td>Uses official VMware template discovery and item data to build the Datacenter → Cluster → ESXi Host hierarchy and displays VMs through Network nodes below their ESXi Host.</td></tr>
-  <tr><td nowrap>Kubernetes monitoring</td><td>Uses official Kubernetes template keys and discovery relationships to display the Network → aggregate host → Kubernetes Cluster → component host hierarchy.</td></tr>
+  <tr><td nowrap>VMware monitoring</td><td>Uses official VMware template discovery and item data to build the Datacenter â Cluster â ESXi Host hierarchy and displays VMs through Network nodes below their ESXi Host.</td></tr>
+  <tr><td nowrap>Kubernetes monitoring</td><td>Uses official Kubernetes template keys and discovery relationships to display the Network â aggregate host â Kubernetes Cluster â component host hierarchy.</td></tr>
   <tr><td nowrap>Hosts without interfaces</td><td>For monitored hosts without interfaces, derives a network or label from the connection-target macro.</td></tr>
   <tr><td nowrap>Device and monitoring-method display</td><td>Shows monitoring-method badges such as Ping, SNMP, Agent, IPMI, VMware, ODBC, JMX, and Kubernetes on host-type icons.</td></tr>
   <tr><td nowrap>Problem status display</td><td>Colors each host icon background by the highest severity among problems detected on that host.</td></tr>
   <tr><td nowrap>Display filters</td><td>Filters by problem status, host status, interface, monitoring route, and monitoring method.</td></tr>
   <tr><td nowrap>Target selection</td><td>Displays multiple fixed host groups, or receives a host or host group from Navigator and updates the topology dynamically.</td></tr>
+  <tr><td nowrap>Backend topology</td><td>Optionally displays Zabbix DB and Proxy DB nodes, plus Zabbix 8.0 APM datastore and OpenTelemetry topology.</td></tr>
+  <tr><td nowrap>View continuity and tools</td><td>Preserves positions during incremental updates and provides search, fit-to-view, legend, relation filters, and configurable drag-follow hops.</td></tr>
   <tr><td nowrap>Interactive operation</td><td>Supports moving nodes, adjusting the layout, and opening host menus.</td></tr>
 </table>
 
@@ -53,9 +55,19 @@ The main supported model patterns are as follows.
   <tr><td nowrap>Kubernetes monitoring</td><td><strong>Typical path:</strong> <code>Server/Proxy -&gt; Network -&gt; aggregate host (Zabbix Host) -&gt; Kubernetes Cluster -&gt; Kubernetes component host (Zabbix Host)</code><br>Official Kubernetes template item keys and discovery parents identify each cluster. The aggregate host is obtained automatically as the cluster parent, and component hosts such as API Server, Scheduler, Controller Manager, and Kubelet are placed by role. Multiple clusters on the same route remain separate.</td><td><a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes monitoring route"></a></td></tr>
 </table>
 
+## Backend and OpenTelemetry Topology
+
+Backend components are optional and disabled by default. Database topology is available on Zabbix 7.0 and later. APM and OpenTelemetry topology require Zabbix 8.0 or later.
+
+- Database: `Zabbix Server → Zabbix DB` and `Zabbix Proxy → Proxy DB`
+- APM storage: `Zabbix Server → APM Data Store → APM-enabled Zabbix Proxy`
+- Telemetry: `Zabbix Proxy → OTel Service (service.name) → OTel System (host.name)`
+
+OpenTelemetry nodes are not merged with Zabbix Hosts. Displayed services and systems must have a Span within the configured observation window. See the [OpenTelemetry Topology Setup Guide](docs/OTEL_TOPOLOGY_SETUP.md) for Proxy resource attributes, sender configuration, limits, and troubleshooting.
+
 ## Display Filters
 
-The filter panel limits which Host nodes remain visible. Within one category, selected values are combined with OR; the five categories are combined with AND. Ancestor nodes and edges leading to matching descendant hosts remain visible so that paths are not disconnected.
+The filter panel limits which Host nodes remain visible. Within one host category, selected values are combined with OR; the five host categories are combined with AND. The independent Relations category controls monitoring, database, APM storage, and telemetry relationships. Ancestor nodes and edges leading to matching descendant hosts remain visible so that paths are not disconnected.
 
 <table>
         <tr><th align="left" nowrap>Category</th><th align="left">Choices</th><th align="left">Purpose and default</th></tr>
@@ -64,6 +76,7 @@ The filter panel limits which Host nodes remain visible. Within one category, se
         <tr><td nowrap>Interface</td><td>Available, Mixed, Not available, Unknown</td><td>Includes hosts by interface availability. All choices are enabled by default.</td></tr>
         <tr><td nowrap>Monitoring route</td><td>Zabbix Server, Zabbix Proxy, Proxy Group</td><td>Includes hosts by their upstream monitoring route. All choices are enabled by default.</td></tr>
         <tr><td nowrap>Monitoring method</td><td>Ping, Zabbix Agent, SNMP, IPMI, JMX, Other</td><td>Includes hosts by detected monitoring method. All choices are enabled by default. Other includes VMware, ODBC, Kubernetes, and methods that cannot be classified separately.</td></tr>
+        <tr><td nowrap>Relations</td><td>Monitoring, Database, APM storage, Telemetry</td><td>Shows or hides loaded relation types and their backend or OpenTelemetry nodes. All available relations are enabled by default.</td></tr>
 </table>
 
 <a href="screenshots/monitoring-topology-filters.png" target="_blank"><img src="screenshots/monitoring-topology-filters.png" height="395" alt="Monitoring Topology display filter panel"></a>
@@ -83,7 +96,10 @@ Clearing every visibility choice in a category hides every host. Colorize by sev
   <tr><td nowrap>Font color</td><td>Explicit node-label color; empty uses automatic light/dark theme detection.</td></tr>
   <tr><td nowrap>Edge color</td><td>Color of graph edges.</td></tr>
   <tr><td nowrap>Edge width</td><td>Edge width from 1 to 8 pixels.</td></tr>
+  <tr><td nowrap>Drag follow hops</td><td>Number of connected hops that follow a dragged node, from 0 to 10; default is 3.</td></tr>
   <tr><td nowrap>Filter icon position</td><td>Top-left, top-right, bottom-left, or bottom-right.</td></tr>
+  <tr><td nowrap>Backend components</td><td>Optionally enables Database and APM topology. APM requires Zabbix 8.0 or later.</td></tr>
+  <tr><td nowrap>OTel observation window</td><td>Minutes in which OpenTelemetry Spans must be observed; 5 to 1440, default 15.</td></tr>
 </table>
 
 <a href="screenshots/monitoring-topology-settings.png" target="_blank"><img src="screenshots/monitoring-topology-settings.png" width="620" alt="Monitoring Topology widget settings"></a>
@@ -103,7 +119,7 @@ For dynamic selection, connect Host or Host groups to Navigator or another compa
 ## Requirements
 
 - Supported versions: Zabbix 7.0 and 8.0
-- Tested versions: Zabbix 7.0.31 and 8.0.0rc1
+- Tested versions: Zabbix 7.0 and 8.0.0
 - PHP 8.1 or later
 - Browser with Canvas2D support
 
@@ -112,13 +128,13 @@ For dynamic selection, connect Host or Host groups to Navigator or another compa
 ### Install from RPM
 
 ```bash
-dnf install ./zabbix-widget-monitoring-topology-1.1.3.noarch.rpm
+dnf install ./zabbix-widget-monitoring-topology-1.2.3.noarch.rpm
 ```
 
 ### Install from DEB
 
 ```bash
-apt install ./zabbix-widget-monitoring-topology_1.1.3_all.deb
+apt install ./zabbix-widget-monitoring-topology_1.2.3_all.deb
 ```
 
 The packages install the runtime files into the active Zabbix frontend module directory. Then scan and enable the module from Administration -> Modules and add the widget to a dashboard.
@@ -128,10 +144,10 @@ The packages install the runtime files into the active Zabbix frontend module di
 RPM or DEB installation is recommended. For a source installation:
 
 ```bash
-curl -L -o zabbix-widget-monitoring-topology-1.1.3.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.1.3/zabbix-widget-monitoring-topology-1.1.3.tar.gz
-tar -xzf zabbix-widget-monitoring-topology-1.1.3.tar.gz
+curl -L -o zabbix-widget-monitoring-topology-1.2.3.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology-1.2.3.tar.gz
+tar -xzf zabbix-widget-monitoring-topology-1.2.3.tar.gz
 install -d /usr/share/zabbix/ui/modules/holoztek_monitoringmap
-cd zabbix-widget-monitoring-topology-1.1.3
+cd zabbix-widget-monitoring-topology-1.2.3
 cp -a manifest.json Module.php Widget.php actions assets includes locale views /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
 ```
 
@@ -143,6 +159,7 @@ Use `/usr/share/zabbix/modules/holoztek_monitoringmap` if the installation uses 
 - [CONTRIBUTING](docs/CONTRIBUTING.md)
 - [SECURITY](docs/SECURITY.md)
 - [Screenshot Guide](docs/screenshot-guide.md)
+- [OpenTelemetry Topology Setup Guide](docs/OTEL_TOPOLOGY_SETUP.md)
 - [LICENSE](LICENSE)
 
 ## Repository Layout

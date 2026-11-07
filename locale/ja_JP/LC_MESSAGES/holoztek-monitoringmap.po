@@ -200,3 +200,120 @@ msgstr "左下"
 
 msgid "Bottom right"
 msgstr "右下"
+
+msgid "Zabbix DB"
+msgstr "Zabbix DB"
+
+msgid "Proxy DB"
+msgstr "Proxy DB"
+
+msgid "APM Data Store"
+msgstr "APM データストア"
+
+msgid "APM Collector"
+msgstr "APM コレクター"
+
+msgid "Enabled"
+msgstr "有効"
+
+msgid "Type"
+msgstr "種別"
+
+msgid "Source"
+msgstr "取得元"
+
+msgid "Database"
+msgstr "データベース"
+
+msgid "Server runtime"
+msgstr "Server 実行時情報"
+
+msgid "Frontend configuration"
+msgstr "フロントエンド設定"
+
+msgid "Global APM Data Source"
+msgstr "グローバル APM データソース"
+
+msgid "Database details are not available from the Zabbix API."
+msgstr "データベースの詳細は Zabbix API から取得できません。"
+
+msgid "Backend components"
+msgstr "バックエンド構成"
+
+msgid "APM"
+msgstr "APM"
+
+msgid "APM (available on Zabbix 8.0 or later)"
+msgstr "APM（Zabbix 8.0 以降で利用可能）"
+
+msgid "OpenTelemetry service"
+msgstr "OpenTelemetry サービス"
+
+msgid "OpenTelemetry system"
+msgstr "OpenTelemetry システム"
+
+msgid "Service"
+msgstr "サービス"
+
+msgid "Systems"
+msgstr "システム数"
+
+msgid "Namespace"
+msgstr "名前空間"
+
+msgid "Environment"
+msgstr "環境"
+
+msgid "Observed telemetry systems"
+msgstr "観測されたテレメトリシステム数"
+
+msgid "Too many APM systems to display."
+msgstr "APM システムが多すぎるため、一部を表示していません。"
+
+msgid "Relations"
+msgstr "関係"
+
+msgid "Monitoring"
+msgstr "監視経路"
+
+msgid "APM storage"
+msgstr "APMデータストア"
+
+msgid "Telemetry"
+msgstr "Telemetry"
+
+msgid "Service member"
+msgstr "サービス所属"
+
+msgid "Drag follow hops"
+msgstr "ドラッグ時の追従ホップ数"
+
+msgid "OTel observation window (minutes)"
+msgstr "OTel観測期間（分）"
+
+msgid "Displays OpenTelemetry services and systems observed within this period."
+msgstr "指定期間内にTelemetryが確認されたOpenTelemetryサービス／システムを表示します。"
+
+msgid "A longer period keeps low-frequency telemetry sources visible."
+msgstr "期間を長くすると、送信頻度の低いシステムも表示されます。"
+
+msgid "Search nodes"
+msgstr "ノードを検索"
+
+msgid "No matching nodes"
+msgstr "一致するノードはありません"
+
+msgid "More results available..."
+msgstr "ほかにも候補があります（条件を絞り込んでください）"
+
+msgid "Fit topology to view"
+msgstr "全体を表示"
+
+msgid "Legend"
+msgstr "凡例"
+
+msgid "Node types"
+msgstr "ノード種別"
+
+msgid "Virtualization / Cluster"
+msgstr "仮想化 / クラスター"

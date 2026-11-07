@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.1.3
+Version:        1.2.3
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -60,6 +60,7 @@ install -m 644 ${SRCDIR}/actions/WidgetView.php                                 
 install -m 644 ${SRCDIR}/assets/css/widget.css                                  ${STAGEDIR}/assets/css/
 install -m 644 ${SRCDIR}/assets/js/vis-network.min.js                           ${STAGEDIR}/assets/js/
 install -m 644 ${SRCDIR}/assets/js/class.widget.js                              ${STAGEDIR}/assets/js/
+install -m 644 ${SRCDIR}/includes/CWidgetFieldOtelWindow.php                   ${STAGEDIR}/includes/
 install -m 644 ${SRCDIR}/includes/helpers.php                                   ${STAGEDIR}/includes/
 install -m 644 ${SRCDIR}/includes/WidgetForm.php                                ${STAGEDIR}/includes/
 install -m 644 ${SRCDIR}/locale/ja_JP/LC_MESSAGES/holoztek-monitoringmap.po     ${STAGEDIR}/locale/ja_JP/LC_MESSAGES/
@@ -121,6 +122,16 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Tue Nov 03 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.3-0
+- ノード検索、全体表示、凡例、縮小表示の視認性向上を追加
+- OpenTelemetry を Proxy → OTel Service → OTel System の階層で表示
+- OTel観測期間（分）設定と取得上限警告を追加
+* Tue Nov 03 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.2-0
+- 差分更新による表示状態の維持、関係フィルター、ドラッグ追従ホップ数を追加
+* Sat Oct 31 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.1-0
+- APM有効時にProxy経由のOpenTelemetryシステムを表示
+* Sat Oct 31 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.0-0
+- Zabbix DB、Proxy DB、Zabbix 8.0 APM構成の可視化を追加
 * Sun Oct 11 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.1.3-0
 - RPM の PHP 依存を (php >= 8.1 or php-common >= 8.1) および
   php-fpm >= 8.1 に統一。ウィジェット本体と DEB の依存関係は変更なし
