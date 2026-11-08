@@ -20,7 +20,7 @@ Zabbixの監視経路（ZabbixServer / Proxy / Network / Host のつながり）
 
 ## 動作要件
 
-- Zabbix 7.0 以上
+- Zabbix 7.0 以上（8.0.0 で動作確認）
 - Canvas2D 対応ブラウザ（WebGL 不要）
 
 ## インストール
