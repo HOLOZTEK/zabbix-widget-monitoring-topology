@@ -6,7 +6,7 @@ English | [æ¥æ¬èª](README.ja.md)
 
 Monitoring Topology is a dashboard widget that visualizes the monitoring paths to hosts monitored by Zabbix as a topology.
 
-It draws one or more fixed host groups, or a host or host group received from Navigator or another compatible widget. The topology visualizes Zabbix Server, Zabbix Proxy, and Proxy Group monitoring routes together with VMware virtualization and Kubernetes cluster hierarchies. On Zabbix 8.0, it can also show APM and OpenTelemetry backend topology.
+It draws one or more fixed host groups, or a host or host group received from Navigator or another compatible widget. The topology visualizes Zabbix Server, Zabbix Proxy, and Proxy Group monitoring routes together with VMware virtualization and Kubernetes cluster hierarchies. On Zabbix 8.0, it can also show the collection paths of OpenTelemetry traces stored by APM monitoring.
 
 Vis Network renders the graph in Canvas2D; WebGL is not required.
 
@@ -33,7 +33,7 @@ It is suited to environments with many monitored hosts or advanced distributed m
   <tr><td nowrap>Problem status display</td><td>Colors each host icon background by the highest severity among problems detected on that host.</td></tr>
   <tr><td nowrap>Display filters</td><td>Filters by problem status, host status, interface, monitoring route, and monitoring method.</td></tr>
   <tr><td nowrap>Target selection</td><td>Displays multiple fixed host groups, or receives a host or host group from Navigator and updates the topology dynamically.</td></tr>
-  <tr><td nowrap>Backend topology</td><td>Optionally displays Zabbix DB and Proxy DB nodes, plus Zabbix 8.0 APM datastore and OpenTelemetry topology.</td></tr>
+  <tr><td nowrap>Backend topology</td><td>Optionally displays Zabbix DB and Proxy DB nodes, plus the collection paths of OpenTelemetry traces stored by Zabbix 8.0 APM monitoring.</td></tr>
   <tr><td nowrap>View continuity and tools</td><td>Preserves positions during incremental updates and provides search, fit-to-view, legend, relation filters, and configurable drag-follow hops.</td></tr>
   <tr><td nowrap>Interactive operation</td><td>Supports moving nodes, adjusting the layout, and opening host menus.</td></tr>
 </table>
@@ -55,19 +55,20 @@ The main supported model patterns are as follows.
   <tr><td nowrap>Kubernetes monitoring</td><td><strong>Typical path:</strong> <code>Server/Proxy -&gt; Network -&gt; aggregate host (Zabbix Host) -&gt; Kubernetes Cluster -&gt; Kubernetes component host (Zabbix Host)</code><br>Official Kubernetes template item keys and discovery parents identify each cluster. The aggregate host is obtained automatically as the cluster parent, and component hosts such as API Server, Scheduler, Controller Manager, and Kubelet are placed by role. Multiple clusters on the same route remain separate.</td><td><a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes monitoring route"></a></td></tr>
 </table>
 
-## Backend and OpenTelemetry Topology
+## Backend Components and APM Monitoring
 
-Backend components are optional and disabled by default. Database topology is available on Zabbix 7.0 and later. APM and OpenTelemetry topology require Zabbix 8.0 or later.
+Backend components are optional and disabled by default. Database topology is available on Zabbix 7.0 and later. OpenTelemetry topology built from APM monitoring requires Zabbix 8.0 or later.
 
 - Database: `Zabbix Server → Zabbix DB` and `Zabbix Proxy → Proxy DB`
-- APM storage: `Zabbix Server → APM Data Store → APM-enabled Zabbix Proxy`
-- Telemetry: `Zabbix Proxy → OTel Service (service.name) → OTel System (host.name)`
+- APM monitoring: `Zabbix Server → APM Data Store → APM-enabled Zabbix Proxy → OTel Service (service.name) → OTel System (host.name)`
 
-OpenTelemetry nodes are not merged with Zabbix Hosts. Displayed services and systems must have a Span within the configured observation window. See the [OpenTelemetry Topology Setup Guide](docs/OTEL_TOPOLOGY_SETUP.md) for Proxy resource attributes, sender configuration, limits, and troubleshooting.
+Database nodes represent the databases used by Zabbix Server and Proxy as logical backend components. The APM Data Store is labeled ClickHouse when the global APM data source can be read; otherwise, a generic label is used. The relation between the APM Data Store and a Proxy indicates an APM-enabled Proxy and the global APM data source. It does not guarantee the Proxy's actual write destination.
+
+OTel Service and OTel System nodes are not merged with Zabbix Hosts. They are displayed when APM monitoring stores a Span with the required Resource Attributes within the configured observation window. See the [APM Monitoring / OpenTelemetry Topology Guide](docs/OTEL_TOPOLOGY_SETUP.md) for terminology, drawing prerequisites, retrieval limits, and troubleshooting.
 
 ## Display Filters
 
-The filter panel limits which Host nodes remain visible. Within one host category, selected values are combined with OR; the five host categories are combined with AND. The independent Relations category controls monitoring, database, APM storage, and telemetry relationships. Ancestor nodes and edges leading to matching descendant hosts remain visible so that paths are not disconnected.
+The filter panel limits which Host nodes remain visible. Within one host category, selected values are combined with OR; the five host categories are combined with AND. The independent Relations category controls monitoring, database, APM storage, and relations generated from OpenTelemetry traces (labeled Telemetry in the UI). Ancestor nodes and edges leading to matching descendant hosts remain visible so that paths are not disconnected.
 
 <table>
         <tr><th align="left" nowrap>Category</th><th align="left">Choices</th><th align="left">Purpose and default</th></tr>
@@ -76,7 +77,7 @@ The filter panel limits which Host nodes remain visible. Within one host categor
         <tr><td nowrap>Interface</td><td>Available, Mixed, Not available, Unknown</td><td>Includes hosts by interface availability. All choices are enabled by default.</td></tr>
         <tr><td nowrap>Monitoring route</td><td>Zabbix Server, Zabbix Proxy, Proxy Group</td><td>Includes hosts by their upstream monitoring route. All choices are enabled by default.</td></tr>
         <tr><td nowrap>Monitoring method</td><td>Ping, Zabbix Agent, SNMP, IPMI, JMX, Other</td><td>Includes hosts by detected monitoring method. All choices are enabled by default. Other includes VMware, ODBC, Kubernetes, and methods that cannot be classified separately.</td></tr>
-        <tr><td nowrap>Relations</td><td>Monitoring, Database, APM storage, Telemetry</td><td>Shows or hides loaded relation types and their backend or OpenTelemetry nodes. All available relations are enabled by default.</td></tr>
+        <tr><td nowrap>Relations</td><td>Monitoring, Database, APM storage, Telemetry</td><td>Shows or hides loaded relations and backend nodes. Telemetry means the OTel Service and OTel System relations generated from OpenTelemetry traces. All available relations are enabled by default.</td></tr>
 </table>
 
 <a href="screenshots/monitoring-topology-filters.png" target="_blank"><img src="screenshots/monitoring-topology-filters.png" height="395" alt="Monitoring Topology display filter panel"></a>
@@ -98,8 +99,8 @@ Clearing every visibility choice in a category hides every host. Colorize by sev
   <tr><td nowrap>Edge width</td><td>Edge width from 1 to 8 pixels.</td></tr>
   <tr><td nowrap>Drag follow hops</td><td>Number of connected hops that follow a dragged node, from 0 to 10; default is 3.</td></tr>
   <tr><td nowrap>Filter icon position</td><td>Top-left, top-right, bottom-left, or bottom-right.</td></tr>
-  <tr><td nowrap>Backend components</td><td>Optionally enables Database and APM topology. APM requires Zabbix 8.0 or later.</td></tr>
-  <tr><td nowrap>OTel observation window</td><td>Minutes in which OpenTelemetry Spans must be observed; 5 to 1440, default 15.</td></tr>
+  <tr><td nowrap>Backend components</td><td>Optionally enables database topology and APM monitoring collection paths. APM topology requires Zabbix 8.0 or later.</td></tr>
+  <tr><td nowrap>OTel observation window</td><td>Minutes in which OpenTelemetry Spans stored by APM monitoring are considered; 5 to 1440, default 15.</td></tr>
 </table>
 
 <a href="screenshots/monitoring-topology-settings.png" target="_blank"><img src="screenshots/monitoring-topology-settings.png" width="620" alt="Monitoring Topology widget settings"></a>
