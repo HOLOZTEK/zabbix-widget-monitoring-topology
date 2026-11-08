@@ -5,6 +5,12 @@
 - Clarified database-type detection, drag-follow hops, APM logical topology versus actual Telemetry traffic direction, and APM display prerequisites.
 - Documented Zabbix Proxy and APM filter permissions, retrieval-limit behavior, EL9 APM Proxy constraints, and the Zabbix 8.0 tested environment.
 
+## v1.2.4 - 2026-11-09
+
+- Rebuilt and fitted the topology when a Navigator or another broadcaster changes the selected hosts or host groups.
+- Preserved the existing layout during regular refreshes and when the same selection is re-broadcast in a different order.
+- Changed the default drag-follow hops from 3 to 6.
+
 ## v1.2.3 - 2026-11-04
 
 - Added node search, fit-to-view, legends, and improved zoomed-out readability.

@@ -12,7 +12,7 @@ Monitoring Topology は、Zabbix が監視しているホストへ至る監視�
 
 <a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator と連携した Monitoring Topology ダッシュボード" /></a>
 
-[最新リリース](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.2.3) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology-1.2.3.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology_1.2.3_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology-1.2.3.tar.gz)
+[最新リリース](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.2.4) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology-1.2.4.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology_1.2.4_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology-1.2.4.tar.gz)
 
 ## Monitoring Topology を使う理由
 
@@ -58,9 +58,11 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
 
 ### ドラッグ時の追従ホップ数
 
-ノードをドラッグするときに、接続関係を何段階先までレイアウト調整へ追従させるかを0〜10ホップで指定します。既定値は3です。ドラッグしたノードから指定ホップ数以内にあるノードだけが一時的に物理レイアウトの対象となり、その範囲外のノードは位置を維持します。
+ノードをドラッグするときに、接続関係を何段階先までレイアウト調整へ追従させるかを0〜10ホップで指定します。既定値は6です。ドラッグしたノードから指定ホップ数以内にあるノードだけが一時的に物理レイアウトの対象となり、その範囲外のノードは位置を維持します。
 
 0を指定した場合はドラッグしたノードだけを移動します。過去に手動配置したノードは追従対象から除外され、配置した位置を維持します。ドラッグ終了後は周辺レイアウトが整った時点で物理演算を停止し、調整後の位置を維持します。
+
+通常のリフレッシュでは、拡大率、表示位置、ノード位置、Proxyのハイライトを維持します。ナビゲータ等から受信するホスト／ホストグループが変わった場合は新しいトポロジーとして全体を再配置し、表示範囲を合わせます。同じ選択内容が異なる順序で再送された場合は再配置しません。
 
 ## バックエンド構成
 
@@ -122,7 +124,7 @@ OpenTelemetryノードを表示するには、Monitoring Topologyの描画対象
   <tr><td nowrap>フォント色</td><td>空欄ではライト／ダークテーマを自動判定し、指定時はその色を使用します。</td></tr>
   <tr><td nowrap>エッジ色</td><td>ノード間を結ぶ線の色です。</td></tr>
   <tr><td nowrap>エッジ幅</td><td>1〜8pxの線幅です。</td></tr>
-  <tr><td nowrap>ドラッグ時の追従ホップ数</td><td>ドラッグしたノードに追従する接続範囲を0〜10で指定します。既定値は3です。</td></tr>
+  <tr><td nowrap>ドラッグ時の追従ホップ数</td><td>ドラッグしたノードに追従する接続範囲を0〜10で指定します。既定値は6です。</td></tr>
   <tr><td nowrap>フィルタアイコン位置</td><td>左上、右上、左下、右下から選択します。</td></tr>
   <tr><td nowrap>バックエンド構成</td><td>データベース構成とAPM監視の収集経路を任意で有効にします。APM監視のトポロジー表示にはZabbix 8.0以降が必要です。</td></tr>
   <tr><td nowrap>OTel観測期間（分）</td><td>APM監視に保存されたOpenTelemetryのSpanを観測対象とする期間を5〜1440分で指定します。既定値は15です。</td></tr>
@@ -154,13 +156,13 @@ OpenTelemetryノードを表示するには、Monitoring Topologyの描画対象
 ### RPM
 
 ```bash
-dnf install ./zabbix-widget-monitoring-topology-1.2.3.noarch.rpm
+dnf install ./zabbix-widget-monitoring-topology-1.2.4.noarch.rpm
 ```
 
 ### DEB
 
 ```bash
-apt install ./zabbix-widget-monitoring-topology_1.2.3_all.deb
+apt install ./zabbix-widget-monitoring-topology_1.2.4_all.deb
 ```
 
 パッケージは実行ファイルを利用中のZabbixフロントエンドモジュールディレクトリへ配置します。その後、管理 → モジュールで再スキャンして有効化し、ダッシュボードへ追加してください。
@@ -170,14 +172,14 @@ apt install ./zabbix-widget-monitoring-topology_1.2.3_all.deb
 通常はRPMまたはDEBを推奨します。ソースから配置する場合:
 
 ```bash
-curl -L -o zabbix-widget-monitoring-topology-1.2.3.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology-1.2.3.tar.gz
-tar -xzf zabbix-widget-monitoring-topology-1.2.3.tar.gz
+curl -L -o zabbix-widget-monitoring-topology-1.2.4.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology-1.2.4.tar.gz
+tar -xzf zabbix-widget-monitoring-topology-1.2.4.tar.gz
 install -d /usr/share/zabbix/ui/modules/holoztek_monitoringmap
-cd zabbix-widget-monitoring-topology-1.2.3
+cd zabbix-widget-monitoring-topology-1.2.4
 cp -a manifest.json Module.php Widget.php actions assets includes locale views /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
 ```
 
-GitHub Releasesで配布する正式なSourceパッケージには、実行時に必要な `assets/js/vis-network.min.js` が含まれます。GitHubが自動生成するソースコードアーカイブではなく、Release Assetsの `zabbix-widget-monitoring-topology-1.2.3.tar.gz` を使用してください。Zabbixフロントエンドが読める所有者・権限を設定し、モジュールを再スキャンして有効化してください。
+GitHub Releasesで配布する正式なSourceパッケージには、実行時に必要な `assets/js/vis-network.min.js` が含まれます。GitHubが自動生成するソースコードアーカイブではなく、Release Assetsの `zabbix-widget-monitoring-topology-1.2.4.tar.gz` を使用してください。Zabbixフロントエンドが読める所有者・権限を設定し、モジュールを再スキャンして有効化してください。
 
 ## ドキュメント
 

@@ -12,7 +12,7 @@ Vis Network renders the graph in Canvas2D; WebGL is not required.
 
 <a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator driving a Monitoring Topology dashboard" /></a>
 
-[Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.2.3) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology-1.2.3.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology_1.2.3_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology-1.2.3.tar.gz)
+[Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.2.4) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology-1.2.4.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology_1.2.4_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology-1.2.4.tar.gz)
 
 ## Why Monitoring Topology?
 
@@ -58,9 +58,11 @@ The main supported model patterns are as follows.
 
 ### Drag Follow Hops
 
-This setting controls how many connection hops from a dragged node can participate in layout adjustment, from 0 to 10; the default is 3. Only nodes within the configured number of hops are temporarily released into the physics layout. Nodes outside that range keep their positions.
+This setting controls how many connection hops from a dragged node can participate in layout adjustment, from 0 to 10; the default is 6. Only nodes within the configured number of hops are temporarily released into the physics layout. Nodes outside that range keep their positions.
 
 A value of 0 moves only the dragged node. Nodes placed manually in an earlier drag are excluded from the follow range and retain their positions. After the drag ends and the nearby layout settles, physics is disabled and the adjusted positions are preserved.
+
+Regular refreshes preserve the zoom, pan, node positions, and Proxy highlight. When a Navigator or another broadcasting widget changes the selected hosts or host groups, Monitoring Topology treats the result as a new topology, lays it out again, and fits it to the view. Re-broadcasting the same selection in a different order does not trigger a new layout.
 
 ## Backend Components
 
@@ -122,7 +124,7 @@ Clearing every visibility choice in a category hides every host. Colorize by sev
   <tr><td nowrap>Font color</td><td>Explicit node-label color; empty uses automatic light/dark theme detection.</td></tr>
   <tr><td nowrap>Edge color</td><td>Color of graph edges.</td></tr>
   <tr><td nowrap>Edge width</td><td>Edge width from 1 to 8 pixels.</td></tr>
-  <tr><td nowrap>Drag follow hops</td><td>Number of connected hops that follow a dragged node, from 0 to 10; default is 3.</td></tr>
+  <tr><td nowrap>Drag follow hops</td><td>Number of connected hops that follow a dragged node, from 0 to 10; default is 6.</td></tr>
   <tr><td nowrap>Filter icon position</td><td>Top-left, top-right, bottom-left, or bottom-right.</td></tr>
   <tr><td nowrap>Backend components</td><td>Optionally enables database topology and APM monitoring collection paths. APM topology requires Zabbix 8.0 or later.</td></tr>
   <tr><td nowrap>OTel observation window</td><td>Minutes in which OpenTelemetry Spans stored by APM monitoring are considered; 5 to 1440, default 15.</td></tr>
@@ -154,13 +156,13 @@ For dynamic selection, connect Host or Host groups to Navigator or another compa
 ### Install from RPM
 
 ```bash
-dnf install ./zabbix-widget-monitoring-topology-1.2.3.noarch.rpm
+dnf install ./zabbix-widget-monitoring-topology-1.2.4.noarch.rpm
 ```
 
 ### Install from DEB
 
 ```bash
-apt install ./zabbix-widget-monitoring-topology_1.2.3_all.deb
+apt install ./zabbix-widget-monitoring-topology_1.2.4_all.deb
 ```
 
 The packages install the runtime files into the active Zabbix frontend module directory. Then scan and enable the module from Administration -> Modules and add the widget to a dashboard.
@@ -170,14 +172,14 @@ The packages install the runtime files into the active Zabbix frontend module di
 RPM or DEB installation is recommended. For a source installation:
 
 ```bash
-curl -L -o zabbix-widget-monitoring-topology-1.2.3.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.3/zabbix-widget-monitoring-topology-1.2.3.tar.gz
-tar -xzf zabbix-widget-monitoring-topology-1.2.3.tar.gz
+curl -L -o zabbix-widget-monitoring-topology-1.2.4.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology-1.2.4.tar.gz
+tar -xzf zabbix-widget-monitoring-topology-1.2.4.tar.gz
 install -d /usr/share/zabbix/ui/modules/holoztek_monitoringmap
-cd zabbix-widget-monitoring-topology-1.2.3
+cd zabbix-widget-monitoring-topology-1.2.4
 cp -a manifest.json Module.php Widget.php actions assets includes locale views /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
 ```
 
-The official Source package distributed through GitHub Releases contains the required runtime file `assets/js/vis-network.min.js`. Use the `zabbix-widget-monitoring-topology-1.2.3.tar.gz` Release Asset rather than an automatically generated GitHub source-code archive. Set readable ownership and permissions, scan modules, and enable Monitoring Topology.
+The official Source package distributed through GitHub Releases contains the required runtime file `assets/js/vis-network.min.js`. Use the `zabbix-widget-monitoring-topology-1.2.4.tar.gz` Release Asset rather than an automatically generated GitHub source-code archive. Set readable ownership and permissions, scan modules, and enable Monitoring Topology.
 
 ## Documentation
 
