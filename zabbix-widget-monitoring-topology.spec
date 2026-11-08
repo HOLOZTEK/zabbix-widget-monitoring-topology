@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.2.3
+Version:        1.2.4
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -122,6 +122,8 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Mon Nov 09 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.4-0
+- ナビゲータ等で表示対象のホスト／ホストグループが変わったとき、前回のレイアウトに新しいノードを追記するのではなく、全体を再レイアウトして表示範囲を合わせるよう修正（同じ選択の定期更新では従来どおり配置を維持）。
 * Tue Nov 03 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.3-0
 - ノード検索を追加（表示中のノードを名前などで部分一致検索し、候補に種別を表示。選択したノードへ移動して強調）。
 - ツールバーに「全体を表示」ボタンを追加（フィルターで表示中のノードを全体表示）。
