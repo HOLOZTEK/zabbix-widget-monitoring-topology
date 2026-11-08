@@ -140,11 +140,10 @@ OpenTelemetryノードを表示するには、Monitoring Topologyの描画対象
 
 ## 動作要件
 
-- 対応バージョン: Zabbix 7.0／8.0
-- 動作確認済み: Zabbix 7.0／8.0.0
-- Zabbix 8.0検証環境: Zabbix 8.0.0正式版／Rocky Linux 10／PHP 8.4
+- Zabbix 7.0 または 8.0
 - PHP 8.1 以上
-- Canvas2D 対応ブラウザ
+- RPM パッケージは Rocky Linux 9 または 10 を対象とします。互換する PHP と Zabbix パッケージがあれば、他の RHEL 互換ディストリビューションでも動作が見込まれます
+- Zabbix フロントエンドがサポートするブラウザ
 
 ## インストール
 

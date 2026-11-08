@@ -140,11 +140,10 @@ For dynamic selection, connect Host or Host groups to Navigator or another compa
 
 ## Requirements
 
-- Supported versions: Zabbix 7.0 and 8.0
-- Tested versions: Zabbix 7.0 and 8.0.0
-- Zabbix 8.0 tested environment: Zabbix 8.0.0 final release, Rocky Linux 10, and PHP 8.4
+- Zabbix 7.0 or 8.0
 - PHP 8.1 or later
-- Browser with Canvas2D support
+- Rocky Linux 9 or 10 for the RPM package; other RHEL-compatible distributions are expected to work with compatible PHP and Zabbix packages
+- A browser supported by the Zabbix frontend
 
 ## Installation
 
