@@ -494,7 +494,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			fontStyle:      parseInt(container.dataset.nodeFontStyle || '0', 10) === 2 ? 'italic' : 'normal',
 			fontColor:      container.dataset.nodeFontColor || this.#detectThemeFontColor(container),
 			edgeWidth:      parseFloat(container.dataset.edgeWidth || '1'),
-			dragFollowHops: parseInt(container.dataset.dragFollowHops ?? '3', 10),
+			dragFollowHops: parseInt(container.dataset.dragFollowHops ?? '6', 10),
 			edgeColor:      container.dataset.edgeColor     || '#aac4d8',
 			filterPosition: parseInt(container.dataset.filterPosition || '1', 10),
 			severityColors: this.#parseJson(container.dataset.severityColors, {}),
