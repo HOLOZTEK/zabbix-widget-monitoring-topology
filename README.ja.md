@@ -73,6 +73,8 @@ Zabbix ServerのDB種別は、最初にServerの実行時DBバージョン情報
 
 Zabbix ProxyのDB種別はZabbix APIから取得できないため推測せず、種別を付けずに「Proxy DB」と表示します。DBノードのツールチップでは、種別を取得できた場合に判定元も表示します。
 
+<a href="screenshots/monitoring-topology-backend-database.png" target="_blank"><img src="screenshots/monitoring-topology-backend-database.png" width="750" alt="Zabbix Server と Zabbix Proxy のデータベース構成"></a>
+
 ## APM監視
 
 APM監視のトポロジー表示は任意で、既定では無効です。Zabbix 8.0以降のAPM監視で保存されたOpenTelemetryトレースから、次の論理的な表示構造を構成します。
@@ -84,6 +86,8 @@ APM監視のトポロジー表示は任意で、既定では無効です。Zabbi
 APM Data Storeは、グローバルAPMデータソースを参照できる場合はClickHouseとして表示し、それ以外は汎用名で表示します。APM Data StoreとProxyの関係は、APM Collectorが有効なProxyとグローバルAPMデータソースの関係を示すもので、Proxyごとの実際の書き込み先を保証するものではありません。
 
 OpenTelemetryノードを表示するには、Monitoring Topologyの描画対象として少なくとも1台のZabbix Hostと、使用するOS向けのAPM対応Proxy環境が必要です。選択したZabbix HostとOpenTelemetryシステムの<code>host.name</code>が一致する必要はありません。Zabbix 8.0のAPM対応Proxyパッケージが提供されていないEL9ではAPM/OpenTelemetry表示を利用できませんが、これはMonitoring Topology本体の対応OSを制限するものではありません。
+
+<a href="screenshots/monitoring-topology-apm-opentelemetry.png" target="_blank"><img src="screenshots/monitoring-topology-apm-opentelemetry.png" width="750" alt="APM監視と OpenTelemetry の論理表示構造"></a>
 
 詳細な設定、権限制御、取得上限、制約、トラブルシュートは[APM監視 / OpenTelemetry Topology 導入・運用ガイド](docs/OTEL_TOPOLOGY_SETUP.ja.md)を参照してください。
 
@@ -134,7 +138,7 @@ OpenTelemetryノードを表示するには、Monitoring Topologyの描画対象
 
 1. `_hostid` または `_hostgroupid` を配信するナビゲーターを配置します。
 2. 同じページへ Monitoring Topology を追加します。
-3. Monitoring Topology のリフレッシュ間隔を「更新なし」に設定します。
+3. Monitoring Topology のリフレッシュ間隔を「リフレッシュなし」に設定します。
 4. 設定画面でホスト／ホストグループを送信元ウィジェットへ接続します。
 5. ホスト選択時はそのホストの経路、ホストグループ選択時はグループ内ホストの経路を表示します。
 

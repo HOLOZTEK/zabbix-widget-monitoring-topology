@@ -11,6 +11,8 @@ Use a sanitized, publicly shareable lab or demo Zabbix environment. Never captur
 | `screenshots/monitoring-topology-proxy-group.png` | Zabbix Server / Proxy Group / Proxy / Network / Host topology | 1600 x 980 |
 | `screenshots/monitoring-topology-vmware.png` | VMware Datacenter / Cluster / ESXi Host / VM hierarchy | 1600 x 980 |
 | `screenshots/monitoring-topology-kubernetes.png` | Two distinct Kubernetes clusters | 1600 x 980 |
+| `screenshots/monitoring-topology-backend-database.png` | Zabbix Server / Proxy database backend topology | 1500 x 1060 |
+| `screenshots/monitoring-topology-apm-opentelemetry.png` | Logical APM / OpenTelemetry display hierarchy | 1480 x 1190 |
 | `screenshots/monitoring-topology-filters.png` | Expanded display filter panel | 1200 x 800 |
 | `screenshots/monitoring-topology-settings.png` | English settings form | 900 x 720 |
 | `screenshots/monitoring-topology-settings-ja.png` | Japanese settings form | 900 x 720 |
@@ -25,7 +27,8 @@ Use a sanitized, publicly shareable lab or demo Zabbix environment. Never captur
 - Demonstrate multiple Kubernetes clusters with fictional or explicitly publication-approved names.
 - Keep crops and scale consistent, and verify readability at README display width.
 - Capture both English and Japanese settings forms.
+- Set the widget refresh interval to `No refresh` in both settings forms.
 
 ## README Integration
 
-The README files use the dashboard example as the main preview, place topology reference images in the model table, place the filter image below its explanation table, and use the locale-specific settings image. Recheck all images against the sanitizing checklist whenever they are replaced.
+The README files use the dashboard example as the main preview, place topology reference images in the model table, place the backend and APM images in their respective sections, place the filter image below its explanation table, and use the locale-specific settings image. Recheck all images against the sanitizing checklist whenever they are replaced.

@@ -73,6 +73,8 @@ The Zabbix Server database type is determined first from the Server's runtime da
 
 The Zabbix API does not expose the database type used by a Zabbix Proxy, so Monitoring Topology does not guess it and displays the node as “Proxy DB” without a type. When a type is available, the database-node tooltip also shows the source used for the determination.
 
+<a href="screenshots/monitoring-topology-backend-database.png" target="_blank"><img src="screenshots/monitoring-topology-backend-database.png" width="750" alt="Database topology for Zabbix Server and Zabbix Proxy"></a>
+
 ## APM Monitoring
 
 APM topology is optional and disabled by default. On Zabbix 8.0 and later, Monitoring Topology builds this logical display structure from OpenTelemetry traces stored by APM monitoring:
@@ -84,6 +86,8 @@ This does not show the Telemetry traffic direction. Traces actually travel from 
 The APM Data Store is labeled ClickHouse when the global APM data source can be read; otherwise, a generic label is used. The relation between the APM Data Store and a Proxy indicates an APM-enabled Proxy and the global APM data source. It does not guarantee the Proxy's actual write destination.
 
 OpenTelemetry nodes require at least one Zabbix Host as a Monitoring Topology drawing target and an APM-capable Proxy environment for the operating system in use. The selected Zabbix Host does not need to match the OpenTelemetry System's <code>host.name</code>. A Zabbix 8.0 APM-capable Proxy package is not provided for EL9, so APM/OpenTelemetry display is unavailable there; this does not restrict the operating-system support of the Monitoring Topology widget itself.
+
+<a href="screenshots/monitoring-topology-apm-opentelemetry.png" target="_blank"><img src="screenshots/monitoring-topology-apm-opentelemetry.png" width="750" alt="Logical APM monitoring and OpenTelemetry display structure"></a>
 
 See the [APM Monitoring / OpenTelemetry Topology Guide](docs/OTEL_TOPOLOGY_SETUP.md) for detailed settings, access controls, retrieval limits, constraints, and troubleshooting.
 
