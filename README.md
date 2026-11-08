@@ -142,7 +142,7 @@ For dynamic selection, connect Host or Host groups to Navigator or another compa
 
 - Zabbix 7.0 or 8.0
 - PHP 8.1 or later
-- Rocky Linux 9 or 10 for the RPM package; other RHEL-compatible distributions are expected to work with compatible PHP and Zabbix packages
+- RPM package: RHEL-compatible 9 / 10
 - A browser supported by the Zabbix frontend
 
 ## Installation

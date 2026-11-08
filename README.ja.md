@@ -142,7 +142,7 @@ OpenTelemetryノードを表示するには、Monitoring Topologyの描画対象
 
 - Zabbix 7.0 または 8.0
 - PHP 8.1 以上
-- RPM パッケージは Rocky Linux 9 または 10 を対象とします。互換する PHP と Zabbix パッケージがあれば、他の RHEL 互換ディストリビューションでも動作が見込まれます
+- RPM パッケージ: RHEL 互換 9／10
 - Zabbix フロントエンドがサポートするブラウザ
 
 ## インストール
