@@ -55,9 +55,9 @@ Zabbix 管理画面 → 管理 → モジュール からウィジェットを�
 
 ### 表示状態の維持 / Keeping the view
 
-ウィジェットの更新やブロードキャストによる切替では、拡大位置、ノード位置（ドラッグした位置を含む）、Proxy ハイライトを維持します。増えたノードだけを配置し、消えたノードは取り除きます。ノードをドラッグすると、設定「ドラッグ時の追従ホップ数」（0〜10、既定は 3）以内のノードだけが追従し、それより離れたノードと手動で置いたノードは動きません。0 ならドラッグしたノードだけが動きます。全体表示に戻るのは初回表示時、構成が大きく変わったとき、画面内に表示対象がなくなったときです。
+ウィジェットの更新では、拡大位置、ノード位置（ドラッグした位置を含む）、Proxy ハイライトを維持します。増えたノードだけを配置し、消えたノードは取り除きます。ブロードキャスト（ナビゲータなど）で表示対象のホスト／ホストグループが変わったときは、全体を配置し直して表示範囲を合わせます。ノードをドラッグすると、設定「ドラッグ時の追従ホップ数」（0〜10、既定は 6）以内のノードだけが追従し、それより離れたノードと手動で置いたノードは動きません。0 ならドラッグしたノードだけが動きます。全体表示に戻るのは初回表示時、表示対象のホスト／ホストグループが変わったとき、構成が大きく変わったとき、画面内に表示対象がなくなったときです。
 
-Refreshes and broadcast changes keep the zoom, pan, node positions (including dragged nodes) and Proxy highlight. Only added nodes are placed; removed nodes are dropped. Dragging a node also moves the nodes within the "Drag follow hops" setting (0-10, default 3); nodes further away and nodes placed by hand stay put. With 0, only the dragged node moves. The view fits again only on first display, on a substantially different topology, or when nothing remains in view.
+Refreshes keep the zoom, pan, node positions (including dragged nodes) and Proxy highlight. Only added nodes are placed; removed nodes are dropped. When a broadcast (e.g. from a navigator) changes the selected hosts / host groups, the whole topology is laid out again and fitted. Dragging a node also moves the nodes within the "Drag follow hops" setting (0-10, default 6); nodes further away and nodes placed by hand stay put. With 0, only the dragged node moves. The view fits again only on first display, when the selected hosts / host groups change, on a substantially different topology, or when nothing remains in view.
 
 ### 検索・全体表示・凡例 / Search, fit and legend
 
