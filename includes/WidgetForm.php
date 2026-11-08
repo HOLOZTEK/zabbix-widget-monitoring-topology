@@ -116,7 +116,7 @@ class WidgetForm extends CWidgetForm {
 			)
 			->addField(
 				(new CWidgetFieldIntegerBox('drag_follow_hops', _holoztek_mm('Drag follow hops'), 0, 10))
-					->setDefault(3)
+					->setDefault(6)
 			)
 			->addField(
 				(new CWidgetFieldRadioButtonList('filter_position', _holoztek_mm('Filter icon position'),

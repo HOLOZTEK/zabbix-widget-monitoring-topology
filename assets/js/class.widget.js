@@ -313,6 +313,10 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	#model        = { nodes: new Map(), edges: new Map() };
 	// Settings the rendered graph was built with - a change needs a rebuild.
 	#settingsKey  = null;
+	// Host / host group selection last asked for, and the one on screen: a
+	// different selection is a different Topology, not a refresh (issue #41).
+	#requestedSelection = null;
+	#selectionKey = null;
 	// Node positions outliving the DataSet: the whole graph across a rebuild.
 	#positions    = new Map();
 	#savedView    = null;
@@ -368,7 +372,14 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	getUpdateRequestData() {
 		const data = super.getUpdateRequestData();
 		data.widget_unique_id = this.getUniqueId();
+		this.#requestedSelection = this.#selectionKeyOf(data.fields ?? {});
 		return data;
+	}
+
+	// Order-insensitive, so a Navigator re-broadcasting the same set is no change.
+	#selectionKeyOf(fields) {
+		const ids = value => (Array.isArray(value) ? value : (value ? [value] : [])).map(String).sort();
+		return JSON.stringify([ids(fields.hostid), ids(fields.hostgroupid)]);
 	}
 
 	// The update response is only read here, not put into the body: replacing
@@ -383,13 +394,32 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		const next = template.content.querySelector('.js-mm-container');
 		const elements = next ? this.#parseJson(next.dataset.elements, []) : [];
 
+		// The Navigator (or any other source) picked something else: lay the new
+		// Topology out from scratch instead of growing the old layout around it.
+		const selectionChanged = this.#selectionKey !== null && this.#requestedSelection !== this.#selectionKey;
+		this.#selectionKey = this.#requestedSelection;
+
 		if (this.#network !== null && elements.length > 0 && this.#settingsKeyOf(next) === this.#settingsKey) {
 			this.#readModel(elements);
-			this.#syncGraph();
+			if (selectionChanged) {
+				const { nodes, edges } = this.#renderedGraph();
+				this.#replaceGraph(nodes, edges);
+			}
+			else {
+				this.#syncGraph();
+			}
 			return;
 		}
 
-		this.#saveLayout();
+		if (selectionChanged) {
+			this.#positions.clear();
+			this.#userPlaced.clear();
+			this.#userInteracted = false;
+			this.#savedView = null;
+		}
+		else {
+			this.#saveLayout();
+		}
 		this.#destroyNetwork();
 
 		super.setContents(response);
@@ -464,7 +494,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			fontStyle:      parseInt(container.dataset.nodeFontStyle || '0', 10) === 2 ? 'italic' : 'normal',
 			fontColor:      container.dataset.nodeFontColor || this.#detectThemeFontColor(container),
 			edgeWidth:      parseFloat(container.dataset.edgeWidth || '1'),
-			dragFollowHops: parseInt(container.dataset.dragFollowHops ?? '3', 10),
+			dragFollowHops: parseInt(container.dataset.dragFollowHops ?? '6', 10),
 			edgeColor:      container.dataset.edgeColor     || '#aac4d8',
 			filterPosition: parseInt(container.dataset.filterPosition || '1', 10),
 			severityColors: this.#parseJson(container.dataset.severityColors, {}),
