@@ -34,7 +34,7 @@ Monitoring Topology は、Zabbix が監視しているホストへ至る監視�
   <tr><td nowrap>表示フィルタ</td><td>障害状態、ホスト状態、インターフェース、監視経路、監視方式で表示内容の絞り込みを行います。</td></tr>
   <tr><td nowrap>描画対象の指定</td><td>複数のホストグループを固定指定するほか、ナビゲータからホスト／ホストグループを受信して動的に描画内容を変更できます。</td></tr>
   <tr><td nowrap>バックエンド構成</td><td>Zabbix DBとProxy DBを任意で表示します。</td></tr>
-  <tr><td nowrap>APM監視</td><td>Zabbix 8.0のAPM監視で保存されたOpenTelemetryトレースの収集経路を任意で表示します。</td></tr>
+  <tr><td nowrap>APM監視</td><td>APM監視で保存されたOpenTelemetryトレースの収集経路を任意で表示します。</td></tr>
   <tr><td nowrap>表示状態の維持と操作ツール</td><td>差分更新時のノード位置を維持し、検索、全体表示、凡例、関係フィルタ、ドラッグ時の追従ホップ数設定を提供します。</td></tr>
   <tr><td nowrap>対話操作</td><td>ノードの移動とレイアウトの調整、ホストのメニューへのアクセスに対応します。</td></tr>
 </table>
@@ -56,22 +56,36 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
   <tr><td nowrap>Kubernetes監視</td><td><strong>代表的な経路:</strong> <code>Server/Proxy -&gt; Network -&gt; 集約ホスト（Zabbix Host） -&gt; Kubernetes Cluster -&gt; Kubernetes構成要素ホスト（Zabbix Host）</code><br>公式Kubernetesテンプレートのアイテムキーとディスカバリ親からクラスタを識別します。集約ホストをクラスタの親として自動取得し、API Server、Scheduler、Controller Manager、Kubeletなどの構成要素ホストをロール別に配置します。同じ経路上の複数クラスタも分離します。</td><td><a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes監視の経路"></a></td></tr>
 </table>
 
+### ドラッグ時の追従ホップ数
+
+ノードをドラッグするときに、接続関係を何段階先までレイアウト調整へ追従させるかを0〜10ホップで指定します。既定値は3です。ドラッグしたノードから指定ホップ数以内にあるノードだけが一時的に物理レイアウトの対象となり、その範囲外のノードは位置を維持します。
+
+0を指定した場合はドラッグしたノードだけを移動します。過去に手動配置したノードは追従対象から除外され、配置した位置を維持します。ドラッグ終了後は周辺レイアウトが整った時点で物理演算を停止し、調整後の位置を維持します。
+
 ## バックエンド構成
 
-バックエンド構成は任意で、既定では無効です。Zabbix 7.0以降で、Zabbix ServerとZabbix Proxyが使用するデータベースを論理的なバックエンドとして表示します。
+バックエンド構成は任意で、既定では無効です。Zabbix ServerとZabbix Proxyが使用するデータベースを論理的なバックエンドとして表示します。
 
 - `Zabbix Server → Zabbix DB`
 - `Zabbix Proxy → Proxy DB`
 
+Zabbix ServerのDB種別は、最初にServerの実行時DBバージョン情報から判定します。MySQL、MariaDB、PostgreSQLのいずれかを確認できた場合は、その種別を確定情報として表示します。実行時情報から判定できない場合は、Zabbixフロントエンドの接続設定を補助情報として参照し、MySQLまたはPostgreSQLを推定情報として表示します。どちらからも判定できない場合は、種別を付けずに「Zabbix DB」と表示します。
+
+Zabbix ProxyのDB種別はZabbix APIから取得できないため推測せず、種別を付けずに「Proxy DB」と表示します。DBノードのツールチップでは、種別を取得できた場合に判定元も表示します。
+
 ## APM監視
 
-APM監視のトポロジー表示は任意で、既定では無効です。Zabbix 8.0以降のAPM監視で保存されたOpenTelemetryトレースから、次の収集経路を構成します。
+APM監視のトポロジー表示は任意で、既定では無効です。Zabbix 8.0以降のAPM監視で保存されたOpenTelemetryトレースから、次の論理的な表示構造を構成します。
 
-`Zabbix Server → APM Data Store → APM有効Zabbix Proxy → OTel Service（service.name）→ OTel System（host.name）`
+`Zabbix Server → APM Data Store → APM有効Zabbix Proxy → OpenTelemetryサービス（service.name）→ OpenTelemetryシステム（host.name）`
+
+これはTelemetryの通信方向を示すものではありません。実際のトレースは、OpenTelemetry送信元からZabbix Proxy／APM Collectorを経由してAPM Data Storeへ保存されます。
 
 APM Data Storeは、グローバルAPMデータソースを参照できる場合はClickHouseとして表示し、それ以外は汎用名で表示します。APM Data StoreとProxyの関係は、APM Collectorが有効なProxyとグローバルAPMデータソースの関係を示すもので、Proxyごとの実際の書き込み先を保証するものではありません。
 
-OTel Service／OTel SystemはZabbix Hostとは統合しません。設定した観測期間内に、必要なResource Attributeを持つSpanがAPM監視へ保存されている場合に表示します。用語、描画条件、取得上限、トラブルシュートは[APM監視 / OpenTelemetry Topology 導入・運用ガイド](docs/OTEL_TOPOLOGY_SETUP.ja.md)を参照してください。
+OpenTelemetryノードを表示するには、Monitoring Topologyの描画対象として少なくとも1台のZabbix Hostと、使用するOS向けのAPM対応Proxy環境が必要です。選択したZabbix HostとOpenTelemetryシステムの<code>host.name</code>が一致する必要はありません。Zabbix 8.0のAPM対応Proxyパッケージが提供されていないEL9ではAPM/OpenTelemetry表示を利用できませんが、これはMonitoring Topology本体の対応OSを制限するものではありません。
+
+詳細な設定、権限制御、取得上限、制約、トラブルシュートは[APM監視 / OpenTelemetry Topology 導入・運用ガイド](docs/OTEL_TOPOLOGY_SETUP.ja.md)を参照してください。
 
 ## 表示フィルタ
 
@@ -84,7 +98,7 @@ OTel Service／OTel SystemはZabbix Hostとは統合しません。設定した�
         <tr><td nowrap>インターフェイス</td><td>正常、一部監視不可、監視不可、状況不明</td><td>インターフェースの可用性でHostを絞り込みます。既定ではすべてONです。</td></tr>
         <tr><td nowrap>監視経路</td><td>Zabbix Server、Zabbix Proxy、Proxy Group</td><td>上流の監視経路でHostを絞り込みます。既定ではすべてONです。</td></tr>
         <tr><td nowrap>監視方式</td><td>Ping、Zabbix Agent、SNMP、IPMI、JMX、その他</td><td>検出した監視方式でHostを絞り込みます。既定ではすべてONです。「その他」にはVMware、ODBC、Kubernetes、個別分類できない方式を含みます。</td></tr>
-        <tr><td nowrap>関係</td><td>監視経路、データベース、APMストレージ、Telemetry</td><td>取得済みの関係とバックエンドノードを表示・非表示にします。TelemetryはOpenTelemetryトレースから生成したOTel Service／OTel Systemの関係です。利用可能な関係は既定ですべてONです。</td></tr>
+        <tr><td nowrap>関係</td><td>監視経路、データベース、APMストレージ、Telemetry</td><td>取得済みの関係とバックエンドノードを表示・非表示にします。TelemetryはOpenTelemetryトレースから生成したOpenTelemetryサービス／OpenTelemetryシステムの関係です。利用可能な関係は既定ですべてONです。</td></tr>
 </table>
 
 <a href="screenshots/monitoring-topology-filters.png" target="_blank"><img src="screenshots/monitoring-topology-filters.png" height="395" alt="Monitoring Topology の表示フィルタパネル"></a>
@@ -128,6 +142,7 @@ OTel Service／OTel SystemはZabbix Hostとは統合しません。設定した�
 
 - 対応バージョン: Zabbix 7.0／8.0
 - 動作確認済み: Zabbix 7.0／8.0.0
+- Zabbix 8.0検証環境: Zabbix 8.0.0正式版／Rocky Linux 10／PHP 8.4
 - PHP 8.1 以上
 - Canvas2D 対応ブラウザ
 
@@ -159,7 +174,7 @@ cd zabbix-widget-monitoring-topology-1.2.3
 cp -a manifest.json Module.php Widget.php actions assets includes locale views /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
 ```
 
-旧パスを使用する環境では `/usr/share/zabbix/modules/holoztek_monitoringmap` に配置します。Zabbixフロントエンドが読める所有者・権限を設定し、モジュールを再スキャンして有効化してください。
+GitHub Releasesで配布する正式なSourceパッケージには、実行時に必要な `assets/js/vis-network.min.js` が含まれます。GitHubが自動生成するソースコードアーカイブではなく、Release Assetsの `zabbix-widget-monitoring-topology-1.2.3.tar.gz` を使用してください。Zabbixフロントエンドが読める所有者・権限を設定し、モジュールを再スキャンして有効化してください。
 
 ## ドキュメント
 
@@ -167,7 +182,7 @@ cp -a manifest.json Module.php Widget.php actions assets includes locale views /
 - [コントリビューション](docs/CONTRIBUTING.md)
 - [セキュリティ](docs/SECURITY.md)
 - [スクリーンショットガイド](docs/screenshot-guide.md)
-- [OpenTelemetry Topology導入ガイド](docs/OTEL_TOPOLOGY_SETUP.ja.md)
+- [APM監視 / OpenTelemetry Topology 導入・運用ガイド](docs/OTEL_TOPOLOGY_SETUP.ja.md)
 - [ライセンス](LICENSE)
 
 ## リポジトリ構成

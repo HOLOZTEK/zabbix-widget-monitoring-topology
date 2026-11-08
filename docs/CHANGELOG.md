@@ -1,9 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Clarified database-type detection, drag-follow hops, APM logical topology versus actual Telemetry traffic direction, and APM display prerequisites.
+- Documented Zabbix Proxy and APM filter permissions, retrieval-limit behavior, EL9 APM Proxy constraints, and the Zabbix 8.0 tested environment.
+
 ## v1.2.3 - 2026-11-04
 
 - Added node search, fit-to-view, legends, and improved zoomed-out readability.
-- Displayed OpenTelemetry as Proxy → OTel Service (`service.name`) → OTel System (`host.name`).
+- Displayed OpenTelemetry as Proxy → OpenTelemetry Service (`service.name`) → OpenTelemetry System (`host.name`).
 - Added the OTel observation window and truncation warning.
 
 ## v1.2.2 - 2026-11-03
