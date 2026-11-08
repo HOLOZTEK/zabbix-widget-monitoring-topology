@@ -33,7 +33,8 @@ Monitoring Topology は、Zabbix が監視しているホストへ至る監視�
   <tr><td nowrap>障害状態の表示</td><td>ホストで検知されている障害の深刻度の色をアイコンの背景に表示します。複数の障害が発生している場合は、深刻度が最も高い障害の色が選択されます。</td></tr>
   <tr><td nowrap>表示フィルタ</td><td>障害状態、ホスト状態、インターフェース、監視経路、監視方式で表示内容の絞り込みを行います。</td></tr>
   <tr><td nowrap>描画対象の指定</td><td>複数のホストグループを固定指定するほか、ナビゲータからホスト／ホストグループを受信して動的に描画内容を変更できます。</td></tr>
-  <tr><td nowrap>バックエンド構成</td><td>Zabbix DBとProxy DB、Zabbix 8.0のAPM監視で保存されたOpenTelemetryトレースの収集経路を任意で表示します。</td></tr>
+  <tr><td nowrap>バックエンド構成</td><td>Zabbix DBとProxy DBを任意で表示します。</td></tr>
+  <tr><td nowrap>APM監視</td><td>Zabbix 8.0のAPM監視で保存されたOpenTelemetryトレースの収集経路を任意で表示します。</td></tr>
   <tr><td nowrap>表示状態の維持と操作ツール</td><td>差分更新時のノード位置を維持し、検索、全体表示、凡例、関係フィルタ、ドラッグ時の追従ホップ数設定を提供します。</td></tr>
   <tr><td nowrap>対話操作</td><td>ノードの移動とレイアウトの調整、ホストのメニューへのアクセスに対応します。</td></tr>
 </table>
@@ -55,14 +56,20 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
   <tr><td nowrap>Kubernetes監視</td><td><strong>代表的な経路:</strong> <code>Server/Proxy -&gt; Network -&gt; 集約ホスト（Zabbix Host） -&gt; Kubernetes Cluster -&gt; Kubernetes構成要素ホスト（Zabbix Host）</code><br>公式Kubernetesテンプレートのアイテムキーとディスカバリ親からクラスタを識別します。集約ホストをクラスタの親として自動取得し、API Server、Scheduler、Controller Manager、Kubeletなどの構成要素ホストをロール別に配置します。同じ経路上の複数クラスタも分離します。</td><td><a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes監視の経路"></a></td></tr>
 </table>
 
-## バックエンド構成とAPM監視
+## バックエンド構成
 
-バックエンド構成は任意で、既定では無効です。データベース構成はZabbix 7.0以降、APM監視から構成するOpenTelemetryトポロジーはZabbix 8.0以降に対応します。
+バックエンド構成は任意で、既定では無効です。Zabbix 7.0以降で、Zabbix ServerとZabbix Proxyが使用するデータベースを論理的なバックエンドとして表示します。
 
-- データベース: `Zabbix Server → Zabbix DB`、`Zabbix Proxy → Proxy DB`
-- APM監視: `Zabbix Server → APM Data Store → APM有効Zabbix Proxy → OTel Service（service.name）→ OTel System（host.name）`
+- `Zabbix Server → Zabbix DB`
+- `Zabbix Proxy → Proxy DB`
 
-データベースノードは、Zabbix Server／Proxyが使用するデータベースを論理的なバックエンドとして示します。APM Data Storeは、グローバルAPMデータソースを参照できる場合はClickHouseとして表示し、それ以外は汎用名で表示します。APM Data StoreとProxyの関係は、APM Collectorが有効なProxyとグローバルAPMデータソースの関係を示すもので、Proxyごとの実際の書き込み先を保証するものではありません。
+## APM監視
+
+APM監視のトポロジー表示は任意で、既定では無効です。Zabbix 8.0以降のAPM監視で保存されたOpenTelemetryトレースから、次の収集経路を構成します。
+
+`Zabbix Server → APM Data Store → APM有効Zabbix Proxy → OTel Service（service.name）→ OTel System（host.name）`
+
+APM Data Storeは、グローバルAPMデータソースを参照できる場合はClickHouseとして表示し、それ以外は汎用名で表示します。APM Data StoreとProxyの関係は、APM Collectorが有効なProxyとグローバルAPMデータソースの関係を示すもので、Proxyごとの実際の書き込み先を保証するものではありません。
 
 OTel Service／OTel SystemはZabbix Hostとは統合しません。設定した観測期間内に、必要なResource Attributeを持つSpanがAPM監視へ保存されている場合に表示します。用語、描画条件、取得上限、トラブルシュートは[APM監視 / OpenTelemetry Topology 導入・運用ガイド](docs/OTEL_TOPOLOGY_SETUP.ja.md)を参照してください。
 

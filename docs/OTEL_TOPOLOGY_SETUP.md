@@ -16,16 +16,15 @@ It assumes that Zabbix APM monitoring and the sending path, such as an OpenTelem
 | OTel System | An execution-environment node created from the <code>host.name</code> Resource Attribute. |
 | Telemetry | The label shown in the widget's Relations filter. It means relations generated from OpenTelemetry traces. |
 
-## Meaning of Backend Nodes
+## APM Monitoring Backend
 
-Enabling Backend components adds these logical relations to Monitoring Topology:
+Enabling APM in the widget settings adds this logical relation to Monitoring Topology:
 
-- Database: <code>Zabbix Server → Zabbix DB</code> and <code>Zabbix Proxy → Proxy DB</code>
-- APM monitoring: <code>Zabbix Server → APM Data Store → APM-enabled Zabbix Proxy</code>
+<code>Zabbix Server → APM Data Store → APM-enabled Zabbix Proxy</code>
 
 The APM Data Store is labeled ClickHouse when the global APM data source can be read; otherwise, a generic label is used. The line between the APM Data Store and a Proxy represents an APM-enabled Proxy and the global APM data source. It does not guarantee the actual write destination because a Proxy may use an individually configured data source.
 
-## Topology Model
+## OpenTelemetry Topology Model
 
 The APM monitoring collection path is displayed with this model:
 

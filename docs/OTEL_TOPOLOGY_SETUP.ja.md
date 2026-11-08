@@ -16,16 +16,15 @@ ZabbixのAPM監視とOpenTelemetry Collectorなどの送信経路は、すでに
 | OTel System | Resource Attributeの<code>host.name</code>から作成する実行環境ノードです。 |
 | Telemetry | ウィジェットの「関係」フィルタに表示される名称です。OpenTelemetryトレースから生成した関係を指します。 |
 
-## バックエンドノードの意味
+## APM監視のバックエンド
 
-「バックエンド構成」を有効にすると、Monitoring Topologyは次の論理的な関係を追加します。
+ウィジェット設定でAPMを有効にすると、Monitoring Topologyは次の論理的な関係を追加します。
 
-- データベース: <code>Zabbix Server → Zabbix DB</code>、<code>Zabbix Proxy → Proxy DB</code>
-- APM監視: <code>Zabbix Server → APM Data Store → APM有効Zabbix Proxy</code>
+<code>Zabbix Server → APM Data Store → APM有効Zabbix Proxy</code>
 
 APM Data Storeは、グローバルAPMデータソースを参照できる場合はClickHouseとして表示し、それ以外は汎用名で表示します。APM Data StoreとProxyの線は、APM Collectorが有効なProxyとグローバルAPMデータソースの関係を示します。Proxyが個別設定で別のデータソースを使用している可能性があるため、実際の書き込み先を保証する線ではありません。
 
-## トポロジーモデル
+## OpenTelemetryトポロジーモデル
 
 APM監視の収集経路は、次のモデルで表示します。
 

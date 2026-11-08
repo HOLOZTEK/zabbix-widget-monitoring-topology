@@ -33,7 +33,8 @@ It is suited to environments with many monitored hosts or advanced distributed m
   <tr><td nowrap>Problem status display</td><td>Colors each host icon background by the highest severity among problems detected on that host.</td></tr>
   <tr><td nowrap>Display filters</td><td>Filters by problem status, host status, interface, monitoring route, and monitoring method.</td></tr>
   <tr><td nowrap>Target selection</td><td>Displays multiple fixed host groups, or receives a host or host group from Navigator and updates the topology dynamically.</td></tr>
-  <tr><td nowrap>Backend topology</td><td>Optionally displays Zabbix DB and Proxy DB nodes, plus the collection paths of OpenTelemetry traces stored by Zabbix 8.0 APM monitoring.</td></tr>
+  <tr><td nowrap>Backend components</td><td>Optionally displays Zabbix DB and Proxy DB nodes.</td></tr>
+  <tr><td nowrap>APM monitoring</td><td>Optionally displays the collection paths of OpenTelemetry traces stored by Zabbix 8.0 APM monitoring.</td></tr>
   <tr><td nowrap>View continuity and tools</td><td>Preserves positions during incremental updates and provides search, fit-to-view, legend, relation filters, and configurable drag-follow hops.</td></tr>
   <tr><td nowrap>Interactive operation</td><td>Supports moving nodes, adjusting the layout, and opening host menus.</td></tr>
 </table>
@@ -55,14 +56,20 @@ The main supported model patterns are as follows.
   <tr><td nowrap>Kubernetes monitoring</td><td><strong>Typical path:</strong> <code>Server/Proxy -&gt; Network -&gt; aggregate host (Zabbix Host) -&gt; Kubernetes Cluster -&gt; Kubernetes component host (Zabbix Host)</code><br>Official Kubernetes template item keys and discovery parents identify each cluster. The aggregate host is obtained automatically as the cluster parent, and component hosts such as API Server, Scheduler, Controller Manager, and Kubelet are placed by role. Multiple clusters on the same route remain separate.</td><td><a href="screenshots/monitoring-topology-kubernetes.png" target="_blank"><img src="screenshots/monitoring-topology-kubernetes.png" width="150" alt="Kubernetes monitoring route"></a></td></tr>
 </table>
 
-## Backend Components and APM Monitoring
+## Backend Components
 
-Backend components are optional and disabled by default. Database topology is available on Zabbix 7.0 and later. OpenTelemetry topology built from APM monitoring requires Zabbix 8.0 or later.
+Backend components are optional and disabled by default. On Zabbix 7.0 and later, they represent the databases used by Zabbix Server and Zabbix Proxy as logical backend components.
 
-- Database: `Zabbix Server → Zabbix DB` and `Zabbix Proxy → Proxy DB`
-- APM monitoring: `Zabbix Server → APM Data Store → APM-enabled Zabbix Proxy → OTel Service (service.name) → OTel System (host.name)`
+- `Zabbix Server → Zabbix DB`
+- `Zabbix Proxy → Proxy DB`
 
-Database nodes represent the databases used by Zabbix Server and Proxy as logical backend components. The APM Data Store is labeled ClickHouse when the global APM data source can be read; otherwise, a generic label is used. The relation between the APM Data Store and a Proxy indicates an APM-enabled Proxy and the global APM data source. It does not guarantee the Proxy's actual write destination.
+## APM Monitoring
+
+APM topology is optional and disabled by default. On Zabbix 8.0 and later, Monitoring Topology builds this collection path from OpenTelemetry traces stored by APM monitoring:
+
+`Zabbix Server → APM Data Store → APM-enabled Zabbix Proxy → OTel Service (service.name) → OTel System (host.name)`
+
+The APM Data Store is labeled ClickHouse when the global APM data source can be read; otherwise, a generic label is used. The relation between the APM Data Store and a Proxy indicates an APM-enabled Proxy and the global APM data source. It does not guarantee the Proxy's actual write destination.
 
 OTel Service and OTel System nodes are not merged with Zabbix Hosts. They are displayed when APM monitoring stores a Span with the required Resource Attributes within the configured observation window. See the [APM Monitoring / OpenTelemetry Topology Guide](docs/OTEL_TOPOLOGY_SETUP.md) for terminology, drawing prerequisites, retrieval limits, and troubleshooting.
 
