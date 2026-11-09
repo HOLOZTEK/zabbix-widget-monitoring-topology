@@ -134,9 +134,8 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	// Upper bound for new nodes to settle around the frozen ones.
 	static #SETTLE_TIMEOUT_MS = 5000;
 
-	// "Show movement": a rough layout of this many iterations is shown, and
-	// physics then spreads it out on screen for at most this long.
-	static #ANIMATED_STABILIZATION = 150;
+	// With "Layout iterations before display" set, physics spreads the layout
+	// out on screen for at most this long.
 	static #ANIMATION_TIMEOUT_MS = 20000;
 
 	// Different patterns, so the relations differ by more than color.
@@ -501,7 +500,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			fontColor:      container.dataset.nodeFontColor || this.#detectThemeFontColor(container),
 			edgeWidth:      parseFloat(container.dataset.edgeWidth || '1'),
 			dragFollowHops: parseInt(container.dataset.dragFollowHops ?? '6', 10),
-			layoutAnimation: container.dataset.layoutAnimation === '1',
+			layoutIterations: parseInt(container.dataset.layoutIterations || '0', 10),
 			edgeColor:      container.dataset.edgeColor     || '#aac4d8',
 			filterPosition: parseInt(container.dataset.filterPosition || '1', 10),
 			severityColors: this.#parseJson(container.dataset.severityColors, {}),
@@ -666,16 +665,14 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	}
 
 	#layoutBudget(nodeCount) {
-		return this.#s.layoutAnimation
-			? CWidgetHoloztekMonitoringMap.#ANIMATED_STABILIZATION
-			: this.#stabilizationBudget(nodeCount);
+		return this.#s.layoutIterations > 0 ? this.#s.layoutIterations : this.#stabilizationBudget(nodeCount);
 	}
 
 	// The hidden part of a fresh layout is done. Unless the movement is to be
 	// shown, that is the whole layout; otherwise physics keeps running on
 	// screen until the graph settles ('stabilized') or the time is up.
 	#onStabilizationDone() {
-		if (this.#layoutPhase !== 'initial' || !this.#s.layoutAnimation) {
+		if (this.#layoutPhase !== 'initial' || this.#s.layoutIterations === 0) {
 			this.#finishLayout();
 			return;
 		}
@@ -761,7 +758,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		if (initial && !this.#userInteracted) {
 			this.#network.fit({
-				animation: this.#s.layoutAnimation ? { duration: 300, easingFunction: 'easeInOutQuad' } : false,
+				animation: this.#s.layoutIterations > 0 ? { duration: 300, easingFunction: 'easeInOutQuad' } : false,
 			});
 		}
 

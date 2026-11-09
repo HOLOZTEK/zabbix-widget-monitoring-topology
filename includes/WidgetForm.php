@@ -28,9 +28,6 @@ class WidgetForm extends CWidgetForm {
 	public const FILTER_POSITION_BOTTOM_LEFT  = 2;
 	public const FILTER_POSITION_BOTTOM_RIGHT = 3;
 
-	public const LAYOUT_ANIMATION_OFF = 0;
-	public const LAYOUT_ANIMATION_ON  = 1;
-
 	public const BACKEND_DATABASE = 1;
 	public const BACKEND_APM      = 2;
 
@@ -48,13 +45,6 @@ class WidgetForm extends CWidgetForm {
 			self::FILTER_POSITION_TOP_RIGHT    => _holoztek_mm('Top right'),
 			self::FILTER_POSITION_BOTTOM_LEFT  => _holoztek_mm('Bottom left'),
 			self::FILTER_POSITION_BOTTOM_RIGHT => _holoztek_mm('Bottom right'),
-		];
-	}
-
-	private static function layoutAnimationValues(): array {
-		return [
-			self::LAYOUT_ANIMATION_OFF => _holoztek_mm('Show when laid out'),
-			self::LAYOUT_ANIMATION_ON  => _holoztek_mm('Show movement'),
 		];
 	}
 
@@ -128,11 +118,11 @@ class WidgetForm extends CWidgetForm {
 				(new CWidgetFieldIntegerBox('drag_follow_hops', _holoztek_mm('Drag follow hops'), 0, 10))
 					->setDefault(6)
 			)
+			// 0: the layout is shown once done. Otherwise it is shown after this
+			// many iterations and spreads out on screen from there.
 			->addField(
-				(new CWidgetFieldRadioButtonList('layout_animation', _holoztek_mm('Layout display'),
-					self::layoutAnimationValues()
-				))
-					->setDefault(self::LAYOUT_ANIMATION_OFF)
+				(new CWidgetFieldIntegerBox('layout_iterations', _holoztek_mm('Layout iterations before display'), 0, 1000))
+					->setDefault(0)
 			)
 			->addField(
 				(new CWidgetFieldRadioButtonList('filter_position', _holoztek_mm('Filter icon position'),

@@ -318,17 +318,17 @@ msgstr "Node types"
 msgid "Virtualization / Cluster"
 msgstr "Virtualization / Cluster"
 
-msgid "Layout display"
-msgstr "Layout display"
 
-msgid "Show when laid out"
-msgstr "Show when laid out"
 
-msgid "Show movement"
-msgstr "Show movement"
 
 msgid "Applies when the topology is laid out anew: on first display, when the selection changes, or when the topology changes substantially."
 msgstr "Applies when the topology is laid out anew: on first display, when the selection changes, or when the topology changes substantially."
 
-msgid "Show movement: nodes are shown early and spread out until they settle."
-msgstr "Show movement: nodes are shown early and spread out until they settle."
+msgid "Layout iterations before display"
+msgstr "Layout iterations before display"
+
+msgid "0: the topology is shown once its layout is done."
+msgstr "0: the topology is shown once its layout is done."
+
+msgid "1 or more: the topology is shown after this many layout iterations and spreads out on screen until it settles. The smaller the value, the more it moves."
+msgstr "1 or more: the topology is shown after this many layout iterations and spreads out on screen until it settles. The smaller the value, the more it moves."
