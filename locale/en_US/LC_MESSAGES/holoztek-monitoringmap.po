@@ -334,28 +334,18 @@ msgid "1 or more: the topology is shown after this many layout iterations and sp
 msgstr "1 or more: the topology is shown after this many layout iterations and spreads out on screen until it settles. The smaller the value, the more it moves."
 
 msgid "Monitoring targets"
-msgstr "Monitoring targets"
+msgstr "Monitoring"
 
-msgid "Backend / APM"
-msgstr "Backend / APM"
 
 msgid "Display"
 msgstr "Display"
 
-msgid "Default relation visibility"
-msgstr "Default relation visibility"
 
 msgid "Decides what is fetched. Database adds the Zabbix and Proxy databases; APM queries APM trace data."
 msgstr "Decides what is fetched. Database adds the Zabbix and Proxy databases; APM queries APM trace data."
 
-msgid "The relation filter on the dashboard only shows or hides what was fetched."
-msgstr "The relation filter on the dashboard only shows or hides what was fetched."
 
-msgid "Where the relation filter starts each time the dashboard is opened. Changes made in the filter are kept on refresh, not saved."
-msgstr "Where the relation filter starts each time the dashboard is opened. Changes made in the filter are kept on refresh, not saved."
 
-msgid "Relations not fetched (see Backend components) stay off."
-msgstr "Relations not fetched (see Backend components) stay off."
 
 msgid "Info"
 msgstr "Info"
@@ -413,3 +403,33 @@ msgstr "Requires Zabbix 8.0 or later"
 
 msgid "Last observed"
 msgstr "Last observed"
+
+msgid "Data acquisition"
+msgstr "Data acquisition"
+
+msgid "Drawing"
+msgstr "Drawing"
+
+msgid "Default visibility"
+msgstr "Default visibility"
+
+msgid "Default component visibility"
+msgstr "Default component visibility"
+
+msgid "APM data store"
+msgstr "APM data store"
+
+msgid "OpenTelemetry"
+msgstr "OpenTelemetry"
+
+msgid "Components"
+msgstr "Components"
+
+msgid "The Components and Relations filters on the dashboard only show or hide what was fetched."
+msgstr "The Components and Relations filters on the dashboard only show or hide what was fetched."
+
+msgid "Where the Components filter starts each time the dashboard is opened. Changes made in the filter are kept on refresh, not saved."
+msgstr "Where the Components filter starts each time the dashboard is opened. Changes made in the filter are kept on refresh, not saved."
+
+msgid "Components not fetched (see Data acquisition) stay off. Hiding a component does not stop it being fetched."
+msgstr "Components not fetched (see Data acquisition) stay off. Hiding a component does not stop it being fetched."

@@ -287,9 +287,9 @@ The widget does not check whether someone used the agent recently. It only check
 | Host groups / Hosts | The display target. While no host is shown, OTel nodes are not shown either |
 | Backend components → APM | When on, fetches and shows the APM data store, APM-enabled Proxies and OTel nodes (Zabbix 8.0+) |
 | OTel observation window (minutes) | The period to show. Default 15, range 5-1440 ([section 9](#9-otel-observation-window)) |
-| Default relation visibility (Display tab) | Where the relation filter starts when the dashboard is opened. With Telemetry off here, spans are still fetched while APM is on |
+| Default component visibility → OpenTelemetry (Display tab) | Where the Components filter starts when the dashboard is opened (on by default). With it off, spans are still fetched while APM is on |
 
-Backend components and the OTel observation window are on the Backend / APM tab of the settings form.
+Backend components and the OTel observation window are on the Data acquisition tab of the settings form. Data acquisition decides whether data is fetched; the Components and Relations filters only show or hide data that was already fetched.
 
 ## 9. OTel observation window
 
@@ -439,10 +439,11 @@ As explained in [section 1](#1-what-this-topology-shows), `Zabbix Host: claude-n
 | Control | Effect |
 |---|---|
 | APM (widget setting) | Controls data fetching and building the topology itself. When off, no spans are fetched |
-| Relations filter → Telemetry | Controls **only the display** of the topology already fetched. When off, hides OpenTelemetry Services and Systems and the Proxy—Service and Service—System lines |
+| Components filter → OpenTelemetry | Controls **only the display** of the topology already fetched. When off, hides OpenTelemetry Services and Systems and their lines |
+| Relations filter → Telemetry | Controls **only the display of lines** already fetched. When off, hides the Proxy—Service and Service—System lines; the nodes stay |
 | OTel observation window | The period to show ([section 9](#9-otel-observation-window)) |
 | Search | Finds shown nodes by substring. OpenTelemetry Services match by `service.name` and Systems by `host.name`. Both also match their namespace and environment, and a System also matches its Service name. Nodes hidden by the filters are not offered |
-| Info | Shows the nodes and relations fetched, the APM / OpenTelemetry retrieval (observation window, spans fetched, queries / maximum, Services and Systems, retrieval status) and the legend, where telemetry is dash-dot and service membership dash-dot-dot. The retrieval shows here even while Telemetry is hidden by the filter |
+| Info | Shows the nodes and relations fetched, the APM / OpenTelemetry retrieval (observation window, spans fetched, queries / maximum, Services and Systems, retrieval status) and the legend, where telemetry is dash-dot and service membership dash-dot-dot. The node and relation counts and the retrieval show here even while the filters hide them |
 | Fit | Fits every node the filters leave visible into the view |
 
 Tooltips show:
@@ -469,7 +470,7 @@ Check, in this order:
 6. Does the Proxy have `holoztek.zabbix.proxyid` with Category `Traces`, set to its own `proxyid`?
 7. Do the spans have `service.name`?
 8. Are there spans within the OTel observation window?
-9. Is Telemetry turned off in the Relations filter?
+9. Is OpenTelemetry turned off in the Components filter?
 10. Is the sender sending traces? (Metrics and logs are not used.)
 
 ### 13.2 A Service is shown but no System

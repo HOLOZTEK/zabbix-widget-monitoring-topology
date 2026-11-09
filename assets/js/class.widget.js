@@ -112,6 +112,16 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	// Not part of the monitoring tree - see #applyVisibility().
 	static #BACKEND_NODE_TYPES = new Set(['zabbix_db', 'proxy_db', 'apm_datastore', 'otel_service', 'otel_system']);
 
+	// node_type -> Components filter key. Hiding a component hides its nodes
+	// and so every edge to them; the data stays fetched (see #applyVisibility()).
+	static #COMPONENT_KEYS = {
+		zabbix_db:     'compDatabase',
+		proxy_db:      'compDatabase',
+		apm_datastore: 'compApmDataStore',
+		otel_service:  'compOpenTelemetry',
+		otel_system:   'compOpenTelemetry',
+	};
+
 	// relation_type -> Relations filter key; an edge without one is monitoring.
 	static #RELATION_KEYS = {
 		monitoring:  'relMonitoring',
@@ -258,10 +268,14 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		methodIpmi:        true,
 		methodJmx:         true,
 		methodOther:       true,
-		// 関係 - what is drawn out of the fetched data, unlike the Widget's
-		// backend_components setting, which decides what is fetched at all.
-		// Not kept in localStorage: they start from the Widget's "Default
-		// relation visibility" (see #applyRelationDefaults()).
+		// 構成要素 / 関係 - what is drawn out of the fetched data, unlike the
+		// Widget's backend_components setting, which decides what is fetched at
+		// all. Not kept in localStorage: the components start from the Widget's
+		// "Default component visibility" (see #applyComponentDefaults()), the
+		// relations all on.
+		compDatabase:      true,
+		compApmDataStore:  true,
+		compOpenTelemetry: true,
 		relMonitoring:     true,
 		relDatabase:       true,
 		relApmStorage:     true,
@@ -351,10 +365,10 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	#infoEl         = null;
 	// What the last update fetched, for the Info panel (WidgetView 'status').
 	#status         = null;
-	// Relation filter keys -> on/off as the Widget's settings start them, and
+	// Components filter keys -> on/off as the Widget's settings start them, and
 	// the raw setting they came from: the user's choice holds until it changes.
-	#relationDefaults    = {};
-	#relationDefaultsRaw = null;
+	#componentDefaults    = {};
+	#componentDefaultsRaw = null;
 
 	onInitialize() {
 		this._dom_id_suffix = '';
@@ -519,7 +533,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		const previousFilter = this.#filter;
 		this.#loadFilterState();
-		this.#applyRelationDefaults(container.dataset.defaultRelations ?? null, previousFilter);
+		this.#applyComponentDefaults(container.dataset.defaultComponents ?? null, previousFilter);
 		this.#status = this.#parseJson(container.dataset.status, null);
 		this.#iconCache = {};
 		this.#readModel(elements);
@@ -1295,40 +1309,51 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			}
 			const stored = raw ? JSON.parse(raw) : null;
 			this.#filter = stored
-				? Object.assign(defaults, this.#withoutRelations(this.#migrateFilterState(stored)))
+				? Object.assign(defaults, this.#withoutViewState(this.#migrateFilterState(stored)))
 				: defaults;
 		} catch (_) {
 			this.#filter = defaults;
 		}
 	}
 
-	// Up to v1.2.5 the relations were stored with the rest of the filter.
-	#withoutRelations(filter) {
+	// The Components and Relations filters last only while the dashboard is
+	// open. Up to v1.2.5 the relations were stored with the rest of the filter.
+	#withoutViewState(filter) {
 		if (filter === null || typeof filter !== 'object') return filter;
 
 		const stripped = { ...filter };
-		for (const key of Object.values(CWidgetHoloztekMonitoringMap.#RELATION_KEYS)) delete stripped[key];
+		for (const key of CWidgetHoloztekMonitoringMap.#viewStateKeys()) delete stripped[key];
 		return stripped;
 	}
 
-	// The relations start where the Widget's settings put them each time the
-	// dashboard is opened, and again whenever those settings change. Otherwise
-	// - a refresh, a rebuild for another setting - the user's choice holds.
-	#applyRelationDefaults(raw, previousFilter) {
-		const keep = raw === this.#relationDefaultsRaw;
+	static #viewStateKeys() {
+		return new Set([
+			...Object.values(CWidgetHoloztekMonitoringMap.#COMPONENT_KEYS),
+			...Object.values(CWidgetHoloztekMonitoringMap.#RELATION_KEYS),
+		]);
+	}
+
+	// The components start where the Widget's settings put them each time the
+	// dashboard is opened, and again whenever those settings change; the
+	// relations start all on. Otherwise - a refresh, a rebuild for another
+	// setting - the user's choice holds.
+	#applyComponentDefaults(raw, previousFilter) {
+		const keep = raw === this.#componentDefaultsRaw;
 		const values = this.#parseJson(raw, {});
-		const defaults = {};
 
 		// Dashboards saved before the setting existed send nothing: all on.
-		for (const [relation, key] of Object.entries(CWidgetHoloztekMonitoringMap.#RELATION_KEYS)) {
-			if (!(key in defaults) || relation in values) defaults[key] = values[relation] !== false;
-		}
+		this.#componentDefaults = {
+			compDatabase:      values.database !== false,
+			compApmDataStore:  values.apm_datastore !== false,
+			compOpenTelemetry: values.opentelemetry !== false,
+		};
+		this.#componentDefaultsRaw = raw;
 
-		this.#relationDefaults = defaults;
-		this.#relationDefaultsRaw = raw;
+		const defaults = { ...CWidgetHoloztekMonitoringMap.#DEFAULT_FILTER, ...this.#componentDefaults };
 
-		for (const key in defaults) {
-			this.#filter[key] = keep && key in previousFilter ? previousFilter[key] : defaults[key];
+		for (const key of CWidgetHoloztekMonitoringMap.#viewStateKeys()) {
+			const component = key in this.#componentDefaults;
+			this.#filter[key] = (keep || !component) && key in previousFilter ? previousFilter[key] : defaults[key];
 		}
 	}
 
@@ -1362,7 +1387,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 	#saveFilterState() {
 		try {
-			localStorage.setItem(this.#filterStorageKey(), JSON.stringify(this.#withoutRelations(this.#filter)));
+			localStorage.setItem(this.#filterStorageKey(), JSON.stringify(this.#withoutViewState(this.#filter)));
 		} catch (_) {
 			// localStorage unavailable (private browsing, quota, ...) - filter
 			// state just won't persist across reloads, no functional impact.
@@ -1511,9 +1536,12 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		if (!this.#nodesDS || !this.#edgesDS) return;
 
 		const metas = Object.values(this.#nodesMeta);
+		const componentShown = type => this.#filter[CWidgetHoloztekMonitoringMap.#COMPONENT_KEYS[type]] === true;
 		const serverAnchored = metas.some(meta => !meta.backend_owner
 			&& CWidgetHoloztekMonitoringMap.#BACKEND_NODE_TYPES.has(meta.node_type)
+			&& componentShown(meta.node_type)
 		);
+		const apmShown = this.#filter.compApmDataStore || this.#filter.compOpenTelemetry;
 
 		const visible = {};
 		const computeVisible = (id) => {
@@ -1522,19 +1550,21 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			// Seed against re-entrancy before recursing into children.
 			visible[id] = false;
 
-			// Backend components ignore the Host filter: a Proxy DB follows its
-			// Proxy, the Server-level ones always stay.
+			// Backend components ignore the Host filter but follow the Components
+			// filter: a Proxy DB follows its Proxy, the Server-level ones stay.
 			if (meta && CWidgetHoloztekMonitoringMap.#BACKEND_NODE_TYPES.has(meta.node_type)) {
-				visible[id] = meta.backend_owner ? computeVisible(meta.backend_owner) : true;
+				visible[id] = componentShown(meta.node_type)
+					&& (meta.backend_owner ? computeVisible(meta.backend_owner) : true);
 				return visible[id];
 			}
 
 			// An APM-enabled Proxy may monitor no Host at all, and the Server has
-			// to stay as the anchor of its Zabbix DB / APM Data Store.
+			// to stay as the anchor of its Zabbix DB / APM Data Store - while
+			// those are shown.
 			const selfMatch = meta
 				? (meta.node_type === 'host'
 					? this.#hostVisible(meta)
-					: meta.apm_collector || (meta.node_type === 'server' && serverAnchored))
+					: (meta.apm_collector && apmShown) || (meta.node_type === 'server' && serverAnchored))
 				: false;
 			const result = selfMatch
 				|| (this.#children[id] || []).some(childId => computeVisible(childId));
@@ -1544,26 +1574,14 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		Object.keys(this.#nodesMeta).forEach(computeVisible);
 
-		// Relations filter, on top: an edge is drawn iff its relation is on and
-		// both ends passed the above, and a node needs a drawn edge to stay. A
-		// node with no edge at all has only the monitoring tree to belong to.
-		const relationKeys = CWidgetHoloztekMonitoringMap.#RELATION_KEYS;
+		// Relations filter, on top: edges only. An edge is drawn iff both ends
+		// are shown and its relation is on; a node never depends on its edges.
+		const shown = id => visible[id] === true;
 		const drawnEdges = new Set();
-		const connected = new Set();
-		const hasEdge = new Set();
 
 		for (const edge of this.#edgesDS.get()) {
-			hasEdge.add(edge.from);
-			hasEdge.add(edge.to);
-
-			if (this.#filter[relationKeys[edge.relation]] && visible[edge.from] && visible[edge.to]) {
-				drawnEdges.add(edge.id);
-				connected.add(edge.from);
-				connected.add(edge.to);
-			}
+			if (this.#edgeShown(edge, shown)) drawnEdges.add(edge.id);
 		}
-
-		const shown = id => visible[id] && (hasEdge.has(id) ? connected.has(id) : this.#filter.relMonitoring);
 
 		const nodeUpdates = [];
 		for (const node of this.#nodesDS.get()) {
@@ -1580,13 +1598,30 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		if (edgeUpdates.length > 0) this.#edgesDS.update(edgeUpdates);
 
 		this.#toggleEmptyOverlay(!Object.keys(this.#nodesMeta).some(shown));
-		this.#syncRelationRows();
+		this.#syncFilterRows();
 	}
 
-	// Relations the current data has none of cannot be switched: they are off
-	// in the Widget's settings, not in this filter.
-	#syncRelationRows() {
+	#edgeShown(edge, nodeShown) {
+		return nodeShown(edge.from) && nodeShown(edge.to)
+			&& this.#filter[CWidgetHoloztekMonitoringMap.#RELATION_KEYS[edge.relation]] === true;
+	}
+
+	// Components not fetched and relations the current data has none of cannot
+	// be switched: they are off in the Widget's settings, not in this filter.
+	#syncFilterRows() {
 		if (!this.#panelEl) return;
+
+		const apmState = this.#status?.apm?.state;
+		const fetched = {
+			compDatabase:      this.#status?.database === true,
+			compApmDataStore:  apmState !== undefined && apmState !== 'off' && apmState !== 'unsupported',
+		};
+		fetched.compOpenTelemetry = fetched.compApmDataStore;
+
+		for (const [key, on] of Object.entries(fetched)) {
+			const input = this.#panelEl.querySelector(`input[data-filter="${key}"]`);
+			if (input) input.disabled = !on;
+		}
 
 		// One key can switch several relations: Telemetry is the whole OTel path.
 		const relationKeys = CWidgetHoloztekMonitoringMap.#RELATION_KEYS;
@@ -1677,6 +1712,12 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				${row('methodOther', t('Other'))}
 			</details>
 			<details class="mm-filter-category">
+				<summary>${this.#escape(t('Components'))}</summary>
+				${row('compDatabase', t('Database'))}
+				${row('compApmDataStore', t('APM data store'))}
+				${row('compOpenTelemetry', t('OpenTelemetry'))}
+			</details>
+			<details class="mm-filter-category">
 				<summary>${this.#escape(t('Relations'))}</summary>
 				${relationRow('relMonitoring', 'monitoring')}
 				${relationRow('relDatabase', 'database')}
@@ -1698,7 +1739,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		});
 
 		panel.querySelector('.mm-filter-reset').addEventListener('click', () => {
-			this.#filter = { ...CWidgetHoloztekMonitoringMap.#DEFAULT_FILTER, ...this.#relationDefaults };
+			this.#filter = { ...CWidgetHoloztekMonitoringMap.#DEFAULT_FILTER, ...this.#componentDefaults };
 			this.#saveFilterState();
 			panel.querySelectorAll('input[type=checkbox][data-filter]').forEach(input => {
 				input.checked = !!this.#filter[input.dataset.filter];
