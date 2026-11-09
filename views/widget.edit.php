@@ -43,6 +43,13 @@
 		new CWidgetFieldIntegerBoxView($data['fields']['drag_follow_hops'])
 	)
 	->addField(
+		(new CWidgetFieldRadioButtonListView($data['fields']['layout_animation']))
+			->setFieldHint(makeHelpIcon([
+				_holoztek_mm('Applies when the topology is laid out anew: on first display, when the selection changes, or when the topology changes substantially.'), BR(),
+				_holoztek_mm('Show movement: nodes are shown early and spread out until they settle.')
+			]))
+	)
+	->addField(
 		new CWidgetFieldRadioButtonListView($data['fields']['filter_position'])
 	)
 	->addField(

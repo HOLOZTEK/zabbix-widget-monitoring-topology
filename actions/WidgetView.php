@@ -34,6 +34,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'node_font_color'  => ($fv['node_font_color'] ?? '') !== '' ? '#' . $fv['node_font_color'] : '',
 			'edge_width'       => (int) ($fv['edge_width'] ?? 1),
 			'drag_follow_hops' => (int) ($fv['drag_follow_hops'] ?? 6),
+			'layout_animation' => (int) ($fv['layout_animation'] ?? WidgetForm::LAYOUT_ANIMATION_OFF),
 			'edge_color'       => '#' . ($fv['edge_color'] ?: 'aac4d8'),
 			'filter_position'  => (int) ($fv['filter_position'] ?? WidgetForm::FILTER_POSITION_TOP_RIGHT),
 			'severity_colors'  => $this->severityColors(),

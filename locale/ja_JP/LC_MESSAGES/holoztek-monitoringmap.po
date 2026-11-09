@@ -317,3 +317,18 @@ msgstr "ノード種別"
 
 msgid "Virtualization / Cluster"
 msgstr "仮想化 / クラスター"
+
+msgid "Layout display"
+msgstr "レイアウトの表示"
+
+msgid "Show when laid out"
+msgstr "計算後に表示"
+
+msgid "Show movement"
+msgstr "動きを表示"
+
+msgid "Applies when the topology is laid out anew: on first display, when the selection changes, or when the topology changes substantially."
+msgstr "新しく配置し直すとき（初回表示、選択の変更、構成の大きな変化）に適用します。"
+
+msgid "Show movement: nodes are shown early and spread out until they settle."
+msgstr "動きを表示: ノードを早めに表示し、広がって落ち着くまでの動きを見せます。"

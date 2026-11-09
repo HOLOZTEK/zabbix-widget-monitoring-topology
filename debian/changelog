@@ -1,3 +1,10 @@
+zabbix-widget-monitoring-topology (1.2.5) unstable; urgency=medium
+
+  * 設定「レイアウトの表示」を追加（計算後に表示＝従来の動作・既定／動きを表示＝初回表示・選択変更・構成の大きな変化で新しく配置するとき、ノードを早めに表示して広がって落ち着くまでの動きを見せ、落ち着いたら止めて全体表示に合わせ直す）。
+  * README に Zabbix 8.0.0 での動作確認を明記。
+
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Mon, 09 Nov 2026 18:00:00 +0900
+
 zabbix-widget-monitoring-topology (1.2.4) unstable; urgency=medium
 
   * ナビゲータ等で表示対象のホスト／ホストグループが変わったとき、前回のレイアウトに新しいノードを追記するのではなく、全体を再レイアウトして表示範囲を合わせるよう修正（同じ選択の定期更新では従来どおり配置を維持）。

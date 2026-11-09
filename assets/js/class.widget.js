@@ -134,6 +134,11 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	// Upper bound for new nodes to settle around the frozen ones.
 	static #SETTLE_TIMEOUT_MS = 5000;
 
+	// "Show movement": a rough layout of this many iterations is shown, and
+	// physics then spreads it out on screen for at most this long.
+	static #ANIMATED_STABILIZATION = 150;
+	static #ANIMATION_TIMEOUT_MS = 20000;
+
 	// Different patterns, so the relations differ by more than color.
 	static #RELATION_DASHES = {
 		database:    [8, 5],
@@ -321,7 +326,8 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	#positions    = new Map();
 	#savedView    = null;
 	#userInteracted = false;
-	// 'idle', or what the running physics is for: 'initial' / 'settling'.
+	// 'idle', or what the running physics is for: 'initial' (hidden), then
+	// 'animating' when the movement is shown, or 'settling'.
 	#layoutPhase  = 'idle';
 	#settleTimer  = null;
 	#dragging     = false;
@@ -463,7 +469,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	}
 
 	#saveLayout() {
-		if (this.#network === null || this.#layoutPhase === 'initial') return;
+		if (this.#network === null || this.#layoutPhase === 'initial' || this.#layoutPhase === 'animating') return;
 
 		this.#rememberPositions();
 		this.#savedView = { position: this.#network.getViewPosition(), scale: this.#network.getScale() };
@@ -495,6 +501,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			fontColor:      container.dataset.nodeFontColor || this.#detectThemeFontColor(container),
 			edgeWidth:      parseFloat(container.dataset.edgeWidth || '1'),
 			dragFollowHops: parseInt(container.dataset.dragFollowHops ?? '6', 10),
+			layoutAnimation: container.dataset.layoutAnimation === '1',
 			edgeColor:      container.dataset.edgeColor     || '#aac4d8',
 			filterPosition: parseInt(container.dataset.filterPosition || '1', 10),
 			severityColors: this.#parseJson(container.dataset.severityColors, {}),
@@ -538,7 +545,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 					springConstant:        0.04,
 					damping:               0.09,
 				},
-				stabilization: { iterations: this.#stabilizationBudget(nodeCount), fit: false },
+				stabilization: { iterations: this.#layoutBudget(nodeCount), fit: false },
 			},
 			interaction: {
 				hover:        true,
@@ -618,7 +625,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			if (this.#dragging) this.#endNodeDrag(params.nodes);
 		});
 
-		this.#network.on('stabilizationIterationsDone', () => this.#finishLayout());
+		this.#network.on('stabilizationIterationsDone', () => this.#onStabilizationDone());
 		this.#network.on('stabilized', () => this.#finishLayout());
 
 		// Wheel, fit and animated moves alike end up drawn.
@@ -656,6 +663,28 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				nodeCount * CWidgetHoloztekMonitoringMap.#STABILIZATION_PER_NODE
 			)
 		);
+	}
+
+	#layoutBudget(nodeCount) {
+		return this.#s.layoutAnimation
+			? CWidgetHoloztekMonitoringMap.#ANIMATED_STABILIZATION
+			: this.#stabilizationBudget(nodeCount);
+	}
+
+	// The hidden part of a fresh layout is done. Unless the movement is to be
+	// shown, that is the whole layout; otherwise physics keeps running on
+	// screen until the graph settles ('stabilized') or the time is up.
+	#onStabilizationDone() {
+		if (this.#layoutPhase !== 'initial' || !this.#s.layoutAnimation) {
+			this.#finishLayout();
+			return;
+		}
+
+		this.#layoutPhase = 'animating';
+		if (!this.#userInteracted) this.#network.fit({ animation: false });
+
+		clearTimeout(this.#settleTimer);
+		this.#settleTimer = setTimeout(() => this.#finishLayout(), CWidgetHoloztekMonitoringMap.#ANIMATION_TIMEOUT_MS);
 	}
 
 	// Physics only ever runs to produce a layout: once that is done, it is
@@ -715,7 +744,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	#finishLayout() {
 		if (this.#layoutPhase === 'idle' || this.#dragging) return;
 
-		const initial = this.#layoutPhase === 'initial';
+		const initial = this.#layoutPhase === 'initial' || this.#layoutPhase === 'animating';
 
 		this.#layoutPhase = 'idle';
 		clearTimeout(this.#settleTimer);
@@ -731,7 +760,9 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		this.#rememberPositions();
 
 		if (initial && !this.#userInteracted) {
-			this.#network.fit({ animation: false });
+			this.#network.fit({
+				animation: this.#s.layoutAnimation ? { duration: 300, easingFunction: 'easeInOutQuad' } : false,
+			});
 		}
 
 		// A search result picked while a layout was still running.
@@ -964,7 +995,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		this.#layoutPhase = 'initial';
 		this.#network.setOptions({ physics: { enabled: true } });
-		this.#network.stabilize(this.#stabilizationBudget(nodes.length));
+		this.#network.stabilize(this.#layoutBudget(nodes.length));
 	}
 
 	// Starts new nodes next to what they connect to and lets physics sort out
@@ -1025,7 +1056,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		const placedNodes = addedNodes.map(node => ({ ...node, ...placed.get(node.id) }));
 
 		// The running stabilization takes them along.
-		if (this.#layoutPhase === 'initial') {
+		if (this.#layoutPhase === 'initial' || this.#layoutPhase === 'animating') {
 			this.#nodesDS.add(placedNodes);
 			return;
 		}

@@ -317,3 +317,18 @@ msgstr "Node types"
 
 msgid "Virtualization / Cluster"
 msgstr "Virtualization / Cluster"
+
+msgid "Layout display"
+msgstr "Layout display"
+
+msgid "Show when laid out"
+msgstr "Show when laid out"
+
+msgid "Show movement"
+msgstr "Show movement"
+
+msgid "Applies when the topology is laid out anew: on first display, when the selection changes, or when the topology changes substantially."
+msgstr "Applies when the topology is laid out anew: on first display, when the selection changes, or when the topology changes substantially."
+
+msgid "Show movement: nodes are shown early and spread out until they settle."
+msgstr "Show movement: nodes are shown early and spread out until they settle."

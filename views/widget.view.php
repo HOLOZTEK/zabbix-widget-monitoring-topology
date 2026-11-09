@@ -32,6 +32,7 @@ else {
 			->setAttribute('data-node-font-color',   $s['node_font_color'])
 			->setAttribute('data-edge-width',        (string) $s['edge_width'])
 			->setAttribute('data-drag-follow-hops',  (string) $s['drag_follow_hops'])
+			->setAttribute('data-layout-animation',  (string) $s['layout_animation'])
 			->setAttribute('data-edge-color',        $s['edge_color'])
 			->setAttribute('data-filter-position',   (string) $s['filter_position'])
 			->setAttribute('data-severity-colors',   json_encode($s['severity_colors'], JSON_THROW_ON_ERROR))
