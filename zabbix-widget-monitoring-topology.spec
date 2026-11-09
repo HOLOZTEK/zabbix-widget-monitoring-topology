@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.2.4
+Version:        1.2.5
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -122,6 +122,9 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Mon Nov 09 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.5-0
+- 設定「表示前の配置計算回数」を追加（0〜1000、既定 0）。0 は従来どおり配置の計算が終わってから表示する。1 以上は、初回表示・選択変更・構成の大きな変化で新しく配置するとき、指定した回数だけ計算してから表示し、広がって落ち着くまでの動きを見せる（最長 20 秒）。落ち着いたら止めて全体表示に合わせ直す。値が小さいほど大きく動く。
+- README に Zabbix 8.0.0 での動作確認を明記。
 * Mon Nov 09 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.4-0
 - ナビゲータ等で表示対象のホスト／ホストグループが変わったとき、前回のレイアウトに新しいノードを追記するのではなく、全体を再レイアウトして表示範囲を合わせるよう修正（同じ選択の定期更新では従来どおり配置を維持）。
 - 設定「ドラッグ時の追従ホップ数」の既定値を 3 から 6 に変更（既定値のまま使っている既存ウィジェットも 6 になる。3 以外を設定したウィジェットはその値を維持）。
