@@ -29,7 +29,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$fv = $this->fields_values;
 		$dom_id_suffix = preg_replace('/[^A-Za-z0-9_-]/', '_', $this->getInput('widget_unique_id', ''));
 
-		// What is fetched at all. The relation filter only shows or hides what was.
+		// What is fetched at all. The Components and Relations filters only show or hide what was.
 		$backend_components = array_map('intval', (array) ($fv['backend_components'] ?? []));
 		$show_database = in_array(WidgetForm::BACKEND_DATABASE, $backend_components, true);
 		$apm_selected = in_array(WidgetForm::BACKEND_APM, $backend_components, true);
@@ -47,7 +47,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'filter_position'  => (int) ($fv['filter_position'] ?? WidgetForm::FILTER_POSITION_TOP_RIGHT),
 			'severity_colors'  => $this->severityColors(),
 			'severity_labels'  => $this->severityLabels(),
-			'default_relations' => self::defaultRelations($fv, $show_database, $show_apm),
+			'default_components' => self::defaultComponents($fv, $show_database, $show_apm),
 		];
 
 		$common = [
@@ -653,17 +653,16 @@ class WidgetView extends CControllerDashboardWidgetView {
 		]));
 	}
 
-	// Where the relation filter starts when the dashboard is opened. A relation
-	// that is not fetched starts off. Dashboards saved before the setting
-	// existed have no value: every relation on, as before.
-	private static function defaultRelations(array $fv, bool $show_database, bool $show_apm): array {
+	// Where the Components filter starts when the dashboard is opened. A
+	// component that is not fetched starts off. Dashboards saved before the
+	// setting existed have no value: every component on, as before.
+	private static function defaultComponents(array $fv, bool $show_database, bool $show_apm): array {
 		$on = static fn(string $name): bool => (int) ($fv[$name] ?? 1) === 1;
 
 		return [
-			'monitoring'  => $on('default_rel_monitoring'),
-			'database'    => $show_database && $on('default_rel_database'),
-			'apm_storage' => $show_apm && $on('default_rel_apm_storage'),
-			'telemetry'   => $show_apm && $on('default_rel_telemetry')
+			'database'      => $show_database && $on('default_comp_database'),
+			'apm_datastore' => $show_apm && $on('default_comp_apm_datastore'),
+			'opentelemetry' => $show_apm && $on('default_comp_opentelemetry')
 		];
 	}
 

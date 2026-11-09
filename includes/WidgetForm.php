@@ -32,13 +32,12 @@ class WidgetForm extends CWidgetForm {
 	public const BACKEND_DATABASE = 1;
 	public const BACKEND_APM      = 2;
 
-	// Relation filter start state, one checkbox each: a checkbox list cannot
+	// Components filter start state, one checkbox each: a checkbox list cannot
 	// be saved with everything off. Field name => caption.
-	public const DEFAULT_RELATION_FIELDS = [
-		'default_rel_monitoring'  => 'Monitoring',
-		'default_rel_database'    => 'Database',
-		'default_rel_apm_storage' => 'APM storage',
-		'default_rel_telemetry'   => 'Telemetry'
+	public const DEFAULT_COMPONENT_FIELDS = [
+		'default_comp_database'      => 'Database',
+		'default_comp_apm_datastore' => 'APM data store',
+		'default_comp_opentelemetry' => 'OpenTelemetry'
 	];
 
 	private static function fontStyleValues(): array {
@@ -154,9 +153,9 @@ class WidgetForm extends CWidgetForm {
 			);
 
 		// On by default, which is also what dashboards saved before the setting get.
-		foreach (self::DEFAULT_RELATION_FIELDS as $name => $caption) {
+		foreach (self::DEFAULT_COMPONENT_FIELDS as $name => $caption) {
 			$this->addField(
-				(new CWidgetFieldCheckBox($name, _holoztek_mm('Default relation visibility'), _holoztek_mm($caption)))
+				(new CWidgetFieldCheckBox($name, _holoztek_mm('Default component visibility'), _holoztek_mm($caption)))
 					->setDefault(1)
 			);
 		}

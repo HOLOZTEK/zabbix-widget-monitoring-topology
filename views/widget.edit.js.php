@@ -1,7 +1,7 @@
 <?php declare(strict_types = 0); ?>
 window.holoztek_monitoringmap_form = new class {
 
-	init({form_tabs_id, relation_backends, available_backends}) {
+	init({form_tabs_id, component_backends, available_backends}) {
 		// フォームIDは Zabbix 7.0 では 'widget-dialogue-form'、8.0以降では 'widget-form'。
 		this._form = document.getElementById('widget-dialogue-form') ?? document.getElementById('widget-form');
 
@@ -24,21 +24,21 @@ window.holoztek_monitoringmap_form = new class {
 			}
 		}
 
-		this._initRelationDefaults(relation_backends, available_backends);
+		this._initComponentDefaults(component_backends, available_backends);
 	}
 
 	/**
-	 * 取得しない関係（バックエンド構成でOFF、7.0のAPM）の「関係の初期表示」は選べないよう無効にする。
+	 * 取得しない構成要素（バックエンド構成でOFF、7.0のAPM）の「構成要素の初期表示」は選べないよう無効にする。
 	 * 無効なチェックボックスは送信されず、直前の隠し入力（'0'）が保存されてしまうため、無効の間は
 	 * 隠し入力に現在の値を写して保存値を保つ（取得をONに戻すと元の選択が復活する）。
 	 */
-	_initRelationDefaults(relation_backends, available_backends) {
+	_initComponentDefaults(component_backends, available_backends) {
 		const backend = value => this._form.querySelector(
 			`input[type="checkbox"][name="backend_components[]"][value="${value}"]`
 		);
 
 		const sync = () => {
-			for (const [name, value] of Object.entries(relation_backends)) {
+			for (const [name, value] of Object.entries(component_backends)) {
 				const checkbox = this._form.querySelector(`input[type="checkbox"][name="${name}"]`);
 				const hidden = this._form.querySelector(`input[type="hidden"][name="${name}"]`);
 				const source = backend(value);
@@ -54,7 +54,7 @@ window.holoztek_monitoringmap_form = new class {
 			}
 		};
 
-		for (const value of new Set(Object.values(relation_backends))) {
+		for (const value of new Set(Object.values(component_backends))) {
 			const source = backend(value);
 
 			if (source !== null) {

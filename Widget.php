@@ -111,6 +111,9 @@ class Widget extends CWidget {
                 'Retrieval failed' => _holoztek_mm('Retrieval failed'),
                 'Requires Zabbix 8.0 or later' => _holoztek_mm('Requires Zabbix 8.0 or later'),
                 'Last observed' => _holoztek_mm('Last observed'),
+                'Components' => _holoztek_mm('Components'),
+                'APM data store' => _holoztek_mm('APM data store'),
+                'OpenTelemetry' => _holoztek_mm('OpenTelemetry'),
             ]
         ];
     }
