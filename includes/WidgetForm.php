@@ -7,6 +7,7 @@ use CWidgetsData;
 use Zabbix\Widgets\CWidgetForm;
 
 use Zabbix\Widgets\Fields\{
+	CWidgetFieldCheckBox,
 	CWidgetFieldCheckBoxList,
 	CWidgetFieldColor,
 	CWidgetFieldIntegerBox,
@@ -30,6 +31,15 @@ class WidgetForm extends CWidgetForm {
 
 	public const BACKEND_DATABASE = 1;
 	public const BACKEND_APM      = 2;
+
+	// Relation filter start state, one checkbox each: a checkbox list cannot
+	// be saved with everything off. Field name => caption.
+	public const DEFAULT_RELATION_FIELDS = [
+		'default_rel_monitoring'  => 'Monitoring',
+		'default_rel_database'    => 'Database',
+		'default_rel_apm_storage' => 'APM storage',
+		'default_rel_telemetry'   => 'Telemetry'
+	];
 
 	private static function fontStyleValues(): array {
 		return [
@@ -60,7 +70,7 @@ class WidgetForm extends CWidgetForm {
 	}
 
 	public function addFields(): self {
-		return $this
+		$this
 			// Host: broadcast-receive only. preventDefault() hides the manual
 			// pick control, leaving only the "receive from widget" connector, so
 			// selection is driven entirely by Tree Navigator etc.
@@ -142,5 +152,15 @@ class WidgetForm extends CWidgetForm {
 				))
 					->setDefault(HOLOZTEK_MM_OTEL_WINDOW_DEFAULT)
 			);
+
+		// On by default, which is also what dashboards saved before the setting get.
+		foreach (self::DEFAULT_RELATION_FIELDS as $name => $caption) {
+			$this->addField(
+				(new CWidgetFieldCheckBox($name, _holoztek_mm('Default relation visibility'), _holoztek_mm($caption)))
+					->setDefault(1)
+			);
+		}
+
+		return $this;
 	}
 }
