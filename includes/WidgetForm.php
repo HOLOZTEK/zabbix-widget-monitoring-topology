@@ -118,6 +118,12 @@ class WidgetForm extends CWidgetForm {
 				(new CWidgetFieldIntegerBox('drag_follow_hops', _holoztek_mm('Drag follow hops'), 0, 10))
 					->setDefault(6)
 			)
+			// 0: the layout is shown once done. Otherwise it is shown after this
+			// many iterations and spreads out on screen from there.
+			->addField(
+				(new CWidgetFieldIntegerBox('layout_iterations', _holoztek_mm('Layout iterations before display'), 0, 1000))
+					->setDefault(0)
+			)
 			->addField(
 				(new CWidgetFieldRadioButtonList('filter_position', _holoztek_mm('Filter icon position'),
 					self::filterPositionValues()

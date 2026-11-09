@@ -317,3 +317,18 @@ msgstr "ノード種別"
 
 msgid "Virtualization / Cluster"
 msgstr "仮想化 / クラスター"
+
+
+
+
+msgid "Applies when the topology is laid out anew: on first display, when the selection changes, or when the topology changes substantially."
+msgstr "新しく配置し直すとき（初回表示、選択の変更、構成の大きな変化）に適用します。"
+
+msgid "Layout iterations before display"
+msgstr "表示前の配置計算回数"
+
+msgid "0: the topology is shown once its layout is done."
+msgstr "0: 配置の計算が終わってから表示します。"
+
+msgid "1 or more: the topology is shown after this many layout iterations and spreads out on screen until it settles. The smaller the value, the more it moves."
+msgstr "1 以上: 指定した回数だけ配置を計算してから表示し、その後は画面上で広がりながら落ち着きます。値が小さいほど大きく動きます。"
