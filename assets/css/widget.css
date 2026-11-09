@@ -161,31 +161,56 @@ div.dashboard-widget-holoztek_monitoringmap .mm-search-more {
     font-style: italic;
 }
 
-/* ── Legend ────────────────────────────────────────────────────────────────── */
+/* ── Info (topology, APM retrieval, legend) ───────────────────────────────── */
 
-div.dashboard-widget-holoztek_monitoringmap .mm-filter-panel.mm-legend-panel {
-    width: 210px;
-}
-
-div.dashboard-widget-holoztek_monitoringmap .mm-legend-section {
+div.dashboard-widget-holoztek_monitoringmap .mm-info-section {
     padding: 4px 0;
     border-bottom: 1px solid var(--ui-border-color, #f0f2f3);
 }
 
-div.dashboard-widget-holoztek_monitoringmap .mm-legend-section:last-child {
+div.dashboard-widget-holoztek_monitoringmap .mm-info-section:last-child {
     border-bottom: none;
 }
 
-div.dashboard-widget-holoztek_monitoringmap .mm-legend-title {
+div.dashboard-widget-holoztek_monitoringmap .mm-info-title {
     padding: 4px 10px;
     font-weight: bold;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-info-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 3px 10px 3px 18px;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-info-value {
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-info-note {
+    padding: 0 10px 3px 18px;
+    opacity: .7;
+}
+
+/* The legend is the Info panel's last section: its own titles are sub-headings. */
+div.dashboard-widget-holoztek_monitoringmap .mm-info-section .mm-legend-section {
+    padding: 0;
+    border-bottom: none;
+}
+
+div.dashboard-widget-holoztek_monitoringmap .mm-info-section .mm-legend-title {
+    padding: 3px 10px 3px 18px;
+    font-weight: normal;
+    opacity: .7;
 }
 
 div.dashboard-widget-holoztek_monitoringmap .mm-legend-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 3px 10px 3px 18px;
+    padding: 3px 10px 3px 28px;
 }
 
 div.dashboard-widget-holoztek_monitoringmap .mm-legend-icon {
@@ -325,4 +350,27 @@ div.dashboard-widget-holoztek_monitoringmap .mm-filter-empty {
     padding: 12px;
     pointer-events: none;
     background: var(--ui-bg-color, rgba(255, 255, 255, .85));
+}
+
+/* ── Settings form tabs ───────────────────────────────────────────────────── */
+
+/* Across both form columns, as in Zabbix's own Pie chart settings. */
+form.dashboard-widget-holoztek_monitoringmap .mm-config-tabs {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
+form.dashboard-widget-holoztek_monitoringmap .mm-config-tabs > .ui-tabs-nav {
+    white-space: nowrap;
+}
+
+form.dashboard-widget-holoztek_monitoringmap .mm-config-tabs > div[id] {
+    min-width: 0;
+}
+
+/* Default relation visibility: one checkbox per line under a single label. */
+form.dashboard-widget-holoztek_monitoringmap .mm-default-relations {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
