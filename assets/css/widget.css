@@ -368,14 +368,9 @@ form.dashboard-widget-holoztek_monitoringmap .mm-config-tabs > div[id] {
     min-width: 0;
 }
 
-/* Default component visibility: one checkbox per line under a single label. */
-form.dashboard-widget-holoztek_monitoringmap .mm-default-components {
+/* Filter tab: one checkbox per line under each section label. */
+form.dashboard-widget-holoztek_monitoringmap .mm-filter-defaults {
     display: flex;
     flex-direction: column;
     gap: 6px;
-}
-
-/* Display tab: Drawing / Default visibility. */
-form.dashboard-widget-holoztek_monitoringmap .mm-config-section + .mm-config-section {
-    margin-top: 10px;
 }

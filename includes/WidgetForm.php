@@ -32,13 +32,71 @@ class WidgetForm extends CWidgetForm {
 	public const BACKEND_DATABASE = 1;
 	public const BACKEND_APM      = 2;
 
-	// Components filter start state, one checkbox each: a checkbox list cannot
-	// be saved with everything off. Field name => caption.
-	public const DEFAULT_COMPONENT_FIELDS = [
-		'default_comp_database'      => 'Database',
-		'default_comp_apm_datastore' => 'APM data store',
-		'default_comp_opentelemetry' => 'OpenTelemetry'
+	// Where the dashboard filter starts: the same sections, keys and order as
+	// the filter panel (class.widget.js), one checkbox field per key - a
+	// checkbox list cannot be saved with everything off. Defaults are the
+	// filter's own, which is also what dashboards saved before v1.2.6 get.
+	// Section caption => [filter key => [caption, default]].
+	public const FILTER_SECTIONS = [
+		'Problem status' => [
+			'faultUnack'       => ['Unacknowledged', 1],
+			'faultAck'         => ['Acknowledged', 1],
+			'faultNone'        => ['No problem', 1],
+			'faultMaintenance' => ['Include hosts in maintenance', 0],
+			'faultColor'       => ['Colorize by severity', 1]
+		],
+		'Host status' => [
+			'cfgNormal'      => ['Normal hosts', 1],
+			'cfgNoInterface' => ['No interface configured', 0],
+			'cfgLocal'       => ['Local host monitoring', 0],
+			'cfgDisabled'    => ['Disabled hosts', 0]
+		],
+		'Interface' => [
+			'ifaceAvailable'   => ['Available', 1],
+			'ifaceMixed'       => ['Mixed', 1],
+			'ifaceUnavailable' => ['Not available', 1],
+			'ifaceUnknown'     => ['Unknown', 1]
+		],
+		'Monitoring route' => [
+			'routeServer'     => ['Zabbix Server', 1],
+			'routeProxy'      => ['Zabbix Proxy', 1],
+			'routeProxyGroup' => ['Proxy Group', 1]
+		],
+		'Monitoring method' => [
+			'methodPing'  => ['Ping', 1],
+			'methodAgent' => ['Zabbix Agent', 1],
+			'methodSnmp'  => ['SNMP', 1],
+			'methodIpmi'  => ['IPMI', 1],
+			'methodJmx'   => ['JMX', 1],
+			'methodOther' => ['Other', 1]
+		],
+		'Components' => [
+			'compDatabase'      => ['Database', 1],
+			'compApmDataStore'  => ['APM data store', 1],
+			'compOpenTelemetry' => ['OpenTelemetry', 1]
+		],
+		'Relations' => [
+			'relMonitoring' => ['Monitoring', 1],
+			'relDatabase'   => ['Database', 1],
+			'relApmStorage' => ['APM storage', 1],
+			'relTelemetry'  => ['Telemetry', 1]
+		]
 	];
+
+	// Filter keys that only mean something while a backend is fetched.
+	public const FILTER_BACKENDS = [
+		'compDatabase'      => self::BACKEND_DATABASE,
+		'relDatabase'       => self::BACKEND_DATABASE,
+		'compApmDataStore'  => self::BACKEND_APM,
+		'compOpenTelemetry' => self::BACKEND_APM,
+		'relApmStorage'     => self::BACKEND_APM,
+		'relTelemetry'      => self::BACKEND_APM
+	];
+
+	// faultUnack -> filter_fault_unack
+	public static function filterFieldName(string $key): string {
+		return 'filter_'.strtolower(preg_replace('/[A-Z]/', '_$0', $key));
+	}
 
 	private static function fontStyleValues(): array {
 		return [
@@ -152,12 +210,13 @@ class WidgetForm extends CWidgetForm {
 					->setDefault(HOLOZTEK_MM_OTEL_WINDOW_DEFAULT)
 			);
 
-		// On by default, which is also what dashboards saved before the setting get.
-		foreach (self::DEFAULT_COMPONENT_FIELDS as $name => $caption) {
-			$this->addField(
-				(new CWidgetFieldCheckBox($name, _holoztek_mm('Default component visibility'), _holoztek_mm($caption)))
-					->setDefault(1)
-			);
+		foreach (self::FILTER_SECTIONS as $section => $keys) {
+			foreach ($keys as $key => [$caption, $default]) {
+				$this->addField(
+					(new CWidgetFieldCheckBox(self::filterFieldName($key), _holoztek_mm($section), _holoztek_mm($caption)))
+						->setDefault($default)
+				);
+			}
 		}
 
 		return $this;
