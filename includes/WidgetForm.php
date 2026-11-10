@@ -7,6 +7,7 @@ use CWidgetsData;
 use Zabbix\Widgets\CWidgetForm;
 
 use Zabbix\Widgets\Fields\{
+	CWidgetFieldCheckBox,
 	CWidgetFieldCheckBoxList,
 	CWidgetFieldColor,
 	CWidgetFieldIntegerBox,
@@ -30,6 +31,72 @@ class WidgetForm extends CWidgetForm {
 
 	public const BACKEND_DATABASE = 1;
 	public const BACKEND_APM      = 2;
+
+	// Where the dashboard filter starts: the same sections, keys and order as
+	// the filter panel (class.widget.js), one checkbox field per key - a
+	// checkbox list cannot be saved with everything off. Defaults are the
+	// filter's own, which is also what dashboards saved before v1.2.6 get.
+	// Section caption => [filter key => [caption, default]].
+	public const FILTER_SECTIONS = [
+		'Problem status' => [
+			'faultUnack'       => ['Unacknowledged', 1],
+			'faultAck'         => ['Acknowledged', 1],
+			'faultNone'        => ['No problem', 1],
+			'faultMaintenance' => ['Include hosts in maintenance', 0],
+			'faultColor'       => ['Colorize by severity', 1]
+		],
+		'Host status' => [
+			'cfgNormal'      => ['Normal hosts', 1],
+			'cfgNoInterface' => ['No interface configured', 0],
+			'cfgLocal'       => ['Local host monitoring', 0],
+			'cfgDisabled'    => ['Disabled hosts', 0]
+		],
+		'Interface' => [
+			'ifaceAvailable'   => ['Available', 1],
+			'ifaceMixed'       => ['Mixed', 1],
+			'ifaceUnavailable' => ['Not available', 1],
+			'ifaceUnknown'     => ['Unknown', 1]
+		],
+		'Monitoring route' => [
+			'routeServer'     => ['Zabbix Server', 1],
+			'routeProxy'      => ['Zabbix Proxy', 1],
+			'routeProxyGroup' => ['Proxy Group', 1]
+		],
+		'Monitoring method' => [
+			'methodPing'  => ['Ping', 1],
+			'methodAgent' => ['Zabbix Agent', 1],
+			'methodSnmp'  => ['SNMP', 1],
+			'methodIpmi'  => ['IPMI', 1],
+			'methodJmx'   => ['JMX', 1],
+			'methodOther' => ['Other', 1]
+		],
+		'Components' => [
+			'compDatabase'      => ['Database', 1],
+			'compApmDataStore'  => ['APM data store', 1],
+			'compOpenTelemetry' => ['OpenTelemetry', 1]
+		],
+		'Relations' => [
+			'relMonitoring' => ['Monitoring', 1],
+			'relDatabase'   => ['Database', 1],
+			'relApmStorage' => ['APM storage', 1],
+			'relTelemetry'  => ['Telemetry', 1]
+		]
+	];
+
+	// Filter keys that only mean something while a backend is fetched.
+	public const FILTER_BACKENDS = [
+		'compDatabase'      => self::BACKEND_DATABASE,
+		'relDatabase'       => self::BACKEND_DATABASE,
+		'compApmDataStore'  => self::BACKEND_APM,
+		'compOpenTelemetry' => self::BACKEND_APM,
+		'relApmStorage'     => self::BACKEND_APM,
+		'relTelemetry'      => self::BACKEND_APM
+	];
+
+	// faultUnack -> filter_fault_unack
+	public static function filterFieldName(string $key): string {
+		return 'filter_'.strtolower(preg_replace('/[A-Z]/', '_$0', $key));
+	}
 
 	private static function fontStyleValues(): array {
 		return [
@@ -60,7 +127,7 @@ class WidgetForm extends CWidgetForm {
 	}
 
 	public function addFields(): self {
-		return $this
+		$this
 			// Host: broadcast-receive only. preventDefault() hides the manual
 			// pick control, leaving only the "receive from widget" connector, so
 			// selection is driven entirely by Tree Navigator etc.
@@ -142,5 +209,16 @@ class WidgetForm extends CWidgetForm {
 				))
 					->setDefault(HOLOZTEK_MM_OTEL_WINDOW_DEFAULT)
 			);
+
+		foreach (self::FILTER_SECTIONS as $section => $keys) {
+			foreach ($keys as $key => [$caption, $default]) {
+				$this->addField(
+					(new CWidgetFieldCheckBox(self::filterFieldName($key), _holoztek_mm($section), _holoztek_mm($caption)))
+						->setDefault($default)
+				);
+			}
+		}
+
+		return $this;
 	}
 }

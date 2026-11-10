@@ -287,6 +287,9 @@ The widget does not check whether someone used the agent recently. It only check
 | Host groups / Hosts | The display target. While no host is shown, OTel nodes are not shown either |
 | Backend components → APM | When on, fetches and shows the APM data store, APM-enabled Proxies and OTel nodes (Zabbix 8.0+) |
 | OTel observation window (minutes) | The period to show. Default 15, range 5-1440 ([section 9](#9-otel-observation-window)) |
+| Filter → Components → OpenTelemetry (Filter tab) | Whether OTel nodes are shown when the dashboard is opened (on by default); Reset in the dashboard filter returns here. **Turning it off does not stop the APM queries**: spans are still fetched while APM is on. To stop the queries, turn off Backend components → APM |
+
+Backend components and the OTel observation window are on the Data acquisition tab of the settings form; the initial filter state is on the Filter tab. Data acquisition decides whether data is fetched; the Components and Relations filters only show or hide data that was already fetched. With APM off, the APM-related components and relations cannot be chosen on the Filter tab.
 
 ## 9. OTel observation window
 
@@ -364,6 +367,8 @@ In the following cases, the APM data store tooltip shows the warning below:
 
 The widget omits the warning only when it could confirm every combination within the limits.
 
+The Info panel's Retrieval status tells the two apart: Display limit reached when there are more than 100, Query limit reached when a missed combination cannot be ruled out. It also shows the spans fetched and the queries run (such as 3 / 3).
+
 ### 10.4 What to do about the warning
 
 1. **First, shorten the OTel observation window.** Fewer spans fall within it, so they are more likely to fit within the limits.
@@ -434,19 +439,22 @@ As explained in [section 1](#1-what-this-topology-shows), `Zabbix Host: claude-n
 | Control | Effect |
 |---|---|
 | APM (widget setting) | Controls data fetching and building the topology itself. When off, no spans are fetched |
-| Relations filter → Telemetry | Controls **only the display** of the topology already fetched. When off, hides OpenTelemetry Services and Systems and the Proxy—Service and Service—System lines |
+| Components filter → OpenTelemetry | Controls **only the display** of the topology already fetched. When off, hides OpenTelemetry Services and Systems and their lines |
+| Relations filter → Telemetry | Controls **only the display of lines** already fetched. When off, hides the Proxy—Service and Service—System lines; the nodes stay |
 | OTel observation window | The period to show ([section 9](#9-otel-observation-window)) |
 | Search | Finds shown nodes by substring. OpenTelemetry Services match by `service.name` and Systems by `host.name`. Both also match their namespace and environment, and a System also matches its Service name. Nodes hidden by the filters are not offered |
-| Legend | Lists the relation line styles and node types in the current graph (telemetry is dash-dot, service membership is dash-dot-dot) |
+| Info | Shows the nodes and relations fetched, the APM / OpenTelemetry retrieval (observation window, spans fetched, queries / maximum, Services and Systems, retrieval status) and the legend, where telemetry is dash-dot and service membership dash-dot-dot. The node and relation counts and the retrieval show here even while the filters hide them |
 | Fit | Fits every node the filters leave visible into the view |
 
 Tooltips show:
 
 | Node | Shows |
 |---|---|
-| OpenTelemetry Service | Type, Service name, number of Systems |
-| OpenTelemetry System | Type, Host (`host.name`), Service name |
+| OpenTelemetry Service | Type, Service name, number of Systems, Last observed |
+| OpenTelemetry System | Type, Host (`host.name`), Service name, Last observed |
 | APM-enabled Proxy | Number of observed telemetry systems |
+
+**Last observed** is the latest span time among the spans this widget fetched: a System's own spans, and for a Service, all its Systems plus its spans without `host.name`. It is not when a user last used the agent, nor process uptime; an agent that sends background traces updates it without anyone using it ([13.4](#134-an-agent-nobody-is-using-stays-visible)). If the fetch hit its limits, it is still the latest time within what was fetched ([section 10](#10-fetch-limits-and-missed-telemetry)). It is shown in the user's Zabbix time zone and language, and adds no queries.
 
 ## 13. Troubleshooting
 
@@ -462,7 +470,7 @@ Check, in this order:
 6. Does the Proxy have `holoztek.zabbix.proxyid` with Category `Traces`, set to its own `proxyid`?
 7. Do the spans have `service.name`?
 8. Are there spans within the OTel observation window?
-9. Is Telemetry turned off in the Relations filter?
+9. Is OpenTelemetry turned off in the Components filter?
 10. Is the sender sending traces? (Metrics and logs are not used.)
 
 ### 13.2 A Service is shown but no System
@@ -475,7 +483,7 @@ The most common cause is that the OTel observation window has passed. In **APM �
 
 ### 13.4 An agent nobody is using stays visible
 
-This is not necessarily a fault. Check whether the agent itself keeps sending background traces, such as periodic work, authentication checks or other internal operations. This behaviour has actually been observed with Codex app-server ([7.1](#71-codex-codex-app-server)).
+This is not necessarily a fault. If Last observed in the tooltip keeps advancing, check whether the agent itself keeps sending background traces, such as periodic work, authentication checks or other internal operations. This behaviour has actually been observed with Codex app-server ([7.1](#71-codex-codex-app-server)).
 
 ### 13.5 The same host appears twice
 

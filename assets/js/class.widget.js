@@ -112,6 +112,16 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	// Not part of the monitoring tree - see #applyVisibility().
 	static #BACKEND_NODE_TYPES = new Set(['zabbix_db', 'proxy_db', 'apm_datastore', 'otel_service', 'otel_system']);
 
+	// node_type -> Components filter key. Hiding a component hides its nodes
+	// and so every edge to them; the data stays fetched (see #applyVisibility()).
+	static #COMPONENT_KEYS = {
+		zabbix_db:     'compDatabase',
+		proxy_db:      'compDatabase',
+		apm_datastore: 'compApmDataStore',
+		otel_service:  'compOpenTelemetry',
+		otel_system:   'compOpenTelemetry',
+	};
+
 	// relation_type -> Relations filter key; an edge without one is monitoring.
 	static #RELATION_KEYS = {
 		monitoring:  'relMonitoring',
@@ -221,50 +231,16 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	// problem state, unchecked = hide them), and faultColor controls only
 	// whether problem severity is colored onto the icon, never host
 	// visibility (see #recomputeSeverity()).
-	static #DEFAULT_FILTER = {
-		// 障害状態 - faultUnack/faultAck/faultNone are a covering partition over
-		// non-maintenance hosts (all on by default = every non-maintenance host
-		// shown). faultMaintenance is an independent OR gate: a host in
-		// maintenance is shown iff it is checked (default off), regardless of
-		// its problem state. faultColor toggles severity-color display only, it
-		// never hides a host (see #recomputeSeverity()).
-		faultUnack:        true,
-		faultAck:          true,
-		faultNone:         true,
-		faultMaintenance:  false,
-		faultColor:        true,
-		// インターフェイス - all checked by default (show every host).
-		ifaceAvailable:    true,
-		ifaceMixed:        true,
-		ifaceUnavailable:  true,
-		ifaceUnknown:      true,
-		// ホスト状態 - cfgNormal defaults on so ordinary hosts (an interface
-		// configured, not local-only, monitoring enabled) are shown out of the
-		// box. cfgDisabled (default off) is the only bucket that admits
-		// host_status === 1; the other three are guarded on host_status === 0
-		// so this stays an exclusive 4-way partition (see #hostVisible()).
-		cfgNormal:         true,
-		cfgNoInterface:    false,
-		cfgLocal:          false,
-		cfgDisabled:       false,
-		// 監視経路 - all checked by default (show every host).
-		routeServer:       true,
-		routeProxy:        true,
-		routeProxyGroup:   true,
-		// 監視方式 - all checked by default (show every host).
-		methodPing:        true,
-		methodAgent:       true,
-		methodSnmp:        true,
-		methodIpmi:        true,
-		methodJmx:         true,
-		methodOther:       true,
-		// 関係 - what is drawn out of the fetched data, unlike the Widget's
-		// backend_components setting, which decides what is fetched at all.
-		relMonitoring:     true,
-		relDatabase:       true,
-		relApmStorage:     true,
-		relTelemetry:      true,
-	};
+	//
+	// The keys, sections and defaults are WidgetForm::FILTER_SECTIONS: the
+	// filter starts from the Widget's Filter tab (data-initial-filter).
+	// 障害状態 - faultUnack/faultAck/faultNone are a covering partition over
+	// non-maintenance hosts; faultMaintenance is the OR gate above.
+	// ホスト状態 - cfgDisabled is the only bucket that admits host_status === 1;
+	// the other three are guarded on host_status === 0 so this stays an
+	// exclusive 4-way partition (see #hostVisible()).
+	// 構成要素 / 関係 - what is drawn out of the fetched data, unlike the
+	// Widget's backend_components setting, which decides what is fetched at all.
 
 	// value -> filter-key maps for the "single value per host, select-to-
 	// include" categories (インターフェイス/監視経路).
@@ -341,12 +317,18 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	#searchActive   = -1;
 	#searchTimer    = null;
 	#pendingFocus   = null;
-	#legendOpen     = false;
+	#infoOpen       = false;
 	#searchWrapEl   = null;
 	#searchInputEl  = null;
 	#searchListEl   = null;
-	#legendBtnEl    = null;
-	#legendEl       = null;
+	#infoBtnEl      = null;
+	#infoEl         = null;
+	// What the last update fetched, for the Info panel (WidgetView 'status').
+	#status         = null;
+	// Where the filter starts (the Widget's Filter tab), and the raw setting it
+	// came from: the user's choice holds until the setting changes.
+	#initialFilter    = {};
+	#initialFilterRaw = null;
 
 	onInitialize() {
 		this._dom_id_suffix = '';
@@ -398,6 +380,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		const next = template.content.querySelector('.js-mm-container');
 		const elements = next ? this.#parseJson(next.dataset.elements, []) : [];
+		if (next) this.#status = this.#parseJson(next.dataset.status, null);
 
 		// The Navigator (or any other source) picked something else: lay the new
 		// Topology out from scratch instead of growing the old layout around it.
@@ -463,8 +446,8 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		this.#searchWrapEl = null;
 		this.#searchInputEl = null;
 		this.#searchListEl = null;
-		this.#legendBtnEl = null;
-		this.#legendEl = null;
+		this.#infoBtnEl = null;
+		this.#infoEl = null;
 	}
 
 	#saveLayout() {
@@ -479,8 +462,9 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		for (const id in positions) this.#positions.set(id, positions[id]);
 	}
 
+	// What the Widget fetched, and how it went, is data, not a setting.
 	#settingsKeyOf(container) {
-		const { elements, ...settings } = container.dataset;
+		const { elements, status, ...settings } = container.dataset;
 		return JSON.stringify(settings);
 	}
 
@@ -507,7 +491,8 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			severityLabels: this.#parseJson(container.dataset.severityLabels, {}),
 		};
 
-		this.#loadFilterState();
+		this.#applyInitialFilter(container.dataset.initialFilter ?? null);
+		this.#status = this.#parseJson(container.dataset.status, null);
 		this.#iconCache = {};
 		this.#readModel(elements);
 
@@ -814,6 +799,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				otel_namespaces:     el.data.otel_namespaces || [],
 				otel_environments:   el.data.otel_environments || [],
 				otel_system_count:   el.data.otel_system_count || 0,
+				otel_last_observed:  el.data.otel_last_observed || null,
 				severity_ack:       isHost && el.data.severity_ack !== undefined && el.data.severity_ack !== null
 					? Number(el.data.severity_ack) : null,
 				severity_unack:     isHost && el.data.severity_unack !== undefined && el.data.severity_unack !== null
@@ -1253,76 +1239,16 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 	// ── filter ────────────────────────────────────────────────────────────────
 
-	#filterStorageKey() {
-		// getWidgetId() is the DB-stored id, stable across dashboard reloads and
-		// distinct per widget instance. It's null until the widget is first saved
-		// (new/unsaved widget), so fall back to the runtime id in that case - an
-		// unsaved widget has no persisted state to restore anyway.
-		return `holoztek-monitoringmap-filter-${this.getWidgetId() ?? this.getUniqueId()}`;
-	}
+	// The filter starts where the Widget's Filter tab puts it each time the
+	// dashboard is opened, and again whenever those settings change. Otherwise
+	// - a refresh, a rebuild for another setting - the user's choice holds.
+	// Nothing is stored: a reload starts over.
+	#applyInitialFilter(raw) {
+		if (raw === this.#initialFilterRaw) return;
 
-	// pre-v1.0.1 key (before the holoztek_ id/prefix rename); same widget-id basis.
-	#legacyFilterStorageKey() {
-		return `monitoringmap-filter-${this.getWidgetId() ?? this.getUniqueId()}`;
-	}
-
-	#loadFilterState() {
-		const defaults = { ...CWidgetHoloztekMonitoringMap.#DEFAULT_FILTER };
-		try {
-			let raw = localStorage.getItem(this.#filterStorageKey());
-			if (raw === null) {
-				// one-time migration: only when the new key has no data yet, so an
-				// existing new-key value always wins and is never clobbered.
-				const legacyRaw = localStorage.getItem(this.#legacyFilterStorageKey());
-				if (legacyRaw !== null) {
-					raw = legacyRaw;
-					localStorage.setItem(this.#filterStorageKey(), raw);
-				}
-			}
-			const stored = raw ? JSON.parse(raw) : null;
-			this.#filter = stored
-				? Object.assign(defaults, this.#migrateFilterState(stored))
-				: defaults;
-		} catch (_) {
-			this.#filter = defaults;
-		}
-	}
-
-	// Pre-v1.0.8 the filter had a separate ホスト状態 category
-	// (statusEnabled/statusMaintenance/statusDisabled) and no faultNone /
-	// faultMaintenance / faultColor keys. A blob from that era is detected by
-	// the absence of faultMaintenance; carry the user's intent across the
-	// restructure and drop the now-dead keys so Object.assign doesn't keep
-	// them around.
-	#migrateFilterState(stored) {
-		if (stored === null || typeof stored !== 'object' || 'faultMaintenance' in stored) {
-			return stored;
-		}
-
-		stored.faultMaintenance = stored.statusMaintenance === true;
-		stored.cfgDisabled      = stored.statusDisabled === true;
-		// Old severity-color rule: shown iff faultAck or faultUnack was checked.
-		stored.faultColor = stored.faultUnack !== false || stored.faultAck !== false;
-		// The presence partition is new; default it fully on so a migrated user
-		// keeps seeing every non-maintenance host exactly as before.
-		stored.faultUnack = true;
-		stored.faultAck   = true;
-		stored.faultNone  = true;
-
-		delete stored.statusEnabled;
-		delete stored.statusMaintenance;
-		delete stored.statusDisabled;
-
-		return stored;
-	}
-
-	#saveFilterState() {
-		try {
-			localStorage.setItem(this.#filterStorageKey(), JSON.stringify(this.#filter));
-		} catch (_) {
-			// localStorage unavailable (private browsing, quota, ...) - filter
-			// state just won't persist across reloads, no functional impact.
-		}
+		this.#initialFilter    = this.#parseJson(raw, {});
+		this.#initialFilterRaw = raw;
+		this.#filter           = { ...this.#initialFilter };
 	}
 
 	// Recomputes a host's effective severity from its ack/unack problem
@@ -1467,8 +1393,16 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		if (!this.#nodesDS || !this.#edgesDS) return;
 
 		const metas = Object.values(this.#nodesMeta);
+		const componentShown = type => this.#filter[CWidgetHoloztekMonitoringMap.#COMPONENT_KEYS[type]] === true;
 		const serverAnchored = metas.some(meta => !meta.backend_owner
 			&& CWidgetHoloztekMonitoringMap.#BACKEND_NODE_TYPES.has(meta.node_type)
+			&& componentShown(meta.node_type)
+		);
+		const apmShown = this.#filter.compApmDataStore || this.#filter.compOpenTelemetry;
+		// Proxies whose own Proxy DB is shown.
+		const ownsShown = new Set(metas
+			.filter(meta => meta.node_type === 'proxy_db' && meta.backend_owner && componentShown(meta.node_type))
+			.map(meta => meta.backend_owner)
 		);
 
 		const visible = {};
@@ -1478,19 +1412,24 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			// Seed against re-entrancy before recursing into children.
 			visible[id] = false;
 
-			// Backend components ignore the Host filter: a Proxy DB follows its
-			// Proxy, the Server-level ones always stay.
+			// Backend components ignore the Host filter but follow the Components
+			// filter: a Proxy DB follows its Proxy, the Server-level ones stay.
 			if (meta && CWidgetHoloztekMonitoringMap.#BACKEND_NODE_TYPES.has(meta.node_type)) {
-				visible[id] = meta.backend_owner ? computeVisible(meta.backend_owner) : true;
+				visible[id] = componentShown(meta.node_type)
+					&& (meta.backend_owner ? computeVisible(meta.backend_owner) : true);
 				return visible[id];
 			}
 
-			// An APM-enabled Proxy may monitor no Host at all, and the Server has
-			// to stay as the anchor of its Zabbix DB / APM Data Store.
+			// A Proxy stays as the anchor while its own Proxy DB is shown, even
+			// with all its Hosts filtered out; an APM-enabled Proxy also while an
+			// APM component is shown. The Server likewise for its Zabbix DB / APM
+			// Data Store.
 			const selfMatch = meta
 				? (meta.node_type === 'host'
 					? this.#hostVisible(meta)
-					: meta.apm_collector || (meta.node_type === 'server' && serverAnchored))
+					: (meta.apm_collector && apmShown)
+						|| ownsShown.has(id)
+						|| (meta.node_type === 'server' && serverAnchored))
 				: false;
 			const result = selfMatch
 				|| (this.#children[id] || []).some(childId => computeVisible(childId));
@@ -1500,26 +1439,14 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		Object.keys(this.#nodesMeta).forEach(computeVisible);
 
-		// Relations filter, on top: an edge is drawn iff its relation is on and
-		// both ends passed the above, and a node needs a drawn edge to stay. A
-		// node with no edge at all has only the monitoring tree to belong to.
-		const relationKeys = CWidgetHoloztekMonitoringMap.#RELATION_KEYS;
+		// Relations filter, on top: edges only. An edge is drawn iff both ends
+		// are shown and its relation is on; a node never depends on its edges.
+		const shown = id => visible[id] === true;
 		const drawnEdges = new Set();
-		const connected = new Set();
-		const hasEdge = new Set();
 
 		for (const edge of this.#edgesDS.get()) {
-			hasEdge.add(edge.from);
-			hasEdge.add(edge.to);
-
-			if (this.#filter[relationKeys[edge.relation]] && visible[edge.from] && visible[edge.to]) {
-				drawnEdges.add(edge.id);
-				connected.add(edge.from);
-				connected.add(edge.to);
-			}
+			if (this.#edgeShown(edge, shown)) drawnEdges.add(edge.id);
 		}
-
-		const shown = id => visible[id] && (hasEdge.has(id) ? connected.has(id) : this.#filter.relMonitoring);
 
 		const nodeUpdates = [];
 		for (const node of this.#nodesDS.get()) {
@@ -1536,13 +1463,30 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		if (edgeUpdates.length > 0) this.#edgesDS.update(edgeUpdates);
 
 		this.#toggleEmptyOverlay(!Object.keys(this.#nodesMeta).some(shown));
-		this.#syncRelationRows();
+		this.#syncFilterRows();
 	}
 
-	// Relations the current data has none of cannot be switched: they are off
-	// in the Widget's settings, not in this filter.
-	#syncRelationRows() {
+	#edgeShown(edge, nodeShown) {
+		return nodeShown(edge.from) && nodeShown(edge.to)
+			&& this.#filter[CWidgetHoloztekMonitoringMap.#RELATION_KEYS[edge.relation]] === true;
+	}
+
+	// Components not fetched and relations the current data has none of cannot
+	// be switched: they are off in the Widget's settings, not in this filter.
+	#syncFilterRows() {
 		if (!this.#panelEl) return;
+
+		const apmState = this.#status?.apm?.state;
+		const fetched = {
+			compDatabase:      this.#status?.database === true,
+			compApmDataStore:  apmState !== undefined && apmState !== 'off' && apmState !== 'unsupported',
+		};
+		fetched.compOpenTelemetry = fetched.compApmDataStore;
+
+		for (const [key, on] of Object.entries(fetched)) {
+			const input = this.#panelEl.querySelector(`input[data-filter="${key}"]`);
+			if (input) input.disabled = !on;
+		}
 
 		// One key can switch several relations: Telemetry is the whole OTel path.
 		const relationKeys = CWidgetHoloztekMonitoringMap.#RELATION_KEYS;
@@ -1633,6 +1577,12 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				${row('methodOther', t('Other'))}
 			</details>
 			<details class="mm-filter-category">
+				<summary>${this.#escape(t('Components'))}</summary>
+				${row('compDatabase', t('Database'))}
+				${row('compApmDataStore', t('APM data store'))}
+				${row('compOpenTelemetry', t('OpenTelemetry'))}
+			</details>
+			<details class="mm-filter-category">
 				<summary>${this.#escape(t('Relations'))}</summary>
 				${relationRow('relMonitoring', 'monitoring')}
 				${relationRow('relDatabase', 'database')}
@@ -1648,14 +1598,12 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			input.checked = !!this.#filter[key];
 			input.addEventListener('change', () => {
 				this.#filter[key] = input.checked;
-				this.#saveFilterState();
 				this.#onFilterChanged(key);
 			});
 		});
 
 		panel.querySelector('.mm-filter-reset').addEventListener('click', () => {
-			this.#filter = { ...CWidgetHoloztekMonitoringMap.#DEFAULT_FILTER };
-			this.#saveFilterState();
+			this.#filter = { ...this.#initialFilter };
 			panel.querySelectorAll('input[type=checkbox][data-filter]').forEach(input => {
 				input.checked = !!this.#filter[input.dataset.filter];
 			});
@@ -1664,7 +1612,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		});
 	}
 
-	// The toolbar - [search][fit][legend][filter], the filter in the corner -
+	// The toolbar - [search][fit][info][filter], the filter in the corner -
 	// and the panels it opens. Built once per Network: updates keep it as is.
 	#buildFilterUI(container) {
 		const posClass = CWidgetHoloztekMonitoringMap.#FILTER_POSITION_CLASS[this.#s.filterPosition]
@@ -1685,16 +1633,16 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			() => this.#fitVisible()
 		));
 
-		this.#legendBtnEl = this.#toolButton('mm-legend-btn', t('Legend'),
-			icon('<path d="M8 5h9M8 10h9M8 15h9"/><path d="M3 5h1.5M3 10h1.5M3 15h1.5"/>'),
-			() => this.#setLegendOpen(!this.#legendOpen)
+		this.#infoBtnEl = this.#toolButton('mm-info-btn', t('Info'),
+			icon('<circle cx="10" cy="10" r="7.5"/><path d="M10 9v5"/><path d="M10 6.2v.1"/>'),
+			() => this.#setInfoOpen(!this.#infoOpen)
 		);
-		toolbar.appendChild(this.#legendBtnEl);
+		toolbar.appendChild(this.#infoBtnEl);
 
 		this.#btnEl = this.#toolButton('mm-filter-btn', t('Filter'), icon('<path d="M2 3.5h16l-6 7.2v5l-4 2v-7z"/>'), () => {
 			const open = this.#panelEl.style.display === 'none';
 			this.#panelEl.style.display = open ? 'block' : 'none';
-			if (open) this.#setLegendOpen(false);
+			if (open) this.#setInfoOpen(false);
 		});
 		toolbar.appendChild(this.#btnEl);
 
@@ -1707,14 +1655,14 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 		this.#wireFilterPanel(this.#panelEl);
 
-		this.#legendEl = document.createElement('div');
-		this.#legendEl.className = `mm-filter-panel mm-legend-panel ${posClass}`;
-		this.#legendEl.setAttribute('role', 'region');
-		this.#legendEl.setAttribute('aria-label', t('Legend'));
-		container.appendChild(this.#legendEl);
-		this.#legendEl.addEventListener('click', (e) => e.stopPropagation());
+		this.#infoEl = document.createElement('div');
+		this.#infoEl.className = `mm-filter-panel mm-info-panel ${posClass}`;
+		this.#infoEl.setAttribute('role', 'region');
+		this.#infoEl.setAttribute('aria-label', t('Info'));
+		container.appendChild(this.#infoEl);
+		this.#infoEl.addEventListener('click', (e) => e.stopPropagation());
 
-		this.#setLegendOpen(this.#legendOpen);
+		this.#setInfoOpen(this.#infoOpen);
 	}
 
 	#toolButton(className, label, svg, onClick) {
@@ -1732,7 +1680,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		return button;
 	}
 
-	// ── search / fit / legend ─────────────────────────────────────────────────
+	// ── search / fit / info ───────────────────────────────────────────────────
 
 	#buildSearchUI(toolbar, svg) {
 		const listId = `mm-search-list-${this.getUniqueId()}`;
@@ -2008,7 +1956,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		this.#paintSearchHighlight();
 
 		if (this.#searchListEl && this.#searchListEl.style.display !== 'none') this.#runSearch();
-		if (this.#legendOpen) this.#renderLegend();
+		if (this.#infoOpen) this.#renderInfo();
 	}
 
 	// Centers the node, zooming in only as far as needed to make it readable.
@@ -2041,21 +1989,68 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 		this.#network.fit({ nodes: ids, animation: { duration: 300, easingFunction: 'easeInOutQuad' } });
 	}
 
-	#setLegendOpen(open) {
-		this.#legendOpen = open;
-		if (!this.#legendEl) return;
+	#setInfoOpen(open) {
+		this.#infoOpen = open;
+		if (!this.#infoEl) return;
 
 		if (open) {
-			this.#renderLegend();
+			this.#renderInfo();
 			this.#panelEl.style.display = 'none';
 		}
 
-		this.#legendEl.style.display = open ? 'block' : 'none';
-		this.#legendBtnEl.setAttribute('aria-expanded', String(open));
+		this.#infoEl.style.display = open ? 'block' : 'none';
+		this.#infoBtnEl.setAttribute('aria-expanded', String(open));
 	}
 
-	// What the current graph has, not every type there is.
-	#renderLegend() {
+	// Counts are what the server sent (the model), not what the filters leave
+	// shown; the legend is what the current graph has, not every type there is.
+	#renderInfo() {
+		const value = (label, text) => `<div class="mm-info-row"><span>${this.#escape(label)}</span>`
+			+ `<span class="mm-info-value">${this.#escape(String(text))}</span></div>`;
+		const section = (title, body) => `<div class="mm-info-section">`
+			+ `<div class="mm-info-title">${this.#escape(title)}</div>${body}</div>`;
+		const status = this.#status ?? {};
+
+		const topology = value(t('Nodes'), this.#model.nodes.size)
+			+ value(t('Relations'), this.#model.edges.size)
+			+ value(t('Database topology'), status.database ? t('Enabled') : t('Disabled'));
+
+		this.#infoEl.innerHTML = `
+			<div class="mm-filter-header"><span>${this.#escape(t('Info'))}</span></div>
+			${section(t('Topology'), topology)}
+			${section(t('APM / OpenTelemetry'), this.#apmInfoRows(status.apm ?? {}, value))}
+			${section(t('Legend'), this.#legendRows())}
+		`;
+	}
+
+	// WidgetView::otelRetrievalState(): only what the retrieval itself tells.
+	#apmInfoRows(apm, value) {
+		if (apm.state === 'off' || apm.state === undefined) {
+			return value(t('Status'), t('Disabled'));
+		}
+		if (apm.state === 'unsupported') {
+			return value(t('Status'), t('Disabled'))
+				+ `<div class="mm-info-note">${this.#escape(t('Requires Zabbix 8.0 or later'))}</div>`;
+		}
+
+		const states = {
+			ok:            'OK',
+			no_data:       'No data available',
+			no_spans:      'No spans fetched',
+			display_limit: 'Display limit reached',
+			query_limit:   'Query limit reached',
+			failed:        'Retrieval failed',
+		};
+
+		return value(t('Observation window'), `${apm.window} ${t('min')}`)
+			+ value(t('Spans fetched'), Number(apm.spans).toLocaleString())
+			+ value(t('Queries'), `${apm.queries} / ${apm.max_queries}`)
+			+ value(t('Services'), apm.services)
+			+ value(t('Systems'), apm.systems)
+			+ value(t('Retrieval status'), t(states[apm.state] ?? 'No data available'));
+	}
+
+	#legendRows() {
 		const nodeTypes = new Set();
 		for (const meta of Object.values(this.#nodesMeta)) {
 			nodeTypes.add(meta.node_type);
@@ -2090,8 +2085,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				+ `<span>${this.#escape(t(label))}</span></div>`)
 			.join('');
 
-		this.#legendEl.innerHTML = `
-			<div class="mm-filter-header"><span>${this.#escape(t('Legend'))}</span></div>
+		return `
 			${relationRows !== '' ? `<div class="mm-legend-section">
 				<div class="mm-legend-title">${this.#escape(t('Relations'))}</div>${relationRows}</div>` : ''}
 			${nodeRows !== '' ? `<div class="mm-legend-section">
@@ -2208,6 +2202,11 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			html += row(`${t('Type')}: ${t('OpenTelemetry system')}`);
 			html += row(`${t('Host')}: ${this.#escape(meta.otel_host)}`);
 			html += row(`${t('Service')}: ${this.#escape(meta.otel_service)}`);
+		}
+
+		// The latest span this widget fetched, not when anybody last used it.
+		if (meta.otel_last_observed) {
+			html += row(`${t('Last observed')}: ${this.#escape(meta.otel_last_observed)}`);
 		}
 
 		if (meta.node_type === 'otel_service' || meta.node_type === 'otel_system') {

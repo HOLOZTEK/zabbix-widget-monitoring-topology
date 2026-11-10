@@ -17,6 +17,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 	private array $edge_keys = [];
 	private array $elements = [];
 	private array $cluster_member_ips = [];
+	// What the APM / OpenTelemetry retrieval did - shown in the Info panel.
+	private array $apm_status = [];
 
 	protected function init(): void {
 		parent::init();
@@ -26,6 +28,12 @@ class WidgetView extends CControllerDashboardWidgetView {
 	protected function doAction(): void {
 		$fv = $this->fields_values;
 		$dom_id_suffix = preg_replace('/[^A-Za-z0-9_-]/', '_', $this->getInput('widget_unique_id', ''));
+
+		// What is fetched at all. The Components and Relations filters only show or hide what was.
+		$backend_components = array_map('intval', (array) ($fv['backend_components'] ?? []));
+		$show_database = in_array(WidgetForm::BACKEND_DATABASE, $backend_components, true);
+		$apm_selected = in_array(WidgetForm::BACKEND_APM, $backend_components, true);
+		$show_apm = $apm_selected && holoztek_mm_apm_supported();
 
 		$settings = [
 			'server_label'     => (string) ($fv['server_label'] ?: 'Zabbix Server'),
@@ -39,6 +47,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'filter_position'  => (int) ($fv['filter_position'] ?? WidgetForm::FILTER_POSITION_TOP_RIGHT),
 			'severity_colors'  => $this->severityColors(),
 			'severity_labels'  => $this->severityLabels(),
+			'initial_filter'   => self::initialFilter($fv, $show_database, $show_apm),
 		];
 
 		$common = [
@@ -340,10 +349,6 @@ class WidgetView extends CControllerDashboardWidgetView {
 			])
 			: [];
 
-		$backend_components = array_map('intval', (array) ($fv['backend_components'] ?? []));
-		$show_database = in_array(WidgetForm::BACKEND_DATABASE, $backend_components, true);
-		$show_apm = in_array(WidgetForm::BACKEND_APM, $backend_components, true) && holoztek_mm_apm_supported();
-
 		// An APM-enabled Proxy need not monitor any selected Host, so it is added
 		// to the same list: one Proxy always stays one node, and its Proxy Group
 		// is resolved along with those of the Hosts.
@@ -634,14 +639,40 @@ class WidgetView extends CControllerDashboardWidgetView {
 		if ($show_apm) {
 			$this->addApmComponents($apm_proxies, self::otelWindowSeconds($fv));
 		}
+		else {
+			$this->apm_status = ['state' => $apm_selected ? 'unsupported' : 'off'];
+		}
 
 		$this->applyClusterMemberIps();
 		$this->applyProblems($hosts);
 
 		$this->setResponse(new CControllerResponseData($common + [
 			'error'    => null,
-			'elements' => $this->elements
+			'elements' => $this->elements,
+			'status'   => ['database' => $show_database, 'apm' => $this->apm_status]
 		]));
+	}
+
+	// Where the dashboard filter starts (the Filter tab). A key whose backend
+	// is not fetched starts off. Dashboards saved before v1.2.6 have no value:
+	// the field defaults, which are the filter's own.
+	private static function initialFilter(array $fv, bool $show_database, bool $show_apm): array {
+		$fetched = [
+			WidgetForm::BACKEND_DATABASE => $show_database,
+			WidgetForm::BACKEND_APM      => $show_apm
+		];
+		$filter = [];
+
+		foreach (WidgetForm::FILTER_SECTIONS as $keys) {
+			foreach ($keys as $key => [, $default]) {
+				$backend = WidgetForm::FILTER_BACKENDS[$key] ?? null;
+
+				$filter[$key] = (int) ($fv[WidgetForm::filterFieldName($key)] ?? $default) === 1
+					&& ($backend === null || $fetched[$backend]);
+			}
+		}
+
+		return $filter;
 	}
 
 	// Zabbix host groups form a tree via "/"-separated names (e.g. "Linux
@@ -847,6 +878,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 		// excluded.
 		$observed = [];
 		$excluded = [];
+		$span_count = 0;
+		$query_count = 0;
 
 		$condition = static fn(string $key, int $operator, string $value = '') =>
 			['key' => $key, 'operator' => $operator, 'value' => $value];
@@ -864,7 +897,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		];
 
 		$options = [
-			'output'    => ['resource_attributes'],
+			'output'    => ['resource_attributes', 'timestamp'],
 			'time_from' => $time_till - $window,
 			'time_till' => $time_till,
 			'sortfield' => ['timestamp'],
@@ -891,10 +924,15 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$options['resource_attributes'] = array_merge($proxy_filter, $service_filter, $exclusions);
 
 			$spans = $this->optionalApiCall(static fn() => API::ApmSpan()->get($options));
+			$query_count++;
 
 			if ($spans === null) {
-				return ['services' => [], 'systems' => [], 'truncated' => false];
+				return ['services' => [], 'systems' => [], 'truncated' => false, 'failed' => true,
+					'capped' => false, 'incomplete' => false, 'spans' => $span_count, 'queries' => $query_count
+				];
 			}
+
+			$span_count += count($spans);
 
 			foreach ($spans as $span) {
 				foreach ($seen as $key => $values) {
@@ -918,11 +956,17 @@ class WidgetView extends CControllerDashboardWidgetView {
 		ksort($services);
 		ksort($systems);
 
+		$incomplete = $full[0] && !self::isOtelFetchComplete($full, $proxyids, $excluded, $observed);
+
 		return [
-			'services'  => $services,
-			'systems'   => $systems,
-			'truncated' => $truncated_nodes
-				|| ($full[0] && !self::isOtelFetchComplete($full, $proxyids, $excluded, $observed))
+			'services'   => $services,
+			'systems'    => $systems,
+			'truncated'  => $truncated_nodes || $incomplete,
+			'failed'     => false,
+			'capped'     => $truncated_nodes,
+			'incomplete' => $incomplete,
+			'spans'      => $span_count,
+			'queries'    => $query_count
 		];
 	}
 
@@ -978,6 +1022,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 			return;
 		}
 
+		// Nanoseconds. Only the spans read here count: the latest the widget saw.
+		$timestamp = (string) ($span['timestamp'] ?? '');
+		$clock = ctype_digit($timestamp) && strlen($timestamp) > 9 ? (int) substr($timestamp, 0, -9) : 0;
+
 		$service_id = holoztek_mm_node_id_otel_service($proxyid, $service);
 
 		// Services are capped like Systems, so that ever-new service.name values
@@ -993,11 +1041,13 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'service'      => $service,
 				'systems'      => [],
 				'namespaces'   => [],
-				'environments' => []
+				'environments' => [],
+				'last_clock'   => 0
 			];
 		}
 
 		self::collectOtelMetadata($services[$service_id], $attributes, $clip);
+		$services[$service_id]['last_clock'] = max($services[$service_id]['last_clock'], $clock);
 
 		// The Service is known to send, but not from where.
 		if ($host === '') {
@@ -1017,12 +1067,14 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'service'      => $service,
 				'host'         => $host,
 				'namespaces'   => [],
-				'environments' => []
+				'environments' => [],
+				'last_clock'   => 0
 			];
 			$services[$service_id]['systems'][$system_id] = true;
 		}
 
 		self::collectOtelMetadata($systems[$system_id], $attributes, $clip);
+		$systems[$system_id]['last_clock'] = max($systems[$system_id]['last_clock'], $clock);
 	}
 
 	// Shown, never used to tell nodes apart.
@@ -1126,6 +1178,16 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$global = $this->fetchApmGlobalDataSource();
 		$is_configured = $global !== null && $global['status'] === 1;
 
+		$this->apm_status = [
+			'state'       => 'no_data',
+			'window'      => intdiv($otel_window, 60),
+			'spans'       => 0,
+			'queries'     => 0,
+			'max_queries' => HOLOZTEK_MM_OTEL_MAX_QUERIES,
+			'services'    => 0,
+			'systems'     => 0
+		];
+
 		if (!$is_configured && !$apm_proxies) {
 			return;
 		}
@@ -1134,6 +1196,16 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$otel = $tagged_proxyids
 			? $this->fetchOtelTelemetry($tagged_proxyids, $otel_window)
 			: ['services' => [], 'systems' => [], 'truncated' => false];
+
+		if (array_key_exists('queries', $otel)) {
+			$this->apm_status = [
+				'state'    => self::otelRetrievalState($otel),
+				'spans'    => $otel['spans'],
+				'queries'  => $otel['queries'],
+				'services' => count($otel['services']),
+				'systems'  => count($otel['systems'])
+			] + $this->apm_status;
+		}
 
 		$datastore_node = holoztek_mm_node_id_apm_datastore();
 
@@ -1154,6 +1226,24 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$this->addOtelTelemetry($otel['services'], $otel['systems']);
 	}
 
+	// Only what the retrieval itself tells: an empty result is never put down to
+	// permissions or to an APM filter, as the API does not say which it was.
+	private static function otelRetrievalState(array $otel): string {
+		if ($otel['failed']) {
+			return 'failed';
+		}
+
+		if ($otel['spans'] == 0) {
+			return 'no_spans';
+		}
+
+		if ($otel['capped']) {
+			return 'display_limit';
+		}
+
+		return $otel['incomplete'] ? 'query_limit' : 'ok';
+	}
+
 	// Proxy -> Service -> System, one node per path: the same host.name under
 	// another Service or Proxy is another node. Observed means within the time
 	// range: it does not prove the Proxy is receiving now.
@@ -1163,6 +1253,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'otel_namespaces'   => array_map('strval', array_keys($node['namespaces'])),
 			'otel_environments' => array_map('strval', array_keys($node['environments']))
 		];
+		// In the user's time zone and format, like the rest of the frontend.
+		$last_observed = static fn(array $node) => $node['last_clock'] > 0
+			? ['otel_last_observed' => zbx_date2str(DATE_TIME_FORMAT_SECONDS, $node['last_clock'])]
+			: [];
 
 		foreach ($services as $node_id => $service) {
 			$proxy_node = holoztek_mm_node_id_proxy($service['proxyid']);
@@ -1171,7 +1265,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'backend_owner'     => $proxy_node,
 				'otel_service'      => $service['service'],
 				'otel_system_count' => count($service['systems'])
-			] + $metadata($service));
+			] + $metadata($service) + $last_observed($service));
 			$this->addRelationEdge($proxy_node, $node_id, HOLOZTEK_MM_RELATION_TELEMETRY);
 
 			$system_counts[$proxy_node] = ($system_counts[$proxy_node] ?? 0) + count($service['systems']);
@@ -1182,7 +1276,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'backend_owner' => $system['service_id'],
 				'otel_host'     => $system['host'],
 				'otel_service'  => $system['service']
-			] + $metadata($system));
+			] + $metadata($system) + $last_observed($system));
 			$this->addRelationEdge($system['service_id'], $node_id, HOLOZTEK_MM_RELATION_TELEMETRY_MEMBER);
 		}
 

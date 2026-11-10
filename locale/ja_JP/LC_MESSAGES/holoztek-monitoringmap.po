@@ -94,7 +94,7 @@ msgid "OK"
 msgstr "正常"
 
 msgid "Filter"
-msgstr "フィルタ"
+msgstr "フィルター"
 
 msgid "Reset"
 msgstr "リセット"
@@ -318,9 +318,6 @@ msgstr "ノード種別"
 msgid "Virtualization / Cluster"
 msgstr "仮想化 / クラスター"
 
-
-
-
 msgid "Applies when the topology is laid out anew: on first display, when the selection changes, or when the topology changes substantially."
 msgstr "新しく配置し直すとき（初回表示、選択の変更、構成の大きな変化）に適用します。"
 
@@ -332,3 +329,96 @@ msgstr "0: 配置の計算が終わってから表示します。"
 
 msgid "1 or more: the topology is shown after this many layout iterations and spreads out on screen until it settles. The smaller the value, the more it moves."
 msgstr "1 以上: 指定した回数だけ配置を計算してから表示し、その後は画面上で広がりながら落ち着きます。値が小さいほど大きく動きます。"
+
+msgid "Monitoring targets"
+msgstr "監視対象"
+
+msgid "Decides what is fetched. Database adds the Zabbix and Proxy databases; APM queries APM trace data."
+msgstr "取得する内容を決めます。データベースは Zabbix・Proxy のデータベースを、APM は APM のトレースデータを照会して追加します。"
+
+msgid "Info"
+msgstr "情報"
+
+msgid "Topology"
+msgstr "トポロジー"
+
+msgid "Nodes"
+msgstr "ノード"
+
+msgid "Database topology"
+msgstr "データベース構成"
+
+msgid "Disabled"
+msgstr "無効"
+
+msgid "APM / OpenTelemetry"
+msgstr "APM / OpenTelemetry"
+
+msgid "Observation window"
+msgstr "観測期間"
+
+msgid "min"
+msgstr "分"
+
+msgid "Spans fetched"
+msgstr "取得したSpan"
+
+msgid "Queries"
+msgstr "クエリ"
+
+msgid "Services"
+msgstr "サービス数"
+
+msgid "Retrieval status"
+msgstr "取得状況"
+
+msgid "No data available"
+msgstr "データなし"
+
+msgid "No spans fetched"
+msgstr "Spanなし"
+
+msgid "Display limit reached"
+msgstr "表示上限に到達"
+
+msgid "Query limit reached"
+msgstr "クエリ上限に到達"
+
+msgid "Retrieval failed"
+msgstr "取得失敗"
+
+msgid "Requires Zabbix 8.0 or later"
+msgstr "Zabbix 8.0 以降が必要です"
+
+msgid "Last observed"
+msgstr "最終観測"
+
+msgid "Data acquisition"
+msgstr "データ取得"
+
+msgid "APM data store"
+msgstr "APMデータストア"
+
+msgid "OpenTelemetry"
+msgstr "OpenTelemetry"
+
+msgid "Components"
+msgstr "構成要素"
+
+msgid "Appearance"
+msgstr "外観"
+
+msgid "The filter on the dashboard only shows or hides what was fetched."
+msgstr "ダッシュボード上のフィルターは、取得済みのものを表示・非表示にするだけです。"
+
+msgid "The filter on the dashboard starts here each time the dashboard is opened, and its Reset returns here."
+msgstr "ダッシュボードを開いたときのフィルターはこの状態から始まり、フィルターの［リセット］もこの状態に戻します。"
+
+msgid "Changes made in the filter are kept on refresh, not saved."
+msgstr "フィルターでの変更は更新後も保たれますが、保存はされません。"
+
+msgid "Components and relations not fetched (see Data acquisition) cannot be chosen."
+msgstr "取得しない構成要素・関係（データ取得を参照）は選べません。"
+
+msgid "Hiding them does not stop them being fetched."
+msgstr "非表示にしても取得は止まりません。"
