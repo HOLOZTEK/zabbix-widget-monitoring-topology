@@ -1399,9 +1399,9 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			&& componentShown(meta.node_type)
 		);
 		const apmShown = this.#filter.compApmDataStore || this.#filter.compOpenTelemetry;
-		// Owners of a shown backend component (a Proxy with its Proxy DB shown).
+		// Proxies whose own Proxy DB is shown.
 		const ownsShown = new Set(metas
-			.filter(meta => meta.backend_owner && componentShown(meta.node_type))
+			.filter(meta => meta.node_type === 'proxy_db' && meta.backend_owner && componentShown(meta.node_type))
 			.map(meta => meta.backend_owner)
 		);
 
@@ -1420,13 +1420,15 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 				return visible[id];
 			}
 
-			// An APM-enabled Proxy may monitor no Host at all: it stays as the
-			// anchor while an APM component or its own Proxy DB is shown, and the
-			// Server likewise for its Zabbix DB / APM Data Store.
+			// A Proxy stays as the anchor while its own Proxy DB is shown, even
+			// with all its Hosts filtered out; an APM-enabled Proxy also while an
+			// APM component is shown. The Server likewise for its Zabbix DB / APM
+			// Data Store.
 			const selfMatch = meta
 				? (meta.node_type === 'host'
 					? this.#hostVisible(meta)
-					: (meta.apm_collector && (apmShown || ownsShown.has(id)))
+					: (meta.apm_collector && apmShown)
+						|| ownsShown.has(id)
 						|| (meta.node_type === 'server' && serverAnchored))
 				: false;
 			const result = selfMatch
