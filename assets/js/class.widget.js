@@ -231,56 +231,16 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	// problem state, unchecked = hide them), and faultColor controls only
 	// whether problem severity is colored onto the icon, never host
 	// visibility (see #recomputeSeverity()).
-	static #DEFAULT_FILTER = {
-		// 障害状態 - faultUnack/faultAck/faultNone are a covering partition over
-		// non-maintenance hosts (all on by default = every non-maintenance host
-		// shown). faultMaintenance is an independent OR gate: a host in
-		// maintenance is shown iff it is checked (default off), regardless of
-		// its problem state. faultColor toggles severity-color display only, it
-		// never hides a host (see #recomputeSeverity()).
-		faultUnack:        true,
-		faultAck:          true,
-		faultNone:         true,
-		faultMaintenance:  false,
-		faultColor:        true,
-		// インターフェイス - all checked by default (show every host).
-		ifaceAvailable:    true,
-		ifaceMixed:        true,
-		ifaceUnavailable:  true,
-		ifaceUnknown:      true,
-		// ホスト状態 - cfgNormal defaults on so ordinary hosts (an interface
-		// configured, not local-only, monitoring enabled) are shown out of the
-		// box. cfgDisabled (default off) is the only bucket that admits
-		// host_status === 1; the other three are guarded on host_status === 0
-		// so this stays an exclusive 4-way partition (see #hostVisible()).
-		cfgNormal:         true,
-		cfgNoInterface:    false,
-		cfgLocal:          false,
-		cfgDisabled:       false,
-		// 監視経路 - all checked by default (show every host).
-		routeServer:       true,
-		routeProxy:        true,
-		routeProxyGroup:   true,
-		// 監視方式 - all checked by default (show every host).
-		methodPing:        true,
-		methodAgent:       true,
-		methodSnmp:        true,
-		methodIpmi:        true,
-		methodJmx:         true,
-		methodOther:       true,
-		// 構成要素 / 関係 - what is drawn out of the fetched data, unlike the
-		// Widget's backend_components setting, which decides what is fetched at
-		// all. Not kept in localStorage: the components start from the Widget's
-		// "Default component visibility" (see #applyComponentDefaults()), the
-		// relations all on.
-		compDatabase:      true,
-		compApmDataStore:  true,
-		compOpenTelemetry: true,
-		relMonitoring:     true,
-		relDatabase:       true,
-		relApmStorage:     true,
-		relTelemetry:      true,
-	};
+	//
+	// The keys, sections and defaults are WidgetForm::FILTER_SECTIONS: the
+	// filter starts from the Widget's Filter tab (data-initial-filter).
+	// 障害状態 - faultUnack/faultAck/faultNone are a covering partition over
+	// non-maintenance hosts; faultMaintenance is the OR gate above.
+	// ホスト状態 - cfgDisabled is the only bucket that admits host_status === 1;
+	// the other three are guarded on host_status === 0 so this stays an
+	// exclusive 4-way partition (see #hostVisible()).
+	// 構成要素 / 関係 - what is drawn out of the fetched data, unlike the
+	// Widget's backend_components setting, which decides what is fetched at all.
 
 	// value -> filter-key maps for the "single value per host, select-to-
 	// include" categories (インターフェイス/監視経路).
@@ -365,10 +325,10 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 	#infoEl         = null;
 	// What the last update fetched, for the Info panel (WidgetView 'status').
 	#status         = null;
-	// Components filter keys -> on/off as the Widget's settings start them, and
-	// the raw setting they came from: the user's choice holds until it changes.
-	#componentDefaults    = {};
-	#componentDefaultsRaw = null;
+	// Where the filter starts (the Widget's Filter tab), and the raw setting it
+	// came from: the user's choice holds until the setting changes.
+	#initialFilter    = {};
+	#initialFilterRaw = null;
 
 	onInitialize() {
 		this._dom_id_suffix = '';
@@ -531,9 +491,7 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			severityLabels: this.#parseJson(container.dataset.severityLabels, {}),
 		};
 
-		const previousFilter = this.#filter;
-		this.#loadFilterState();
-		this.#applyComponentDefaults(container.dataset.defaultComponents ?? null, previousFilter);
+		this.#applyInitialFilter(container.dataset.initialFilter ?? null);
 		this.#status = this.#parseJson(container.dataset.status, null);
 		this.#iconCache = {};
 		this.#readModel(elements);
@@ -1281,117 +1239,16 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 
 	// ── filter ────────────────────────────────────────────────────────────────
 
-	#filterStorageKey() {
-		// getWidgetId() is the DB-stored id, stable across dashboard reloads and
-		// distinct per widget instance. It's null until the widget is first saved
-		// (new/unsaved widget), so fall back to the runtime id in that case - an
-		// unsaved widget has no persisted state to restore anyway.
-		return `holoztek-monitoringmap-filter-${this.getWidgetId() ?? this.getUniqueId()}`;
-	}
+	// The filter starts where the Widget's Filter tab puts it each time the
+	// dashboard is opened, and again whenever those settings change. Otherwise
+	// - a refresh, a rebuild for another setting - the user's choice holds.
+	// Nothing is stored: a reload starts over.
+	#applyInitialFilter(raw) {
+		if (raw === this.#initialFilterRaw) return;
 
-	// pre-v1.0.1 key (before the holoztek_ id/prefix rename); same widget-id basis.
-	#legacyFilterStorageKey() {
-		return `monitoringmap-filter-${this.getWidgetId() ?? this.getUniqueId()}`;
-	}
-
-	#loadFilterState() {
-		const defaults = { ...CWidgetHoloztekMonitoringMap.#DEFAULT_FILTER };
-		try {
-			let raw = localStorage.getItem(this.#filterStorageKey());
-			if (raw === null) {
-				// one-time migration: only when the new key has no data yet, so an
-				// existing new-key value always wins and is never clobbered.
-				const legacyRaw = localStorage.getItem(this.#legacyFilterStorageKey());
-				if (legacyRaw !== null) {
-					raw = legacyRaw;
-					localStorage.setItem(this.#filterStorageKey(), raw);
-				}
-			}
-			const stored = raw ? JSON.parse(raw) : null;
-			this.#filter = stored
-				? Object.assign(defaults, this.#withoutViewState(this.#migrateFilterState(stored)))
-				: defaults;
-		} catch (_) {
-			this.#filter = defaults;
-		}
-	}
-
-	// The Components and Relations filters last only while the dashboard is
-	// open. Up to v1.2.5 the relations were stored with the rest of the filter.
-	#withoutViewState(filter) {
-		if (filter === null || typeof filter !== 'object') return filter;
-
-		const stripped = { ...filter };
-		for (const key of CWidgetHoloztekMonitoringMap.#viewStateKeys()) delete stripped[key];
-		return stripped;
-	}
-
-	static #viewStateKeys() {
-		return new Set([
-			...Object.values(CWidgetHoloztekMonitoringMap.#COMPONENT_KEYS),
-			...Object.values(CWidgetHoloztekMonitoringMap.#RELATION_KEYS),
-		]);
-	}
-
-	// The components start where the Widget's settings put them each time the
-	// dashboard is opened, and again whenever those settings change; the
-	// relations start all on. Otherwise - a refresh, a rebuild for another
-	// setting - the user's choice holds.
-	#applyComponentDefaults(raw, previousFilter) {
-		const keep = raw === this.#componentDefaultsRaw;
-		const values = this.#parseJson(raw, {});
-
-		// Dashboards saved before the setting existed send nothing: all on.
-		this.#componentDefaults = {
-			compDatabase:      values.database !== false,
-			compApmDataStore:  values.apm_datastore !== false,
-			compOpenTelemetry: values.opentelemetry !== false,
-		};
-		this.#componentDefaultsRaw = raw;
-
-		const defaults = { ...CWidgetHoloztekMonitoringMap.#DEFAULT_FILTER, ...this.#componentDefaults };
-
-		for (const key of CWidgetHoloztekMonitoringMap.#viewStateKeys()) {
-			const component = key in this.#componentDefaults;
-			this.#filter[key] = (keep || !component) && key in previousFilter ? previousFilter[key] : defaults[key];
-		}
-	}
-
-	// Pre-v1.0.8 the filter had a separate ホスト状態 category
-	// (statusEnabled/statusMaintenance/statusDisabled) and no faultNone /
-	// faultMaintenance / faultColor keys. A blob from that era is detected by
-	// the absence of faultMaintenance; carry the user's intent across the
-	// restructure and drop the now-dead keys so Object.assign doesn't keep
-	// them around.
-	#migrateFilterState(stored) {
-		if (stored === null || typeof stored !== 'object' || 'faultMaintenance' in stored) {
-			return stored;
-		}
-
-		stored.faultMaintenance = stored.statusMaintenance === true;
-		stored.cfgDisabled      = stored.statusDisabled === true;
-		// Old severity-color rule: shown iff faultAck or faultUnack was checked.
-		stored.faultColor = stored.faultUnack !== false || stored.faultAck !== false;
-		// The presence partition is new; default it fully on so a migrated user
-		// keeps seeing every non-maintenance host exactly as before.
-		stored.faultUnack = true;
-		stored.faultAck   = true;
-		stored.faultNone  = true;
-
-		delete stored.statusEnabled;
-		delete stored.statusMaintenance;
-		delete stored.statusDisabled;
-
-		return stored;
-	}
-
-	#saveFilterState() {
-		try {
-			localStorage.setItem(this.#filterStorageKey(), JSON.stringify(this.#withoutViewState(this.#filter)));
-		} catch (_) {
-			// localStorage unavailable (private browsing, quota, ...) - filter
-			// state just won't persist across reloads, no functional impact.
-		}
+		this.#initialFilter    = this.#parseJson(raw, {});
+		this.#initialFilterRaw = raw;
+		this.#filter           = { ...this.#initialFilter };
 	}
 
 	// Recomputes a host's effective severity from its ack/unack problem
@@ -1733,14 +1590,12 @@ class CWidgetHoloztekMonitoringMap extends CWidget {
 			input.checked = !!this.#filter[key];
 			input.addEventListener('change', () => {
 				this.#filter[key] = input.checked;
-				this.#saveFilterState();
 				this.#onFilterChanged(key);
 			});
 		});
 
 		panel.querySelector('.mm-filter-reset').addEventListener('click', () => {
-			this.#filter = { ...CWidgetHoloztekMonitoringMap.#DEFAULT_FILTER, ...this.#componentDefaults };
-			this.#saveFilterState();
+			this.#filter = { ...this.#initialFilter };
 			panel.querySelectorAll('input[type=checkbox][data-filter]').forEach(input => {
 				input.checked = !!this.#filter[input.dataset.filter];
 			});

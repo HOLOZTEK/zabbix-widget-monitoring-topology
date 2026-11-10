@@ -318,9 +318,6 @@ msgstr "Node types"
 msgid "Virtualization / Cluster"
 msgstr "Virtualization / Cluster"
 
-
-
-
 msgid "Applies when the topology is laid out anew: on first display, when the selection changes, or when the topology changes substantially."
 msgstr "Applies when the topology is laid out anew: on first display, when the selection changes, or when the topology changes substantially."
 
@@ -336,16 +333,8 @@ msgstr "1 or more: the topology is shown after this many layout iterations and s
 msgid "Monitoring targets"
 msgstr "Monitoring"
 
-
-msgid "Display"
-msgstr "Display"
-
-
 msgid "Decides what is fetched. Database adds the Zabbix and Proxy databases; APM queries APM trace data."
 msgstr "Decides what is fetched. Database adds the Zabbix and Proxy databases; APM queries APM trace data."
-
-
-
 
 msgid "Info"
 msgstr "Info"
@@ -407,15 +396,6 @@ msgstr "Last observed"
 msgid "Data acquisition"
 msgstr "Data acquisition"
 
-msgid "Drawing"
-msgstr "Drawing"
-
-msgid "Default visibility"
-msgstr "Default visibility"
-
-msgid "Default component visibility"
-msgstr "Default component visibility"
-
 msgid "APM data store"
 msgstr "APM data store"
 
@@ -425,11 +405,20 @@ msgstr "OpenTelemetry"
 msgid "Components"
 msgstr "Components"
 
-msgid "The Components and Relations filters on the dashboard only show or hide what was fetched."
-msgstr "The Components and Relations filters on the dashboard only show or hide what was fetched."
+msgid "Appearance"
+msgstr "Appearance"
 
-msgid "Where the Components filter starts each time the dashboard is opened. Changes made in the filter are kept on refresh, not saved."
-msgstr "Where the Components filter starts each time the dashboard is opened. Changes made in the filter are kept on refresh, not saved."
+msgid "The filter on the dashboard only shows or hides what was fetched."
+msgstr "The filter on the dashboard only shows or hides what was fetched."
 
-msgid "Components not fetched (see Data acquisition) stay off. Hiding a component does not stop it being fetched."
-msgstr "Components not fetched (see Data acquisition) stay off. Hiding a component does not stop it being fetched."
+msgid "The filter on the dashboard starts here each time the dashboard is opened, and its Reset returns here."
+msgstr "The filter on the dashboard starts here each time the dashboard is opened, and its Reset returns here."
+
+msgid "Changes made in the filter are kept on refresh, not saved."
+msgstr "Changes made in the filter are kept on refresh, not saved."
+
+msgid "Components and relations not fetched (see Data acquisition) cannot be chosen."
+msgstr "Components and relations not fetched (see Data acquisition) cannot be chosen."
+
+msgid "Hiding them does not stop them being fetched."
+msgstr "Hiding them does not stop them being fetched."

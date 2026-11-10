@@ -37,7 +37,7 @@ else {
 			->setAttribute('data-filter-position',   (string) $s['filter_position'])
 			->setAttribute('data-severity-colors',   json_encode($s['severity_colors'], JSON_THROW_ON_ERROR))
 			->setAttribute('data-severity-labels',   json_encode($s['severity_labels'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE))
-			->setAttribute('data-default-components', json_encode($s['default_components'], JSON_THROW_ON_ERROR))
+			->setAttribute('data-initial-filter',    json_encode($s['initial_filter'], JSON_THROW_ON_ERROR))
 			// Not a setting: what this update fetched, for the Info panel.
 			->setAttribute('data-status',            json_encode($data['status'], JSON_THROW_ON_ERROR))
 	);

@@ -47,7 +47,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'filter_position'  => (int) ($fv['filter_position'] ?? WidgetForm::FILTER_POSITION_TOP_RIGHT),
 			'severity_colors'  => $this->severityColors(),
 			'severity_labels'  => $this->severityLabels(),
-			'default_components' => self::defaultComponents($fv, $show_database, $show_apm),
+			'initial_filter'   => self::initialFilter($fv, $show_database, $show_apm),
 		];
 
 		$common = [
@@ -653,17 +653,26 @@ class WidgetView extends CControllerDashboardWidgetView {
 		]));
 	}
 
-	// Where the Components filter starts when the dashboard is opened. A
-	// component that is not fetched starts off. Dashboards saved before the
-	// setting existed have no value: every component on, as before.
-	private static function defaultComponents(array $fv, bool $show_database, bool $show_apm): array {
-		$on = static fn(string $name): bool => (int) ($fv[$name] ?? 1) === 1;
-
-		return [
-			'database'      => $show_database && $on('default_comp_database'),
-			'apm_datastore' => $show_apm && $on('default_comp_apm_datastore'),
-			'opentelemetry' => $show_apm && $on('default_comp_opentelemetry')
+	// Where the dashboard filter starts (the Filter tab). A key whose backend
+	// is not fetched starts off. Dashboards saved before v1.2.6 have no value:
+	// the field defaults, which are the filter's own.
+	private static function initialFilter(array $fv, bool $show_database, bool $show_apm): array {
+		$fetched = [
+			WidgetForm::BACKEND_DATABASE => $show_database,
+			WidgetForm::BACKEND_APM      => $show_apm
 		];
+		$filter = [];
+
+		foreach (WidgetForm::FILTER_SECTIONS as $keys) {
+			foreach ($keys as $key => [, $default]) {
+				$backend = WidgetForm::FILTER_BACKENDS[$key] ?? null;
+
+				$filter[$key] = (int) ($fv[WidgetForm::filterFieldName($key)] ?? $default) === 1
+					&& ($backend === null || $fetched[$backend]);
+			}
+		}
+
+		return $filter;
 	}
 
 	// Zabbix host groups form a tree via "/"-separated names (e.g. "Linux

@@ -287,9 +287,9 @@ The widget does not check whether someone used the agent recently. It only check
 | Host groups / Hosts | The display target. While no host is shown, OTel nodes are not shown either |
 | Backend components → APM | When on, fetches and shows the APM data store, APM-enabled Proxies and OTel nodes (Zabbix 8.0+) |
 | OTel observation window (minutes) | The period to show. Default 15, range 5-1440 ([section 9](#9-otel-observation-window)) |
-| Default component visibility → OpenTelemetry (Display tab) | Where the Components filter starts when the dashboard is opened (on by default). With it off, spans are still fetched while APM is on |
+| Filter → Components → OpenTelemetry (Filter tab) | Whether OTel nodes are shown when the dashboard is opened (on by default); Reset in the dashboard filter returns here. **Turning it off does not stop the APM queries**: spans are still fetched while APM is on. To stop the queries, turn off Backend components → APM |
 
-Backend components and the OTel observation window are on the Data acquisition tab of the settings form. Data acquisition decides whether data is fetched; the Components and Relations filters only show or hide data that was already fetched.
+Backend components and the OTel observation window are on the Data acquisition tab of the settings form; the initial filter state is on the Filter tab. Data acquisition decides whether data is fetched; the Components and Relations filters only show or hide data that was already fetched. With APM off, the APM-related components and relations cannot be chosen on the Filter tab.
 
 ## 9. OTel observation window
 
