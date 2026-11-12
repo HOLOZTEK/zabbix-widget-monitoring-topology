@@ -317,3 +317,108 @@ msgstr "Node types"
 
 msgid "Virtualization / Cluster"
 msgstr "Virtualization / Cluster"
+
+msgid "Applies when the topology is laid out anew: on first display, when the selection changes, or when the topology changes substantially."
+msgstr "Applies when the topology is laid out anew: on first display, when the selection changes, or when the topology changes substantially."
+
+msgid "Layout iterations before display"
+msgstr "Layout iterations before display"
+
+msgid "0: the topology is shown once its layout is done."
+msgstr "0: the topology is shown once its layout is done."
+
+msgid "1 or more: the topology is shown after this many layout iterations and spreads out on screen until it settles. The smaller the value, the more it moves."
+msgstr "1 or more: the topology is shown after this many layout iterations and spreads out on screen until it settles. The smaller the value, the more it moves."
+
+msgid "Monitoring targets"
+msgstr "Monitoring"
+
+msgid "Decides what is fetched. Database adds the Zabbix and Proxy databases; APM queries APM trace data."
+msgstr "Decides what is fetched. Database adds the Zabbix and Proxy databases; APM queries APM trace data."
+
+msgid "Info"
+msgstr "Info"
+
+msgid "Topology"
+msgstr "Topology"
+
+msgid "Nodes"
+msgstr "Nodes"
+
+msgid "Database topology"
+msgstr "Database topology"
+
+msgid "Disabled"
+msgstr "Disabled"
+
+msgid "APM / OpenTelemetry"
+msgstr "APM / OpenTelemetry"
+
+msgid "Observation window"
+msgstr "Observation window"
+
+msgid "min"
+msgstr "min"
+
+msgid "Spans fetched"
+msgstr "Spans fetched"
+
+msgid "Queries"
+msgstr "Queries"
+
+msgid "Services"
+msgstr "Services"
+
+msgid "Retrieval status"
+msgstr "Retrieval status"
+
+msgid "No data available"
+msgstr "No data available"
+
+msgid "No spans fetched"
+msgstr "No spans fetched"
+
+msgid "Display limit reached"
+msgstr "Display limit reached"
+
+msgid "Query limit reached"
+msgstr "Query limit reached"
+
+msgid "Retrieval failed"
+msgstr "Retrieval failed"
+
+msgid "Requires Zabbix 8.0 or later"
+msgstr "Requires Zabbix 8.0 or later"
+
+msgid "Last observed"
+msgstr "Last observed"
+
+msgid "Data acquisition"
+msgstr "Data acquisition"
+
+msgid "APM data store"
+msgstr "APM data store"
+
+msgid "OpenTelemetry"
+msgstr "OpenTelemetry"
+
+msgid "Components"
+msgstr "Components"
+
+msgid "Appearance"
+msgstr "Appearance"
+
+msgid "The filter on the dashboard only shows or hides what was fetched."
+msgstr "The filter on the dashboard only shows or hides what was fetched."
+
+msgid "The filter on the dashboard starts here each time the dashboard is opened, and its Reset returns here."
+msgstr "The filter on the dashboard starts here each time the dashboard is opened, and its Reset returns here."
+
+msgid "Changes made in the filter are kept on refresh, not saved."
+msgstr "Changes made in the filter are kept on refresh, not saved."
+
+msgid "Components and relations not fetched (see Data acquisition) cannot be chosen."
+msgstr "Components and relations not fetched (see Data acquisition) cannot be chosen."
+
+msgid "Hiding them does not stop them being fetched."
+msgstr "Hiding them does not stop them being fetched."

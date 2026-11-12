@@ -12,7 +12,7 @@ Vis Network renders the graph in Canvas2D; WebGL is not required.
 
 <a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator driving a Monitoring Topology dashboard" /></a>
 
-[Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.2.4) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology-1.2.4.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology_1.2.4_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology-1.2.4.tar.gz)
+[Latest release](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.2.7) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.7/zabbix-widget-monitoring-topology-1.2.7.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.7/zabbix-widget-monitoring-topology_1.2.7_all.deb) | [Source (.tar.gz)](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.7/zabbix-widget-monitoring-topology-1.2.7.tar.gz) | [Source (.zip)](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.7/zabbix-widget-monitoring-topology-1.2.7.zip)
 
 ## Why Monitoring Topology?
 
@@ -31,11 +31,11 @@ It is suited to environments with many monitored hosts or advanced distributed m
   <tr><td nowrap>Hosts without interfaces</td><td>For monitored hosts without interfaces, derives a network or label from the connection-target macro.</td></tr>
   <tr><td nowrap>Device and monitoring-method display</td><td>Shows monitoring-method badges such as Ping, SNMP, Agent, IPMI, VMware, ODBC, JMX, and Kubernetes on host-type icons.</td></tr>
   <tr><td nowrap>Problem status display</td><td>Colors each host icon background by the highest severity among problems detected on that host.</td></tr>
-  <tr><td nowrap>Display filters</td><td>Filters by problem status, host status, interface, monitoring route, and monitoring method.</td></tr>
+  <tr><td nowrap>Display filters</td><td>Filters hosts, backend components, and relation lines. The Filter settings tab defines the initial state.</td></tr>
   <tr><td nowrap>Target selection</td><td>Displays multiple fixed host groups, or receives a host or host group from Navigator and updates the topology dynamically.</td></tr>
   <tr><td nowrap>Backend components</td><td>Optionally displays Zabbix DB and Proxy DB nodes.</td></tr>
   <tr><td nowrap>APM monitoring</td><td>Optionally displays the collection paths of OpenTelemetry traces stored by APM monitoring.</td></tr>
-  <tr><td nowrap>View continuity and tools</td><td>Preserves positions during incremental updates and provides search, fit-to-view, legend, relation filters, and configurable drag-follow hops.</td></tr>
+  <tr><td nowrap>View continuity and tools</td><td>Preserves positions during refreshes and provides search, fit-to-view, an information panel, configurable drag-follow hops, and optional visible layout animation.</td></tr>
   <tr><td nowrap>Interactive operation</td><td>Supports moving nodes, adjusting the layout, and opening host menus.</td></tr>
 </table>
 
@@ -63,6 +63,10 @@ This setting controls how many connection hops from a dragged node can participa
 A value of 0 moves only the dragged node. Nodes placed manually in an earlier drag are excluded from the follow range and retain their positions. After the drag ends and the nearby layout settles, physics is disabled and the adjusted positions are preserved.
 
 Regular refreshes preserve the zoom, pan, node positions, and Proxy highlight. When a Navigator or another broadcasting widget changes the selected hosts or host groups, Monitoring Topology treats the result as a new topology, lays it out again, and fits it to the view. Re-broadcasting the same selection in a different order does not trigger a new layout.
+
+### Layout Iterations Before Display
+
+This setting controls how a newly calculated layout is shown, from 0 to 1000; the default is 0. A value of 0 waits for layout calculation to settle before showing the topology. A value of 1 or more shows the topology after the specified number of iterations and lets the nodes visibly spread until the layout settles or 20 seconds elapse. It applies to the first display, selection changes, and substantially changed topologies; regular refreshes keep the existing layout.
 
 ## Backend Components
 
@@ -95,7 +99,7 @@ See the [APM Monitoring / OpenTelemetry Topology Guide](docs/OTEL_TOPOLOGY_SETUP
 
 ## Display Filters
 
-The filter panel limits which Host nodes remain visible. Within one host category, selected values are combined with OR; the five host categories are combined with AND. The independent Relations category controls monitoring, database, APM storage, and relations generated from OpenTelemetry traces (labeled Telemetry in the UI). Ancestor nodes and edges leading to matching descendant hosts remain visible so that paths are not disconnected.
+The filter panel limits visible Host nodes, backend components, and relation lines. Within one host category, selected values are combined with OR; the five host categories are combined with AND. Ancestor nodes and edges leading to matching descendant hosts remain visible so that paths are not disconnected.
 
 <table>
         <tr><th align="left" nowrap>Category</th><th align="left">Choices</th><th align="left">Purpose and default</th></tr>
@@ -104,30 +108,35 @@ The filter panel limits which Host nodes remain visible. Within one host categor
         <tr><td nowrap>Interface</td><td>Available, Mixed, Not available, Unknown</td><td>Includes hosts by interface availability. All choices are enabled by default.</td></tr>
         <tr><td nowrap>Monitoring route</td><td>Zabbix Server, Zabbix Proxy, Proxy Group</td><td>Includes hosts by their upstream monitoring route. All choices are enabled by default.</td></tr>
         <tr><td nowrap>Monitoring method</td><td>Ping, Zabbix Agent, SNMP, IPMI, JMX, Other</td><td>Includes hosts by detected monitoring method. All choices are enabled by default. Other includes VMware, ODBC, Kubernetes, and methods that cannot be classified separately.</td></tr>
-        <tr><td nowrap>Relations</td><td>Monitoring, Database, APM storage, Telemetry</td><td>Shows or hides loaded relations and backend nodes. Telemetry means the OpenTelemetry Service and OpenTelemetry System relations generated from OpenTelemetry traces. All available relations are enabled by default.</td></tr>
+        <tr><td nowrap>Components</td><td>Database, APM data store, OpenTelemetry</td><td>Shows or hides loaded component nodes together with their connected lines. Hiding a component does not stop data acquisition.</td></tr>
+        <tr><td nowrap>Relations</td><td>Monitoring, Database, APM storage, Telemetry</td><td>Shows or hides only the loaded relation lines; nodes remain visible. Telemetry covers Proxy—Service and Service—System lines.</td></tr>
 </table>
 
 <a href="screenshots/monitoring-topology-filters.png" target="_blank"><img src="screenshots/monitoring-topology-filters.png" height="395" alt="Monitoring Topology display filter panel"></a>
 
-Clearing every visibility choice in a category hides every host. Colorize by severity does not affect visibility. Filter state is saved per widget in the browser, and Reset restores the defaults above.
+Clearing every visibility choice in a host category hides every host. Colorize by severity does not affect visibility. The Filter settings tab defines the initial state. Dashboard filter changes are kept during regular refreshes but are not saved in the browser; reloading the page or selecting Reset restores the Filter-tab values. Filter changes do not refetch data or move nodes. Components and relations that are not acquired are disabled in both filter locations.
+
+## Information Panel
+
+The toolbar's Info panel shows the fetched topology's node and relation counts, database-topology state, APM/OpenTelemetry observation window and retrieval statistics, retrieval status, and legend. It updates during regular refreshes without issuing additional queries. OpenTelemetry Service and System tooltips show Last observed from the newest Span retrieved by the widget, in the user's Zabbix time zone.
 
 ## Settings
 
+The settings form is organized into four tabs.
+
 <table>
-  <tr><th align="left" nowrap>Setting</th><th align="left">Description</th></tr>
-  <tr><td nowrap>Host</td><td>Receive-only connector used to link Navigator or another compatible widget.</td></tr>
-  <tr><td nowrap>Host groups</td><td>Selects multiple fixed host groups, including their subgroups, or receives a host group from another widget.</td></tr>
-  <tr><td nowrap>Subnet prefix length</td><td>IPv4 prefix used to derive network nodes; default is 24.</td></tr>
-  <tr><td nowrap>Zabbix Server label</td><td>Label displayed for the root server node.</td></tr>
-  <tr><td nowrap>Font size</td><td>Node-label size from 8 to 24 pixels.</td></tr>
-  <tr><td nowrap>Style</td><td>Normal, bold, or italic node labels.</td></tr>
-  <tr><td nowrap>Font color</td><td>Explicit node-label color; empty uses automatic light/dark theme detection.</td></tr>
-  <tr><td nowrap>Edge color</td><td>Color of graph edges.</td></tr>
-  <tr><td nowrap>Edge width</td><td>Edge width from 1 to 8 pixels.</td></tr>
-  <tr><td nowrap>Drag follow hops</td><td>Number of connected hops that follow a dragged node, from 0 to 10; default is 6.</td></tr>
-  <tr><td nowrap>Filter icon position</td><td>Top-left, top-right, bottom-left, or bottom-right.</td></tr>
-  <tr><td nowrap>Backend components</td><td>Optionally enables database topology and APM monitoring collection paths. APM topology requires Zabbix 8.0 or later.</td></tr>
-  <tr><td nowrap>OTel observation window</td><td>Minutes in which OpenTelemetry Spans stored by APM monitoring are considered; 5 to 1440, default 15.</td></tr>
+  <tr><th align="left" nowrap>Tab</th><th align="left" nowrap>Setting</th><th align="left">Description</th></tr>
+  <tr><td nowrap>Monitoring</td><td nowrap>Host</td><td>Receive-only connector used to link Navigator or another compatible widget.</td></tr>
+  <tr><td nowrap>Monitoring</td><td nowrap>Host groups</td><td>Selects multiple fixed host groups, including their subgroups, or receives a host group from another widget.</td></tr>
+  <tr><td nowrap>Monitoring</td><td nowrap>Subnet prefix length</td><td>IPv4 prefix used to derive network nodes; default is 24.</td></tr>
+  <tr><td nowrap>Monitoring</td><td nowrap>Zabbix Server label</td><td>Label displayed for the root server node.</td></tr>
+  <tr><td nowrap>Data acquisition</td><td nowrap>Backend components</td><td>Acquires database topology and APM monitoring data. APM topology requires Zabbix 8.0 or later.</td></tr>
+  <tr><td nowrap>Data acquisition</td><td nowrap>OTel observation window</td><td>Minutes in which OpenTelemetry Spans are considered; 5 to 1440, default 15.</td></tr>
+  <tr><td nowrap>Filter</td><td nowrap>Initial filter state</td><td>Defines the initial values for Problem status, Host status, Interface, Monitoring route, Monitoring method, Components, and Relations.</td></tr>
+  <tr><td nowrap>Appearance</td><td nowrap>Font, style, and edge settings</td><td>Controls node-label font, edge color, and edge width.</td></tr>
+  <tr><td nowrap>Appearance</td><td nowrap>Drag follow hops</td><td>Connected range that follows a dragged node, from 0 to 10; default is 6.</td></tr>
+  <tr><td nowrap>Appearance</td><td nowrap>Layout iterations before display</td><td>Iterations completed before a new layout becomes visible, from 0 to 1000; default is 0.</td></tr>
+  <tr><td nowrap>Appearance</td><td nowrap>Filter icon position</td><td>Top-left, top-right, bottom-left, or bottom-right.</td></tr>
 </table>
 
 <a href="screenshots/monitoring-topology-settings.png" target="_blank"><img src="screenshots/monitoring-topology-settings.png" width="620" alt="Monitoring Topology widget settings"></a>
@@ -156,30 +165,39 @@ For dynamic selection, connect Host or Host groups to Navigator or another compa
 ### Install from RPM
 
 ```bash
-dnf install ./zabbix-widget-monitoring-topology-1.2.4.noarch.rpm
+dnf install ./zabbix-widget-monitoring-topology-1.2.7.noarch.rpm
 ```
 
 ### Install from DEB
 
 ```bash
-apt install ./zabbix-widget-monitoring-topology_1.2.4_all.deb
+apt install ./zabbix-widget-monitoring-topology_1.2.7_all.deb
 ```
 
 The packages install the runtime files into the active Zabbix frontend module directory. Then scan and enable the module from Administration -> Modules and add the widget to a dashboard.
 
 ### Install from Source
 
-RPM or DEB installation is recommended. For a source installation:
+RPM or DEB installation is recommended. For a manual installation, use the official Source package attached to the Release. It contains every runtime file, including `assets/js/vis-network.min.js`. Do not use the automatically generated “Source code” archive.
+
+The destination depends on the Zabbix version:
+
+| Zabbix | Module directory |
+|---|---|
+| 8.0 | `/usr/share/zabbix/ui/modules/holoztek_monitoringmap/` |
+| 7.0 | `/usr/share/zabbix/modules/holoztek_monitoringmap/` |
+
+Example for Zabbix 8.0:
 
 ```bash
-curl -L -o zabbix-widget-monitoring-topology-1.2.4.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology-1.2.4.tar.gz
-tar -xzf zabbix-widget-monitoring-topology-1.2.4.tar.gz
-install -d /usr/share/zabbix/ui/modules/holoztek_monitoringmap
-cd zabbix-widget-monitoring-topology-1.2.4
-cp -a manifest.json Module.php Widget.php actions assets includes locale views /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
+curl -L -o zabbix-widget-monitoring-topology-1.2.7.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.7/zabbix-widget-monitoring-topology-1.2.7.tar.gz
+tar -xzf zabbix-widget-monitoring-topology-1.2.7.tar.gz
+sudo mkdir -p /usr/share/zabbix/ui/modules/holoztek_monitoringmap
+sudo cp -a zabbix-widget-monitoring-topology-1.2.7/. /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
+sudo systemctl reload php-fpm
 ```
 
-The official Source package distributed through GitHub Releases contains the required runtime file `assets/js/vis-network.min.js`. Use the `zabbix-widget-monitoring-topology-1.2.4.tar.gz` Release Asset rather than an automatically generated GitHub source-code archive. Set readable ownership and permissions, scan modules, and enable Monitoring Topology.
+For Zabbix 7.0, use `/usr/share/zabbix/modules/holoztek_monitoringmap/` instead. Reload the applicable web server when required, scan modules in the Zabbix frontend, and enable Monitoring Topology. Do not overlay a manual installation on an RPM- or DEB-managed installation.
 
 ## Documentation
 

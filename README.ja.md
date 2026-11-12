@@ -12,7 +12,7 @@ Monitoring Topology は、Zabbix が監視しているホストへ至る監視�
 
 <a href="screenshots/monitoring-topology-dashboard-example.png" target="_blank"><img src="screenshots/monitoring-topology-dashboard-example.png" width="750" alt="Tree Navigator と連携した Monitoring Topology ダッシュボード" /></a>
 
-[最新リリース](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.2.4) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology-1.2.4.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology_1.2.4_all.deb) | [Source](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology-1.2.4.tar.gz)
+[最新リリース](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/tag/v1.2.7) | [RPM](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.7/zabbix-widget-monitoring-topology-1.2.7.noarch.rpm) | [DEB](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.7/zabbix-widget-monitoring-topology_1.2.7_all.deb) | [Source（tar.gz）](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.7/zabbix-widget-monitoring-topology-1.2.7.tar.gz) | [Source（zip）](https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.7/zabbix-widget-monitoring-topology-1.2.7.zip)
 
 ## Monitoring Topology を使う理由
 
@@ -31,11 +31,11 @@ Monitoring Topology は、Zabbix が監視しているホストへ至る監視�
   <tr><td nowrap>インターフェイスなしホスト</td><td>インターフェースを持たない監視ホストでは、接続先マクロからネットワークまたはラベルを判定して表示します。</td></tr>
   <tr><td nowrap>機器・監視方式表示</td><td>ホスト種別アイコンに対して、監視方式のバッジ（Ping、SNMP、Agent、IPMI、VMware、ODBC、JMX、Kubernetes 等）を表示します。</td></tr>
   <tr><td nowrap>障害状態の表示</td><td>ホストで検知されている障害の深刻度の色をアイコンの背景に表示します。複数の障害が発生している場合は、深刻度が最も高い障害の色が選択されます。</td></tr>
-  <tr><td nowrap>表示フィルタ</td><td>障害状態、ホスト状態、インターフェース、監視経路、監視方式で表示内容の絞り込みを行います。</td></tr>
+  <tr><td nowrap>表示フィルタ</td><td>ホスト、バックエンド構成要素、関係の線を絞り込みます。「フィルター」設定タブで初期状態を指定できます。</td></tr>
   <tr><td nowrap>描画対象の指定</td><td>複数のホストグループを固定指定するほか、ナビゲータからホスト／ホストグループを受信して動的に描画内容を変更できます。</td></tr>
   <tr><td nowrap>バックエンド構成</td><td>Zabbix DBとProxy DBを任意で表示します。</td></tr>
   <tr><td nowrap>APM監視</td><td>APM監視で保存されたOpenTelemetryトレースの収集経路を任意で表示します。</td></tr>
-  <tr><td nowrap>表示状態の維持と操作ツール</td><td>差分更新時のノード位置を維持し、検索、全体表示、凡例、関係フィルタ、ドラッグ時の追従ホップ数設定を提供します。</td></tr>
+  <tr><td nowrap>表示状態の維持と操作ツール</td><td>リフレッシュ時のノード位置を維持し、検索、全体表示、情報パネル、ドラッグ時の追従ホップ数、配置計算の表示設定を提供します。</td></tr>
   <tr><td nowrap>対話操作</td><td>ノードの移動とレイアウトの調整、ホストのメニューへのアクセスに対応します。</td></tr>
 </table>
 
@@ -63,6 +63,10 @@ Monitoring Topology は、Zabbix Serverからの直接監視、Zabbix Proxy経�
 0を指定した場合はドラッグしたノードだけを移動します。過去に手動配置したノードは追従対象から除外され、配置した位置を維持します。ドラッグ終了後は周辺レイアウトが整った時点で物理演算を停止し、調整後の位置を維持します。
 
 通常のリフレッシュでは、拡大率、表示位置、ノード位置、Proxyのハイライトを維持します。ナビゲータ等から受信するホスト／ホストグループが変わった場合は新しいトポロジーとして全体を再配置し、表示範囲を合わせます。同じ選択内容が異なる順序で再送された場合は再配置しません。
+
+### 表示前の配置計算回数
+
+新しいレイアウトをどの段階から表示するかを0〜1000で指定します。既定値は0です。0では配置計算が安定してからトポロジーを表示します。1以上では指定回数を計算した時点で表示し、安定するか20秒が経過するまでノードが広がる動きを表示します。初回表示、描画対象の変更、構成が大きく変わった場合に適用し、通常のリフレッシュでは既存の配置を維持します。
 
 ## バックエンド構成
 
@@ -95,7 +99,7 @@ OpenTelemetryノードを表示するには、Monitoring Topologyの描画対象
 
 ## 表示フィルタ
 
-フィルタパネルは、グラフに残すHostノードを絞り込みます。ホストに関する同じカテゴリ内の選択肢はOR、5つのホストカテゴリ間はANDで組み合わせます。独立した「関係」カテゴリでは、監視経路、データベース、APMストレージ、およびOpenTelemetryトレースから生成した関係（画面上の「Telemetry」）を制御します。表示対象の子孫Hostへ至る上位ノードとエッジは表示を維持し、経路が分断されないようにします。
+フィルタパネルは、表示するHostノード、バックエンド構成要素、関係の線を絞り込みます。ホストに関する同じカテゴリ内の選択肢はOR、5つのホストカテゴリ間はANDで組み合わせます。表示対象の子孫Hostへ至る上位ノードとエッジは表示を維持し、経路が分断されないようにします。
 
 <table>
         <tr><th align="left" nowrap>カテゴリ</th><th align="left">選択肢</th><th align="left">用途と既定状態</th></tr>
@@ -104,30 +108,35 @@ OpenTelemetryノードを表示するには、Monitoring Topologyの描画対象
         <tr><td nowrap>インターフェイス</td><td>正常、一部監視不可、監視不可、状況不明</td><td>インターフェースの可用性でHostを絞り込みます。既定ではすべてONです。</td></tr>
         <tr><td nowrap>監視経路</td><td>Zabbix Server、Zabbix Proxy、Proxy Group</td><td>上流の監視経路でHostを絞り込みます。既定ではすべてONです。</td></tr>
         <tr><td nowrap>監視方式</td><td>Ping、Zabbix Agent、SNMP、IPMI、JMX、その他</td><td>検出した監視方式でHostを絞り込みます。既定ではすべてONです。「その他」にはVMware、ODBC、Kubernetes、個別分類できない方式を含みます。</td></tr>
-        <tr><td nowrap>関係</td><td>監視経路、データベース、APMストレージ、Telemetry</td><td>取得済みの関係とバックエンドノードを表示・非表示にします。TelemetryはOpenTelemetryトレースから生成したOpenTelemetryサービス／OpenTelemetryシステムの関係です。利用可能な関係は既定ですべてONです。</td></tr>
+        <tr><td nowrap>構成要素</td><td>データベース、APMデータストア、OpenTelemetry</td><td>取得済みの構成要素ノードと接続する線を表示・非表示にします。非表示にしてもデータ取得は停止しません。</td></tr>
+        <tr><td nowrap>関係</td><td>監視経路、データベース、APMストレージ、Telemetry</td><td>取得済みの関係の線だけを表示・非表示にし、ノードは残します。TelemetryはProxy—ServiceとService—Systemの線です。</td></tr>
 </table>
 
 <a href="screenshots/monitoring-topology-filters.png" target="_blank"><img src="screenshots/monitoring-topology-filters.png" height="395" alt="Monitoring Topology の表示フィルタパネル"></a>
 
-表示条件となる選択肢をカテゴリ内ですべてOFFにすると、すべてのHostが非表示になります。「深刻度で色分け表示」は表示可否には影響しません。フィルタ状態はウィジェットごとにブラウザへ保存され、「リセット」で上記の既定状態へ戻ります。
+ホストカテゴリ内の表示条件をすべてOFFにすると、すべてのHostが非表示になります。「深刻度で色分け表示」は表示可否には影響しません。「フィルター」設定タブが初期状態を定義します。ダッシュボード上で変更した状態は通常のリフレッシュ中は維持されますが、ブラウザには保存されません。ページの再読み込みまたは「リセット」で設定タブの値へ戻ります。フィルター操作ではデータを再取得せず、ノードも移動しません。取得していない構成要素と関係は、どちらのフィルターでも選択できません。
+
+## 情報パネル
+
+ツールバーの「情報」パネルでは、取得したトポロジーのノード数と関係数、データベース構成の状態、APM/OpenTelemetryの観測期間・取得件数・取得状態、凡例を確認できます。通常のリフレッシュに追従して更新され、追加のクエリは行いません。OpenTelemetryサービス／システムのツールチップには、ウィジェットが取得した最新Spanの時刻を利用者のZabbixタイムゾーンで「最終観測」として表示します。
 
 ## 設定項目
 
+設定画面は4つのタブに分かれています。
+
 <table>
-  <tr><th align="left" nowrap>項目</th><th align="left">説明</th></tr>
-  <tr><td nowrap>ホスト</td><td>ナビゲータ等と接続する受信専用コネクタです。</td></tr>
-  <tr><td nowrap>ホストグループ</td><td>サブグループを含む複数のホストグループを固定指定するか、他ウィジェットからホストグループを受信します。</td></tr>
-  <tr><td nowrap>サブネットプレフィックス長</td><td>Networkノード算出用のIPv4プレフィックス。既定値は24です。</td></tr>
-  <tr><td nowrap>Zabbix Serverラベル</td><td>ルートServerノードに表示する名称です。</td></tr>
-  <tr><td nowrap>フォントサイズ</td><td>8〜24pxのノードラベルサイズです。</td></tr>
-  <tr><td nowrap>スタイル</td><td>通常、太字、斜体から選択します。</td></tr>
-  <tr><td nowrap>フォント色</td><td>空欄ではライト／ダークテーマを自動判定し、指定時はその色を使用します。</td></tr>
-  <tr><td nowrap>エッジ色</td><td>ノード間を結ぶ線の色です。</td></tr>
-  <tr><td nowrap>エッジ幅</td><td>1〜8pxの線幅です。</td></tr>
-  <tr><td nowrap>ドラッグ時の追従ホップ数</td><td>ドラッグしたノードに追従する接続範囲を0〜10で指定します。既定値は6です。</td></tr>
-  <tr><td nowrap>フィルタアイコン位置</td><td>左上、右上、左下、右下から選択します。</td></tr>
-  <tr><td nowrap>バックエンド構成</td><td>データベース構成とAPM監視の収集経路を任意で有効にします。APM監視のトポロジー表示にはZabbix 8.0以降が必要です。</td></tr>
-  <tr><td nowrap>OTel観測期間（分）</td><td>APM監視に保存されたOpenTelemetryのSpanを観測対象とする期間を5〜1440分で指定します。既定値は15です。</td></tr>
+  <tr><th align="left" nowrap>タブ</th><th align="left" nowrap>項目</th><th align="left">説明</th></tr>
+  <tr><td nowrap>監視対象</td><td nowrap>ホスト</td><td>ナビゲータ等と接続する受信専用コネクタです。</td></tr>
+  <tr><td nowrap>監視対象</td><td nowrap>ホストグループ</td><td>サブグループを含む複数のホストグループを固定指定するか、他ウィジェットから受信します。</td></tr>
+  <tr><td nowrap>監視対象</td><td nowrap>サブネットプレフィックス長</td><td>Networkノード算出用のIPv4プレフィックス。既定値は24です。</td></tr>
+  <tr><td nowrap>監視対象</td><td nowrap>Zabbix Serverラベル</td><td>ルートServerノードに表示する名称です。</td></tr>
+  <tr><td nowrap>データ取得</td><td nowrap>バックエンド構成</td><td>データベース構成とAPM監視データを取得します。APMにはZabbix 8.0以降が必要です。</td></tr>
+  <tr><td nowrap>データ取得</td><td nowrap>OTel観測期間（分）</td><td>対象Spanの期間を5〜1440分で指定します。既定値は15です。</td></tr>
+  <tr><td nowrap>フィルター</td><td nowrap>初期フィルター状態</td><td>障害状態、ホスト状態、インターフェイス、監視経路、監視方式、構成要素、関係の初期値を指定します。</td></tr>
+  <tr><td nowrap>外観</td><td nowrap>フォント・スタイル・エッジ</td><td>ノードラベルのフォント、エッジ色、エッジ幅を指定します。</td></tr>
+  <tr><td nowrap>外観</td><td nowrap>ドラッグ時の追従ホップ数</td><td>追従する接続範囲を0〜10で指定します。既定値は6です。</td></tr>
+  <tr><td nowrap>外観</td><td nowrap>表示前の配置計算回数</td><td>新しいレイアウトを表示するまでの計算回数を0〜1000で指定します。既定値は0です。</td></tr>
+  <tr><td nowrap>外観</td><td nowrap>フィルタアイコンの位置</td><td>左上、右上、左下、右下から選択します。</td></tr>
 </table>
 
 <a href="screenshots/monitoring-topology-settings-ja.png" target="_blank"><img src="screenshots/monitoring-topology-settings-ja.png" width="620" alt="Monitoring Topology ウィジェットの日本語設定画面"></a>
@@ -156,30 +165,39 @@ OpenTelemetryノードを表示するには、Monitoring Topologyの描画対象
 ### RPM
 
 ```bash
-dnf install ./zabbix-widget-monitoring-topology-1.2.4.noarch.rpm
+dnf install ./zabbix-widget-monitoring-topology-1.2.7.noarch.rpm
 ```
 
 ### DEB
 
 ```bash
-apt install ./zabbix-widget-monitoring-topology_1.2.4_all.deb
+apt install ./zabbix-widget-monitoring-topology_1.2.7_all.deb
 ```
 
 パッケージは実行ファイルを利用中のZabbixフロントエンドモジュールディレクトリへ配置します。その後、管理 → モジュールで再スキャンして有効化し、ダッシュボードへ追加してください。
 
 ### ソースから
 
-通常はRPMまたはDEBを推奨します。ソースから配置する場合:
+通常はRPMまたはDEBを推奨します。手動インストールには、Release Assetsへ添付されたHOLOZTEK公式Sourceパッケージを使用してください。`assets/js/vis-network.min.js`を含む実行時ファイルをすべて同梱しています。タグから自動生成される「Source code」アーカイブは使用しないでください。
+
+配置先はZabbixのバージョンで異なります。
+
+| Zabbix | モジュールディレクトリ |
+|---|---|
+| 8.0 | `/usr/share/zabbix/ui/modules/holoztek_monitoringmap/` |
+| 7.0 | `/usr/share/zabbix/modules/holoztek_monitoringmap/` |
+
+Zabbix 8.0の例:
 
 ```bash
-curl -L -o zabbix-widget-monitoring-topology-1.2.4.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.4/zabbix-widget-monitoring-topology-1.2.4.tar.gz
-tar -xzf zabbix-widget-monitoring-topology-1.2.4.tar.gz
-install -d /usr/share/zabbix/ui/modules/holoztek_monitoringmap
-cd zabbix-widget-monitoring-topology-1.2.4
-cp -a manifest.json Module.php Widget.php actions assets includes locale views /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
+curl -L -o zabbix-widget-monitoring-topology-1.2.7.tar.gz https://github.com/HOLOZTEK/zabbix-widget-monitoring-topology/releases/download/v1.2.7/zabbix-widget-monitoring-topology-1.2.7.tar.gz
+tar -xzf zabbix-widget-monitoring-topology-1.2.7.tar.gz
+sudo mkdir -p /usr/share/zabbix/ui/modules/holoztek_monitoringmap
+sudo cp -a zabbix-widget-monitoring-topology-1.2.7/. /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
+sudo systemctl reload php-fpm
 ```
 
-GitHub Releasesで配布する正式なSourceパッケージには、実行時に必要な `assets/js/vis-network.min.js` が含まれます。GitHubが自動生成するソースコードアーカイブではなく、Release Assetsの `zabbix-widget-monitoring-topology-1.2.4.tar.gz` を使用してください。Zabbixフロントエンドが読める所有者・権限を設定し、モジュールを再スキャンして有効化してください。
+Zabbix 7.0では`/usr/share/zabbix/modules/holoztek_monitoringmap/`へ配置します。必要に応じてWebサーバーもreloadし、Zabbixフロントエンドでモジュールを再スキャンして有効化してください。RPM／DEBで管理している環境へ手動インストールを重ねないでください。
 
 ## ドキュメント
 

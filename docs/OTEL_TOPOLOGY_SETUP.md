@@ -70,12 +70,15 @@ The same <code>service.name</code> under one Proxy is aggregated into one OpenTe
 
 ## Widget Settings
 
-1. Open Backend components in the Monitoring Topology settings.
-2. Enable APM.
+1. Open the Data acquisition tab in the Monitoring Topology settings.
+2. Enable APM under Backend components.
 3. Set OTel observation window to a value from 5 to 1440 minutes.
-4. Set the widget refresh interval to No refresh.
+4. On the Filter tab, set the initial visibility of Components and Relations.
+5. Set the widget refresh interval to No refresh.
 
-Disabling Telemetry in the Relations filter hides OpenTelemetry Service and OpenTelemetry System nodes together with their OpenTelemetry-derived relations. Disabling APM in the widget settings prevents Span retrieval itself.
+Data acquisition and display filtering have separate roles. Disabling APM prevents Span retrieval. Disabling OpenTelemetry under Components hides the retrieved OpenTelemetry Service and System nodes together with their connected lines, but does not stop retrieval. Disabling Telemetry under Relations hides only the OpenTelemetry-derived lines and leaves the nodes visible.
+
+The Filter tab defines the initial state used when the dashboard opens. Changes made in the dashboard filter are preserved during regular refreshes but are not saved in the browser. Reloading the page or selecting Reset restores the Filter-tab values. Filter changes do not issue new data-retrieval requests or move nodes.
 
 ## Observation Window and Retrieval Limits
 
@@ -87,6 +90,10 @@ The widget retrieves the newest Spans within the configured OTel observation win
 - OpenTelemetry System nodes: up to 100
 
 When a limit is exceeded, the widget draws only the retrieved data and displays a warning. Shortening the observation window reduces the number of eligible Spans and may improve omissions. However, an environment that continuously produces many Spans can continue to reach the limit even with a shorter window, leaving some Services or Systems unavailable to the widget.
+
+The Info panel reports the observation window, fetched Span count, query count and limit, Service and System counts, and retrieval status. It also shows topology counts and the legend. These values are derived from data already retrieved by the widget and do not add queries.
+
+OpenTelemetry Service and System tooltips show Last observed, based on the newest Span time among the Spans retrieved by the widget. It is not a process-health value or the time of a user's last activity. The timestamp is shown in the user's Zabbix time zone.
 
 ## User Permissions and Display Scope
 
@@ -109,8 +116,9 @@ Check the following in order.
 7. Verify that the stored Span's <code>holoztek.zabbix.proxyid</code> matches the Proxy that actually received it.
 8. Verify that the Span contains a non-empty <code>service.name</code>.
 9. Verify that the Span is within the OTel observation window.
-10. Verify that APM and Telemetry in the Relations filter are enabled in Monitoring Topology.
-11. Check whether the widget displays a retrieval-limit warning.
+10. Verify that APM is enabled for data acquisition and OpenTelemetry is enabled in the Components filter.
+11. If only the lines are missing, verify that Telemetry is enabled in the Relations filter.
+12. Check the retrieval status in the Info panel and whether the widget displays a retrieval-limit warning.
 
 If an OpenTelemetry Service appears but its OpenTelemetry System does not, check <code>host.name</code> first.
 
@@ -137,3 +145,5 @@ Node-generation logic for missing attributes was validated with synthetic test d
 - The APM Data Store and APM-enabled Proxy nodes come from Zabbix configuration data; OpenTelemetry Service and System nodes come from retrieved Spans.
 - A Service or System with Spans only outside the observation window is not displayed.
 - Display content is limited to the current user's visibility through the Zabbix API and APM filters.
+- Component and relation filters affect only display; they do not reduce APM retrieval cost while APM data acquisition is enabled.
+- Last observed is limited to the Spans retrieved by the widget and can be affected by retrieval limits.

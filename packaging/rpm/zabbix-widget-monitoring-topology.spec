@@ -1,6 +1,6 @@
 %define _rpmfilename %%{NAME}-%%{VERSION}.%%{ARCH}.rpm
 Name:           zabbix-widget-monitoring-topology
-Version:        1.2.4
+Version:        1.2.7
 Release:        0
 Summary:        Monitoring Topology widget for Zabbix dashboard (Vis Network)
 License:        MIT
@@ -122,6 +122,19 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Thu Nov 12 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.7-0
+- 手動インストール用の公式 Source パッケージ（zabbix-widget-monitoring-topology-<version>.tar.gz / .zip、vis-network.min.js を同梱）を配布物に追加。
+- README の手動インストール手順を Source パッケージ基準とし、配置先を Zabbix 8.0（/usr/share/zabbix/ui/modules）と 7.0（/usr/share/zabbix/modules）で明記。タグから自動生成される Source アーカイブは手動インストールに使えない旨を記載。
+- ウィジェット本体の変更なし。
+* Mon Nov 09 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.6-0
+- 設定画面を「監視対象」「データ取得」「フィルター」「外観」の4タブに整理。「フィルター」タブはダッシュボード上のフィルターと同じ区分（障害状態・ホスト状態・インターフェイス・監視経路・監視方式・構成要素・関係）を持ち、ダッシュボードを開いたときのフィルターの初期状態になる。描画の設定は「外観」タブへ移動。
+- フィルターに「構成要素」（データベース・APMデータストア・OpenTelemetry）を追加し、ノードの表示と関係（線）の表示を分離。関係フィルターは線だけを隠す。データ取得の設定は取得だけ、フィルターは取得済みデータの表示だけを制御する（取得しない構成要素・関係はフィルターでも「フィルター」タブでも選べない）。フィルターでの変更は更新後も保たれるが保存はされず（ブラウザにも保存しない）、再読み込みと［リセット］で「フィルター」タブの設定に戻る。
+- バックエンド構成（データベース・APM）はデータの取得、関係フィルターは取得済みの構成の表示だけを制御することを、設定のヘルプと README / OpenTelemetry Topology 導入ガイドに明記（取得コストと最終観測の意味も追記）。
+- ツールバーの「凡例」を「情報」に変更。トポロジーのノード数・関係数、データベース構成の有無、APM / OpenTelemetry の取得状況（観測期間・取得したSpan数・クエリ数・サービス数・システム数・取得状況）と凡例を表示する。開いたままでも更新ごとに内容を更新。
+- OTel Service / OTel System のツールチップに「最終観測」（このウィジェットが取得した最新のSpanの時刻、利用者のタイムゾーンで表示）を追加。追加のクエリは行わない。
+* Mon Nov 09 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.5-0
+- 設定「表示前の配置計算回数」を追加（0〜1000、既定 0）。0 は従来どおり配置の計算が終わってから表示する。1 以上は、初回表示・選択変更・構成の大きな変化で新しく配置するとき、指定した回数だけ計算してから表示し、広がって落ち着くまでの動きを見せる（最長 20 秒）。落ち着いたら止めて全体表示に合わせ直す。値が小さいほど大きく動く。
+- README に Zabbix 8.0.0 での動作確認を明記。
 * Mon Nov 09 2026 HOLOZTEK <ttake-55@users.noreply.github.com> - 1.2.4-0
 - ナビゲータ等で表示対象のホスト／ホストグループが変わったとき、前回のレイアウトに新しいノードを追記するのではなく、全体を再レイアウトして表示範囲を合わせるよう修正（同じ選択の定期更新では従来どおり配置を維持）。
 - 設定「ドラッグ時の追従ホップ数」の既定値を 3 から 6 に変更（既定値のまま使っている既存ウィジェットも 6 になる。3 以外を設定したウィジェットはその値を維持）。

@@ -13,9 +13,9 @@ Use a sanitized, publicly shareable lab or demo Zabbix environment. Never captur
 | `screenshots/monitoring-topology-kubernetes.png` | Two distinct Kubernetes clusters | 1600 x 980 |
 | `screenshots/monitoring-topology-backend-database.png` | Zabbix Server / Proxy database backend topology | 1500 x 1060 |
 | `screenshots/monitoring-topology-apm-opentelemetry.png` | Logical APM / OpenTelemetry display hierarchy | 1480 x 1190 |
-| `screenshots/monitoring-topology-filters.png` | Expanded display filter panel | 1200 x 800 |
-| `screenshots/monitoring-topology-settings.png` | English settings form | 900 x 720 |
-| `screenshots/monitoring-topology-settings-ja.png` | Japanese settings form | 900 x 720 |
+| `screenshots/monitoring-topology-filters.png` | Expanded display filter panel including Components and Relations | 1200 x 1000 |
+| `screenshots/monitoring-topology-settings.png` | English tabbed settings form with Data acquisition selected | 1200 x 900 |
+| `screenshots/monitoring-topology-settings-ja.png` | Japanese tabbed settings form with Data acquisition selected | 1200 x 900 |
 | `screenshots/monitoring-topology-dashboard-example.png` | Tree Navigator driving Monitoring Topology | 1600 x 980 |
 
 ## Sanitizing Checklist
@@ -28,6 +28,7 @@ Use a sanitized, publicly shareable lab or demo Zabbix environment. Never captur
 - Keep crops and scale consistent, and verify readability at README display width.
 - Capture both English and Japanese settings forms.
 - Set the widget refresh interval to `No refresh` in both settings forms.
+- Keep all four settings-tab labels visible and select the Data acquisition tab for the README image.
 
 ## README Integration
 

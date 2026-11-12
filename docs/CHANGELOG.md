@@ -5,6 +5,23 @@
 - Clarified database-type detection, drag-follow hops, APM logical topology versus actual Telemetry traffic direction, and APM display prerequisites.
 - Documented Zabbix Proxy and APM filter permissions, retrieval-limit behavior, EL9 APM Proxy constraints, and the Zabbix 8.0 tested environment.
 
+## v1.2.7 - 2026-11-13
+
+- Added official `.tar.gz` and `.zip` Source packages for manual installation, including every required runtime file.
+- Documented the different module directories used by Zabbix 7.0 and 8.0.
+
+## v1.2.6 - 2026-11-11
+
+- Organized widget settings into Monitoring, Data acquisition, Filter, and Appearance tabs.
+- Separated data acquisition, component visibility, and relation-line visibility.
+- Added configurable initial filter state, the Info panel, and Last observed timestamps for OpenTelemetry nodes.
+- Kept dashboard filter changes during refreshes without persisting them in the browser.
+
+## v1.2.5 - 2026-11-09
+
+- Added Layout iterations before display to optionally show a newly calculated layout spreading into place.
+- Kept the existing behavior by using 0 as the default.
+
 ## v1.2.4 - 2026-11-09
 
 - Rebuilt and fitted the topology when a Navigator or another broadcaster changes the selected hosts or host groups.
