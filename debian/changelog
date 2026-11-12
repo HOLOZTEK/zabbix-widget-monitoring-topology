@@ -1,3 +1,16 @@
+zabbix-widget-monitoring-topology (1.2.7) unstable; urgency=medium
+
+  * 手動インストール用の公式 Source パッケージ
+    （zabbix-widget-monitoring-topology-<version>.tar.gz / .zip、
+    vis-network.min.js を同梱）を配布物に追加。
+  * README の手動インストール手順を Source パッケージ基準とし、配置先を
+    Zabbix 8.0（/usr/share/zabbix/ui/modules）と
+    7.0（/usr/share/zabbix/modules）で明記。タグから自動生成される
+    Source アーカイブは手動インストールに使えない旨を記載。
+  * ウィジェット本体の変更なし。
+
+ -- HOLOZTEK <ttake-55@users.noreply.github.com>  Thu, 12 Nov 2026 22:00:00 +0900
+
 zabbix-widget-monitoring-topology (1.2.6) unstable; urgency=medium
 
   * 設定画面を「監視対象」「データ取得」「フィルター」「外観」の4タブに整理。「フィルター」タブはダッシュボード上のフィルターと同じ区分（障害状態・ホスト状態・インターフェイス・監視経路・監視方式・構成要素・関係）を持ち、ダッシュボードを開いたときのフィルターの初期状態になる。描画の設定は「外観」タブへ移動。
