@@ -1,28 +1,35 @@
 #!/bin/sh
 # 手動インストール用の HOLOZTEK 公式 Source パッケージ（tar.gz / zip）を作成する。
-# usage: scripts/build-source-package.sh <tag> <vis-network.min.js> [出力先ディレクトリ]
+# usage: scripts/build-source-package.sh <tag|ref> <vis-network.min.js> [出力先ディレクトリ]
+# パッケージ名のバージョンは、指定した ref の manifest.json から取る。
 #
 # vis-network.min.js は .gitignore 対象のため、タグから自動生成される Source
 # アーカイブには含まれない。ここでは RPM/DEB と同じファイル一式（spec の
 # %install と同じ実行時ファイル）にベンダー JS を加え、docs/ を同梱する。
 set -e
 
-TAG=$1
+REF=$1
 VIS=$2
 OUT=${3:-.}
 
-if [ -z "${TAG}" ] || [ ! -f "${VIS}" ]; then
-    echo "usage: $0 <tag> <vis-network.min.js> [outdir]" >&2
+if [ -z "${REF}" ] || [ ! -f "${VIS}" ]; then
+    echo "usage: $0 <tag|ref> <vis-network.min.js> [outdir]" >&2
     exit 1
 fi
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 OUT=$(CDPATH= cd -- "${OUT}" && pwd)
-NAME=zabbix-widget-monitoring-topology-${TAG#v}
+VERSION=$(git -C "${ROOT}" show "${REF}:manifest.json" | grep -Eo '"version"[[:space:]]*:[[:space:]]*"[^"]*"' \
+    | sed -E 's/.*:[[:space:]]*"([^"]*)"/\1/')
+if [ -z "${VERSION}" ]; then
+    echo "Error: could not read the version from ${REF}:manifest.json" >&2
+    exit 1
+fi
+NAME=zabbix-widget-monitoring-topology-${VERSION}
 WORK=$(mktemp -d)
 trap 'rm -rf "${WORK}"' EXIT
 
-git -C "${ROOT}" archive --prefix="${NAME}/" "${TAG}" \
+git -C "${ROOT}" archive --prefix="${NAME}/" "${REF}" \
     LICENSE README.md manifest.json Module.php Widget.php \
     actions assets includes locale views docs | tar -x -C "${WORK}"
 install -m 644 "${VIS}" "${WORK}/${NAME}/assets/js/vis-network.min.js"
