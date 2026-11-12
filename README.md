@@ -32,14 +32,38 @@ rpm -ivh zabbix-widget-monitoring-topology-<version>.noarch.rpm
 systemctl reload httpd php-fpm
 ```
 
-### 手動インストール
+### 手動インストール（Source パッケージ）
+
+手動インストールには、リリースに添付された HOLOZTEK 公式の Source パッケージ
+（`zabbix-widget-monitoring-topology-<version>.tar.gz` / `.zip`）を使用してください。
+実行に必要なファイル（`assets/js/vis-network.min.js` を含む）をすべて同梱しています。
+
+> [!IMPORTANT]
+> GitHub / Gitea がタグから自動生成する「Source code (zip / tar.gz)」はリポジトリの
+> スナップショットであり、手動インストール用の配布物ではありません。
+> `assets/js/vis-network.min.js` を含まないため、そのまま配置するとウィジェットが表示されません。
+
+モジュールの配置先は Zabbix のバージョンによって異なります。
+
+| Zabbix | 配置先 |
+|---|---|
+| 8.0 | `/usr/share/zabbix/ui/modules/holoztek_monitoringmap/` |
+| 7.0 | `/usr/share/zabbix/modules/holoztek_monitoringmap/` |
+
+Zabbix 8.0 の例:
 
 ```bash
-cp -r zabbix-widget-monitoring-topology /usr/share/zabbix/modules/holoztek_monitoringmap
-systemctl reload httpd php-fpm
+tar -xzf zabbix-widget-monitoring-topology-<version>.tar.gz
+sudo mkdir -p /usr/share/zabbix/ui/modules/holoztek_monitoringmap
+sudo cp -r zabbix-widget-monitoring-topology-<version>/* /usr/share/zabbix/ui/modules/holoztek_monitoringmap/
+sudo systemctl reload php-fpm
 ```
 
-Zabbix 管理画面 → 管理 → モジュール からウィジェットを有効化してください。
+Zabbix 7.0 では配置先を `/usr/share/zabbix/modules/holoztek_monitoringmap/` に読み替えてください。
+Web サーバーに応じて `httpd` / `apache2` / `nginx` の reload も行ってください。
+
+Zabbix 管理画面 → 管理 → モジュール で「今すぐスキャン」を実行し、ウィジェットを有効化してください。
+RPM / DEB パッケージで導入済みの環境には、手動インストールを重ねないでください。
 
 ## 使い方
 
