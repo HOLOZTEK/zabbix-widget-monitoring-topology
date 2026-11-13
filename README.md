@@ -1,6 +1,6 @@
 # zabbix-widget-monitoring-topology
 
-English | [æ¥æ¬èª](README.ja.md)
+English | [日本語](README.ja.md)
 
 ## Overview
 
@@ -26,8 +26,8 @@ It is suited to environments with many monitored hosts or advanced distributed m
   <tr><th align="left" nowrap>Function</th><th align="left">Description</th></tr>
   <tr><td nowrap>Monitoring-path graph</td><td>Connects and displays Zabbix Server, Zabbix Proxy, Proxy Group, Network, and Host nodes.</td></tr>
   <tr><td nowrap>Network display</td><td>Calculates Network nodes from host interface IP addresses and a configurable IPv4 prefix length. Because monitoring-route clarity takes priority, the same network segment can appear in multiple places when it is reached through different routes.</td></tr>
-  <tr><td nowrap>VMware monitoring</td><td>Uses official VMware template discovery and item data to build the Datacenter â Cluster â ESXi Host hierarchy and displays VMs through Network nodes below their ESXi Host.</td></tr>
-  <tr><td nowrap>Kubernetes monitoring</td><td>Uses official Kubernetes template keys and discovery relationships to display the Network â aggregate host â Kubernetes Cluster â component host hierarchy.</td></tr>
+  <tr><td nowrap>VMware monitoring</td><td>Uses official VMware template discovery and item data to build the Datacenter → Cluster → ESXi Host hierarchy and displays VMs through Network nodes below their ESXi Host.</td></tr>
+  <tr><td nowrap>Kubernetes monitoring</td><td>Uses official Kubernetes template keys and discovery relationships to display the Network → aggregate host → Kubernetes Cluster → component host hierarchy.</td></tr>
   <tr><td nowrap>Hosts without interfaces</td><td>For monitored hosts without interfaces, derives a network or label from the connection-target macro.</td></tr>
   <tr><td nowrap>Device and monitoring-method display</td><td>Shows monitoring-method badges such as Ping, SNMP, Agent, IPMI, VMware, ODBC, JMX, and Kubernetes on host-type icons.</td></tr>
   <tr><td nowrap>Problem status display</td><td>Colors each host icon background by the highest severity among problems detected on that host.</td></tr>
