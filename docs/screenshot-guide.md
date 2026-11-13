@@ -27,7 +27,6 @@ Use a sanitized, publicly shareable lab or demo Zabbix environment. Never captur
 - Demonstrate multiple Kubernetes clusters with fictional or explicitly publication-approved names.
 - Keep crops and scale consistent, and verify readability at README display width.
 - Capture both English and Japanese settings forms.
-- Set the widget refresh interval to `No refresh` in both settings forms.
 - Keep all four settings-tab labels visible and select the Data acquisition tab for the README image.
 
 ## README Integration

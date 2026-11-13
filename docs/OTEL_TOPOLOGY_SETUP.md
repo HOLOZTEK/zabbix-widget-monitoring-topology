@@ -73,8 +73,8 @@ The same <code>service.name</code> under one Proxy is aggregated into one OpenTe
 1. Open the Data acquisition tab in the Monitoring Topology settings.
 2. Enable APM under Backend components.
 3. Set OTel observation window to a value from 5 to 1440 minutes.
-4. On the Filter tab, set the initial visibility of Components and Relations.
-5. Set the widget refresh interval to No refresh.
+4. On the Filter tab, configure the initial state of the dashboard filter.
+5. Set the refresh interval as needed. When APM is enabled, APM trace data is retrieved during refresh.
 
 Data acquisition and display filtering have separate roles. Disabling APM prevents Span retrieval. Disabling OpenTelemetry under Components hides the retrieved OpenTelemetry Service and System nodes together with their connected lines, but does not stop retrieval. Disabling Telemetry under Relations hides only the OpenTelemetry-derived lines and leaves the nodes visible.
 

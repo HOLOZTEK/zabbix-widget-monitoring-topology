@@ -149,7 +149,7 @@ For dynamic selection, connect Host or Host groups to Navigator or another compa
 
 1. Add Tree Navigator or another widget that broadcasts `_hostid` or `_hostgroupid`.
 2. Add Monitoring Topology to the same dashboard page.
-3. Set the Monitoring Topology refresh interval to **No refresh**.
+3. Set the refresh interval as needed. When APM is enabled, APM trace data is retrieved during refresh.
 4. In Monitoring Topology settings, connect Host and/or Host group to the source widget.
 5. Select a host to show its route, or a host group to show routes for hosts in that group.
 
